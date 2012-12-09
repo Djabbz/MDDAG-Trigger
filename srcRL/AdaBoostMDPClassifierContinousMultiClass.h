@@ -73,6 +73,11 @@ namespace MultiBoost {
         CStateModifier* getStateSpaceNN();
 		
         CStateModifier* getStateSpaceForGSBNFQFunction( int numOfFeatures);
+        
+        void outHeader()
+        {
+            //TODO:
+        }
 	};
 	
 	

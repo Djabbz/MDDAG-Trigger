@@ -48,7 +48,21 @@ namespace MultiBoost {
 		RT_EXP,
 	};
 
-	
+    //////////////////////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////////////////////
+	struct BinaryResultStruct {
+		double origAcc;
+		
+		double acc;
+		double TP;
+		double TN;
+		double usedClassifierAvg;
+		double avgReward;
+		
+		int iterNumber;
+        double negNumEval;
+	};
+
 	////////////////////////////////////////////////////////////////////////////////////////////////	
 	////////////////////////////////////////////////////////////////////////////////////////////////	
 	////////////////////////////////////////////////////////////////////////////////////////////////
@@ -118,7 +132,7 @@ namespace MultiBoost {
 		double getAccuracyOnCurrentDataSet(){ return _data->getAccuracyOnCurrentDataSet(); }
 		
 		void outPutStatistic( double acc, double curracc, double uc, double sumrew );
-		
+        void outPutStatistic( BinaryResultStruct& bres ) {}
 		
 		
 		// constructor
@@ -138,9 +152,15 @@ namespace MultiBoost {
 		
 		// get the discretized state space
 		virtual CStateModifier* getStateSpace();
+        virtual CStateModifier* getStateSpace(int){};
 		virtual CStateModifier* getStateSpaceRBF(unsigned int partitionNumber);
 		virtual CStateModifier* getStateSpaceTileCoding(unsigned int partitionNumber);
-		
+
+        virtual CStateModifier* getStateSpaceForRBFQFunction(int){};
+
+        void outHeader()
+        {        }
+        
 		// classify correctly
 		bool classifyCorrectly();
 		bool hasithLabelCurrentElement( int i );

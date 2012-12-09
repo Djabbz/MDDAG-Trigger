@@ -123,10 +123,6 @@ namespace MultiBoost {
 			sHypothesis = new AdaBoostMHLearner();
 		} else if ( sHypothesisName.compare( "FilterBoost" ) == 0 ) {
 			sHypothesis = new FilterBoostLearner();
-		}  else if ( sHypothesisName.compare( "VJcascade" ) == 0 ) {
-			sHypothesis = new VJCascadeLearner();
-        } else if ( sHypothesisName.compare( "SoftCascade") == 0) {
-            sHypothesis = new SoftCascadeLearner();
         } else {
 			cout << "Unknown strong learner!!!!" << endl;
 			exit( -1 );
