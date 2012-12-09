@@ -156,7 +156,7 @@ namespace MultiBoost {
 		virtual CStateModifier* getStateSpaceRBF(unsigned int partitionNumber);
 		virtual CStateModifier* getStateSpaceTileCoding(unsigned int partitionNumber);
 
-        virtual CStateModifier* getStateSpaceForRBFQFunction(int){};
+        virtual CStateModifier* getStateSpaceForGSBNFQFunction(int){};
 
         void outHeader()
         {        }

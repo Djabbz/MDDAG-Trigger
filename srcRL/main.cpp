@@ -549,12 +549,15 @@ int main(int argc, const char *argv[])
         sptype = args.getValue<int>("statespace", 0);
         
         if (sptype==0) {
-            discState = classifierContinous->getStateSpace(featnum);
+            if ( datahandler->getClassNumber() <= 2 )
+                discState = classifierContinous->getStateSpace(featnum);
+            else
+                discState = dynamic_cast<AdaBoostMDPClassifierContinousMH*>(classifierContinous)->getStateSpaceExp(featnum,2.0);
             agentContinous->addStateModifier(discState);
             qData = new CFeatureQFunction(agentContinous->getActions(), discState);
         }
         else if (sptype ==5 ) {
-            discState = classifierContinous->getStateSpaceForRBFQFunction(featnum);
+            discState = classifierContinous->getStateSpaceForGSBNFQFunction(featnum);
             agentContinous->addStateModifier(discState);
             qData = new GSBNFBasedQFunction(agentContinous->getActions(), discState);
             
