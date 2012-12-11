@@ -231,9 +231,9 @@ namespace MultiBoost {
 	}		
 	// -----------------------------------------------------------------------
 	// -----------------------------------------------------------------------
-	void AdaBoostMDPClassifierContinous::outPutStatistic( double acc, double curracc, double uc, double sumrew )
+	void AdaBoostMDPClassifierContinous::outPutStatistic(int ep, double acc, double curracc, double uc, double sumrew )
 	{
-		_outputStream << acc << " " << curracc << " " << uc << " " << sumrew << endl << flush;
+		_outputStream << ep << "\t" << acc << "\t" << curracc << "\t" << uc << "\t" << sumrew << endl << flush;
 	}
 	// -----------------------------------------------------------------------
 	// -----------------------------------------------------------------------

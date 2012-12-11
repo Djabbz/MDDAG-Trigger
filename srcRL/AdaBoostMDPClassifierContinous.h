@@ -131,8 +131,8 @@ namespace MultiBoost {
         bool setCurrentDataToTest2() { return _data->setCurrentDataToTest2(); }		
 		double getAccuracyOnCurrentDataSet(){ return _data->getAccuracyOnCurrentDataSet(); }
 		
-		void outPutStatistic( double acc, double curracc, double uc, double sumrew );
-        void outPutStatistic( BinaryResultStruct& bres ) {}
+		virtual void outPutStatistic(int ep, double acc, double curracc, double uc, double sumrew );
+        virtual void outPutStatistic( BinaryResultStruct& bres ) {}
 		
 		
 		// constructor
@@ -158,12 +158,15 @@ namespace MultiBoost {
 
         virtual CStateModifier* getStateSpaceForGSBNFQFunction(int){};
 
-        void outHeader()
-        {        }
+        virtual void outHeader()
+        {
+            _outputStream << "Ep" << "\t" <<  "AdaB" << "\t" << "Acc" << "\t" << "AvgEv" << "\t" << "AvgRwd" << endl << setprecision(4) ;
+
+        }
         
 		// classify correctly
-		bool classifyCorrectly();
-		bool hasithLabelCurrentElement( int i );
+		virtual bool classifyCorrectly();
+		virtual bool hasithLabelCurrentElement( int i );
 	};
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////	

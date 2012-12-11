@@ -14,109 +14,11 @@
 #include "cgradientfunction.h"
 #include "cstatemodifier.h"
 #include "RBFStateModifier.h"
-//#include "RBFQETraces.h"
 #include "AdaBoostMDPClassifierAdv.h"
 #include "cfeaturefunction.h"
 #include <newmat/newmat.h>
 #include <newmat/newmatio.h>
 
-class RBFQETraces;
-
-class RBF {
-protected:
-	double _mean;
-	double _sigma;
-	double _alpha;
-	string _ID;
-public:
-	RBF() : _mean(0), _sigma(0), _alpha(0) {}
-	virtual ~RBF() {}
-	
-	virtual double getMean() { return _mean; }
-	virtual double getSigma() { return _sigma; }
-	virtual double getAlpha() { return _alpha; }
-	
-	virtual void setMean( double m ) { _mean=m; }
-	virtual void setSigma( double s ) { _sigma = s; }
-	virtual void setAlpha( double a ) { _alpha = a; }
-	
-	virtual double getValue( double x ) 
-	{ 
-		double retVal = _alpha * getActivationFactor(x);
-		return retVal;
-	}
-    
-    virtual double getActivationFactor( double x ) 
-	{ 
-		double retVal = exp( - (( x-_mean )*( x-_mean ))/(2*_sigma*_sigma));
-		return retVal;
-	}
-    
-	virtual string& getID() { return _ID;}
-	virtual void setID( const string ID ) { _ID = ID; }
-};
-
-
-class RBFBasedQFunctionBinary : public CAbstractQFunction // CAbstractQFunction
-{
-
-protected:
-//	vector< map< CAction*, vector<RBF> > >	_rbfs;
-    map< CAction*, vector<vector<RBF> > > 	_rbfs;
-	int _featureNumber;	
-	CActionSet* _actions;
-	int _numberOfActions;
-    int _numberOfIterations;
-    
-    double _muAlpha;
-    double _muMean;
-    double _muSigma;
-    
-    double _maxSigma;
-public:
-	RBFBasedQFunctionBinary(CActionSet *actions, CStateModifier* statemodifier ) ;
-    
-    virtual void uniformInit(double* init=NULL);
-    
-    virtual double getMuAlpha() { return _muAlpha; }
-	virtual double getMuMean() { return _muMean; }
-	virtual double getMuSigma() { return _muSigma; }
-	
-	virtual void setMuMean( double m ) { _muMean=m; }
-	virtual void setMuSigma( double s ) { _muSigma = s; }
-	virtual void setMuAlpha( double a ) { _muAlpha = a; }
-    
-		
-	virtual ~RBFBasedQFunctionBinary() {}
-    
-    virtual void resetData() {}    
-	
-	/// Interface for getting a Q-Value
-	virtual double getValue(CStateCollection *state, CAction *action, CActionData *data = NULL);
-    
-    virtual double getActivation(CStateCollection *state, CAction *action, CActionData *data = NULL);
-    
-    double getMaxActivation(CStateCollection *state, CAction *action, CActionData *data = NULL); 
-    
-    virtual double addCenter(double tderror, double newCenter, int iter, CAction* action, double& maxError);    
-
-	virtual void updateValue(CStateCollection *state, CAction *action, double td, vector<vector<double> >& eTraces);
-    
-    virtual void getGradient(CStateCollection *state, CAction *action, vector<vector<double> >& gradient);
-    
-    virtual void getGradient(double margin, int currIter, CAction *action, vector<vector<double> >& gradient);
-	
-	virtual void saveQTable( const char* fname );
-    
-	virtual CAbstractQETraces* getStandardETraces();
-    
-    virtual void saveActionValueTable(FILE* stream);
-    
-    virtual void saveActionTable(FILE* stream);
-};
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //typedef ColumnVector RBFParams;

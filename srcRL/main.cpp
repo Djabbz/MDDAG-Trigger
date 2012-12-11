@@ -47,13 +47,13 @@
 
 #include "IO/Serialization.h" // for unserialization
 #include "Bandits/GenericBanditAlgorithm.h"
-#include "AdaBoostMDPClassifier.h"
+//#include "AdaBoostMDPClassifier.h"
 #include "AdaBoostMDPClassifierAdv.h"
-#include "AdaBoostMDPClassifierContinous.h"
+//#include "AdaBoostMDPClassifierContinous.h"
 #include "AdaBoostMDPClassifierDiscrete.h"
 #include "AdaBoostMDPClassifierContinousBinary.h"
 #include "AdaBoostMDPClassifierContinousMultiClass.h"
-#include "AdaBoostMDPClassifierSubsetSelectorBinary.h"
+//#include "AdaBoostMDPClassifierSubsetSelectorBinary.h"
 
 using namespace std;
 using namespace MultiBoost;
@@ -621,8 +621,8 @@ int main(int argc, const char *argv[])
             dynamic_cast<GSBNFBasedQFunction*>( qData )->uniformInit(initRBFs);
             
             dynamic_cast<GSBNFBasedQFunction*>( qData )->setMuAlpha(1) ;
-            dynamic_cast<GSBNFBasedQFunction*>( qData )->setMuMean(0.000) ;
-            dynamic_cast<GSBNFBasedQFunction*>( qData )->setMuSigma(0.000) ;
+            dynamic_cast<GSBNFBasedQFunction*>( qData )->setMuMean(0.00) ;
+            dynamic_cast<GSBNFBasedQFunction*>( qData )->setMuSigma(0.00) ;
         }
         else {
             cout << "unkown statespcae" << endl;
@@ -823,6 +823,16 @@ int main(int argc, const char *argv[])
                 
                 evalValid.classficationAccruacy(bres, logFileName);
                 
+                if (bres.acc > bestAcc) {
+                    bestEpNumber = i;
+                    bestAcc = bres.acc;
+                    bestWhypNumber = bres.usedClassifierAvg;
+                    
+                    FILE* qTableFile = fopen("QTable.dta", "w");
+                    dynamic_cast<GSBNFBasedQFunction*>(qData)->saveActionValueTable(qTableFile);
+                    fclose(qTableFile);
+                }
+                
                 cout << "[+] Validation set results: " << endl;
                 cout << "--> Overall accuracy by MDP: " << bres.acc << " (" << ovaccValid << ")" << endl;
                 cout << "--> Average classifier used: " << bres.usedClassifierAvg << endl;
@@ -833,16 +843,6 @@ int main(int argc, const char *argv[])
                 classifierContinous->outPutStatistic( bres );
                 
                 cout << "----> Best accuracy so far ( " << bestEpNumber << " ) : " << bestAcc << endl << "----> Num of whyp used : " << bestWhypNumber << endl << endl;
-                
-                if ((bres.acc > bestAcc) && (sptype==5)) {
-                    bestEpNumber = i;
-                    bestAcc = bres.acc;
-                    bestWhypNumber = bres.usedClassifierAvg;
-                    
-                    FILE* qTableFile = fopen("QTable.dta", "w");
-                    dynamic_cast<GSBNFBasedQFunction*>(qData)->saveActionValueTable(qTableFile);
-                    fclose(qTableFile);
-                }
                 
                 // TEST stats
                 
@@ -883,15 +883,7 @@ int main(int argc, const char *argv[])
                     FILE *qTableFile2 = fopen(ss.str().c_str(), "w");
                     dynamic_cast<GSBNFBasedQFunction*>(qData)->saveActionValueTable(qTableFile2);
                     fclose(qTableFile2);
-                }
-                
-                
-                if (bres.acc > bestAcc && sptype==0) {
-                    bestEpNumber = i;
-                    bestAcc = bres.acc;
-                    bestWhypNumber = bres.usedClassifierAvg;
-                }
-                
+                }                
                 
                 agentContinous->setController(policy);
                 agentContinous->addSemiMDPListener(qFunctionLearner);
@@ -924,19 +916,21 @@ int main(int argc, const char *argv[])
                 double sumRew = evalTrain.classficationAccruacy(acc,usedclassifierNumber,logfname);
                 
                 
-                //save the number of centers per wc per action
-                std::stringstream ss;
-                ss << logDirContinous << "/rbfCenters_" << i << ".dta";
-                FILE* rbfCentersFile = fopen(ss.str().c_str(), "w");
-                dynamic_cast<GSBNFBasedQFunction*>(qData)->saveCentersNumber(rbfCentersFile);
-                fclose(rbfCentersFile);
+                if (sptype == 5) {
+                    //save the number of centers per wc per action
+                    std::stringstream ss;
+                    ss << logDirContinous << "/rbfCenters_" << i << ".dta";
+                    FILE* rbfCentersFile = fopen(ss.str().c_str(), "w");
+                    dynamic_cast<GSBNFBasedQFunction*>(qData)->saveCentersNumber(rbfCentersFile);
+                    fclose(rbfCentersFile);
+                }
                 
-                cout << "******** Overall Train accuracy by MDP: " << acc << "(" << ovaccTrain << ")" << endl;
+                cout << "******** Overall Train accuracy by MDP: " << acc << " (" << ovaccTrain << ")" << endl;
                 cout << "******** Average Train classifier used: " << usedclassifierNumber << endl;
                 cout << "******** Sum of rewards on Train: " << sumRew << endl << endl;
                 //				cout << "----> Best accuracy so far ( " << bestEpNumber << " ) : " << bestAcc << endl << "----> Num of whyp used : " << bestWhypNumber << endl;
                 
-                classifierContinous->outPutStatistic( ovaccTrain, acc, usedclassifierNumber, sumRew );
+                classifierContinous->outPutStatistic(i, ovaccTrain, acc, usedclassifierNumber, sumRew );
                 
                 
                 // TEST
@@ -953,12 +947,12 @@ int main(int argc, const char *argv[])
                     bestEpNumber = i;
                 }
                 
-                cout << "******** Overall Test accuracy by MDP: " << acc << "(" << ovaccTest << ")" << endl;
+                cout << "******** Overall Test accuracy by MDP: " << acc << " (" << ovaccValid << ")" << endl;
                 cout << "******** Average Test classifier used: " << usedclassifierNumber << endl;
                 cout << "******** Sum of rewards on Test: " << sumRew << endl;
                 cout << "----> Best accuracy so far ( " << bestEpNumber << " ) : " << bestAcc << endl
-                << "----> Num of whyp used : " << bestWhypNumber << endl;
-                classifierContinous->outPutStatistic( ovaccTest, acc, usedclassifierNumber, sumRew );
+                << "----> Num of whyp used : " << bestWhypNumber << endl << endl;
+                classifierContinous->outPutStatistic(i, ovaccValid, acc, usedclassifierNumber, sumRew );
                 
                 classifierContinous->setCurrentDataToTrain();
                 
