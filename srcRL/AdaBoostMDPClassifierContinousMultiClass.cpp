@@ -81,6 +81,15 @@ namespace MultiBoost {
                             _lastReward = 1/exploss;
                         }
                     }
+                    else if (_succRewardMode==RT_LOGIT)
+                    {
+                        double logitloss;
+                        if (_classifierNumber>0)
+                        {
+                            logitloss = _data->getLogisticLoss( _currentRandomInstance,  _exampleResult );
+                            _lastReward = logitloss;
+                        }
+                    }
                     
                     rew += _lastReward;
                     rew = _lastReward;
@@ -141,7 +150,18 @@ namespace MultiBoost {
 				
 				
 				
-			} else {
+			}
+            else if (_succRewardMode==RT_LOGIT)
+            {
+                double logitloss;
+                if (_classifierNumber>0)
+                {
+                    logitloss = _data->getLogisticLoss( _currentRandomInstance,  _exampleResult );
+                    rew += logitloss;
+                }
+            }
+
+            else {
 				cout << "Unknown succes reward type!!! Maybe it is not implemented! " << endl;
 				exit(-1);
 			}

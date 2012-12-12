@@ -69,7 +69,10 @@ namespace MultiBoost {
 		double classifyKthWeakLearner( const int wHypInd, const int instance, ExampleResults* exampleResult );
 		
 		bool currentClassifyingResult( const int currentIstance, ExampleResults* exampleResult );
+        
 		double getExponentialLoss( const int currentIstance, ExampleResults* exampleResult );
+        double getLogisticLoss( const int currentIstance, ExampleResults* exampleResult );
+        
 		bool hasithLabel( int currentIstance, int classIdx );
 		
 		// getter setters

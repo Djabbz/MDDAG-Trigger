@@ -76,7 +76,8 @@ namespace MultiBoost {
         
         void outHeader()
         {
-            //TODO:
+            _outputStream << "Ep" << "\t" <<  "AdaB" << "\t" << "Acc" << "\t" << "AvgEv" << "\t" << "AvgRwd" << endl << setprecision(4) ;
+            
         }
 	};
 	

@@ -610,6 +610,17 @@ int main(int argc, const char *argv[])
             if ( args.hasArgument("maxrbfnumber") )
                 maxrbfnumber = args.getValue<int>("MaxRBFNumber", 0);
             
+            cout << "[+] Meta parameters:" << endl;
+            cout << "\t--> Normalized RBF: " << normalizeRbf << endl;
+            cout << "\t--> RBF Sigma: " << initSigma << endl;
+            
+            if (addCenter != 0)
+            {
+                cout << "\t--> New center addition:" << endl;
+                cout << "\t\t--> Max TD error: 1/" << maxtderr << endl;
+                cout << "\t\t--> Min RBF activation: " << minact << endl;
+            }
+            
             qData->setParameter("AddCenterOnError", addCenter);
             qData->setParameter("NormalizedRBFs", normalizeRbf);
             qData->setParameter("InitRBFSigma", initSigma);
@@ -773,7 +784,7 @@ int main(int argc, const char *argv[])
         
         if (((i%evalTestIteration)==0) && (i>2))
         {
-            
+#pragma mark binary evaluation
             if ( datahandler->getClassNumber() <= 2 ) {
                 agentContinous->removeSemiMDPListener(qFunctionLearner);
                 
@@ -827,10 +838,6 @@ int main(int argc, const char *argv[])
                     bestEpNumber = i;
                     bestAcc = bres.acc;
                     bestWhypNumber = bres.usedClassifierAvg;
-                    
-                    FILE* qTableFile = fopen("QTable.dta", "w");
-                    dynamic_cast<GSBNFBasedQFunction*>(qData)->saveActionValueTable(qTableFile);
-                    fclose(qTableFile);
                 }
                 
                 cout << "[+] Validation set results: " << endl;
@@ -891,6 +898,7 @@ int main(int argc, const char *argv[])
             }
             else
             {
+#pragma mark multiclass evaluation
                 char logfname[4096];
                 /*
                  sprintf( logfname, "./%s/qfunction_%d.txt", logDirContinous.c_str(), i );
@@ -921,7 +929,12 @@ int main(int argc, const char *argv[])
                     std::stringstream ss;
                     ss << logDirContinous << "/rbfCenters_" << i << ".dta";
                     FILE* rbfCentersFile = fopen(ss.str().c_str(), "w");
-                    dynamic_cast<GSBNFBasedQFunction*>(qData)->saveCentersNumber(rbfCentersFile);
+                    vector<int> maxNumCenters = dynamic_cast<GSBNFBasedQFunction*>(qData)->saveCentersNumber(rbfCentersFile);
+                    cout << "[+] Max number of RBFs: ";
+                    for (int k=0; k < maxNumCenters.size(); ++k) {
+                        cout << maxNumCenters[k] << "\t";
+                    }
+                    cout << endl << endl;
                     fclose(rbfCentersFile);
                 }
                 
@@ -949,7 +962,7 @@ int main(int argc, const char *argv[])
                 
                 cout << "******** Overall Test accuracy by MDP: " << acc << " (" << ovaccValid << ")" << endl;
                 cout << "******** Average Test classifier used: " << usedclassifierNumber << endl;
-                cout << "******** Sum of rewards on Test: " << sumRew << endl;
+                cout << "******** Sum of rewards on Test: " << sumRew << endl << endl;
                 cout << "----> Best accuracy so far ( " << bestEpNumber << " ) : " << bestAcc << endl
                 << "----> Num of whyp used : " << bestWhypNumber << endl << endl;
                 classifierContinous->outPutStatistic(i, ovaccValid, acc, usedclassifierNumber, sumRew );

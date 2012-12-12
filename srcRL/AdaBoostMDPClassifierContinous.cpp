@@ -72,6 +72,8 @@ namespace MultiBoost {
 				_succRewardMode = RT_HAMMING;
 			else if ( succRewardMode == "exp" )
 				_succRewardMode = RT_EXP;
+            else if ( succRewardMode == "logit")
+                _succRewardMode = RT_LOGIT;
 			else
 			{
 				cerr << "ERROR: Unrecognized (succrewartdtype) --succes rewards option!!" << endl;

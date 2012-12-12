@@ -439,6 +439,39 @@ namespace MultiBoost {
 	}	
 	// -----------------------------------------------------------------------
 	// -----------------------------------------------------------------------
+    
+    double DataReader::getLogisticLoss( const int currentIstance, ExampleResults* exampleResult )
+	{
+		double logitloss = 0.0;
+		
+		vector<Label>::const_iterator lIt;
+		
+		const int numClasses = _pCurrentData->getNumClasses();
+		const vector<Label>& labels = _pCurrentData->getLabels(currentIstance);
+		vector<double> yfx(numClasses);
+        
+		vector<AlphaReal>& currVotesVector = exampleResult->getVotesVector();
+				
+		for ( lIt = labels.begin(); lIt != labels.end(); ++lIt )
+		{
+			yfx[lIt->idx] = currVotesVector[lIt->idx] * lIt->y;
+		}
+		
+		if (numClasses==2) // binary classification
+		{
+			logitloss = log(1 + exp(-yfx[0]));
+		} else {
+			for ( lIt = labels.begin(); lIt != labels.end(); ++lIt )
+			{
+				logitloss += log(1 + exp(-yfx[lIt->idx]));
+			}
+		}
+		
+		return logitloss;
+	}
+	// -----------------------------------------------------------------------
+	// -----------------------------------------------------------------------
+
 	bool DataReader::hasithLabel( int currentIstance, int classIdx )
 	{
 		const vector<Label>& labels = _pCurrentData->getLabels(currentIstance);

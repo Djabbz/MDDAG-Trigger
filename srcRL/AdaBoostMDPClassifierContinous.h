@@ -46,6 +46,7 @@ namespace MultiBoost {
 	enum SuccesRewardModes {
 		RT_HAMMING,
 		RT_EXP,
+        RT_LOGIT,
 	};
 
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -160,8 +161,6 @@ namespace MultiBoost {
 
         virtual void outHeader()
         {
-            _outputStream << "Ep" << "\t" <<  "AdaB" << "\t" << "Acc" << "\t" << "AvgEv" << "\t" << "AvgRwd" << endl << setprecision(4) ;
-
         }
         
 		// classify correctly

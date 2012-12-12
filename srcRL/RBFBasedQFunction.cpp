@@ -49,7 +49,7 @@ GSBNFBasedQFunction::GSBNFBasedQFunction(CActionSet *actions, CStateModifier* st
     addParameter("MaxTDErrorDivFactor", 10);
     addParameter("MinActivation", 0.3);
     addParameter("QLearningRate", 0.2);
-    addParameter("MaxRBFNumber", 100);
+    addParameter("MaxRBFNumber", 1000);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -421,18 +421,24 @@ void GSBNFBasedQFunction::saveActionValueTable(FILE* stream, int dim)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void GSBNFBasedQFunction::saveCentersNumber(FILE* stream)
+vector<int> GSBNFBasedQFunction::saveCentersNumber(FILE* stream)
 {
     fprintf(stream, "GSNBF centers number\n");
     //    CActionSet::iterator it;
+    
+    vector<int> maxCenterNumber(_numberOfActions);
     
     for (int j = 0; j < _numberOfIterations; ++j) {
         fprintf(stream,"classifier %d:", j);
         for (int k = 0; k < _numberOfActions; ++k) {
             fprintf(stream," %d", _rbfs[k][j].size());
+            if (maxCenterNumber[k] < _rbfs[k][j].size()) {
+                maxCenterNumber[k] = _rbfs[k][j].size();
+            }
         }
         fprintf(stream, "\n");        
     }
+    return maxCenterNumber;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
