@@ -15,7 +15,7 @@ INCLUDE_DIRECTORIES("${BASEPATH}/torch3/include")
 INCLUDE_DIRECTORIES("${BASEPATH}/newmat/")
 
 add_executable(
-	multiboostMDP
+	MDDAG
 	${source_files}
 	)
 	
