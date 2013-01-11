@@ -505,12 +505,12 @@ int main(int argc, const char *argv[])
     AdaBoostMDPClassifierContinous* classifierContinous;
     if ( datahandler->getClassNumber() <= 2 )
     {
-        cout << "-[ Binary classification ]-" << endl;
+        cout << endl << "---[ Binary classification ]---" << endl << endl;
         classifierContinous = new AdaBoostMDPClassifierContinousBinary(args, verbose, datahandler );
     }
     else
     {
-        cout << "-[ Multi-class classification ]-" << endl;
+        cout << endl << "---[ Multi-class classification ]---" << endl << endl;
         classifierContinous = new AdaBoostMDPClassifierContinousMH(args, verbose, datahandler, datahandler->getClassNumber() );
     }
     
@@ -613,6 +613,18 @@ int main(int argc, const char *argv[])
             cout << "[+] Meta parameters:" << endl;
             cout << "\t--> Normalized RBF: " << normalizeRbf << endl;
             cout << "\t--> RBF Sigma: " << initSigma << endl;
+
+            cout << "\t--> Learning rate:" << endl;
+            cout << "\t\t--> Numerator: " << qRateNumerator << endl;
+            cout << "\t\t--> Divisor: " << qRateDivisor << endl;
+            cout << "\t\t--> Increment of the divisor: " << qRateIncrement << endl;
+            
+            cout << "\t--> Exploration rate:" << endl;
+            cout << "\t\t--> Numerator: " << epsNumerator << endl;
+            cout << "\t\t--> Divisor: " << epsDivisor << endl;
+            cout << "\t\t--> Increment of the divisor: " << epsDivisor << endl;
+            
+            cout << "\t--> Update frequency: " << paramUpdate << endl;
             
             if (addCenter != 0)
             {
@@ -620,6 +632,7 @@ int main(int argc, const char *argv[])
                 cout << "\t\t--> Max TD error: 1/" << maxtderr << endl;
                 cout << "\t\t--> Min RBF activation: " << minact << endl;
             }
+            cout << endl;
             
             qData->setParameter("AddCenterOnError", addCenter);
             qData->setParameter("NormalizedRBFs", normalizeRbf);
@@ -684,6 +697,7 @@ int main(int argc, const char *argv[])
     int max_Steps = 100000;
     double ovaccTrain, ovaccValid, ovaccTest;
     
+    cout << "[+] Computing Adaboost performance..." << flush;
     classifierContinous->setCurrentDataToTrain();
     ovaccTrain = classifierContinous->getAccuracyOnCurrentDataSet();
     classifierContinous->setCurrentDataToTest();
@@ -693,7 +707,7 @@ int main(int argc, const char *argv[])
         ovaccTest = classifierContinous->getAccuracyOnCurrentDataSet();
     
     classifierContinous->setCurrentDataToTrain();
-    
+    cout << " done!" << endl;
     if (args.hasArgument("testmdp"))
     {
         //FIXME: works only with binary classification
@@ -729,7 +743,14 @@ int main(int argc, const char *argv[])
         exit(0);
     }
     
-    cout << "Valid: " << ovaccTrain << " Test: " << ovaccTest << endl << flush;
+    cout << "Train: " << ovaccTrain << "\t Valid: " << ovaccValid;
+    
+    if (ovaccTest != 0) {
+        cout << "\t Test: " << ovaccTest;
+    }
+    
+    cout << endl;
+    
     cout << "---------------------------------" << endl;
     double bestAcc=0., bestWhypNumber=0.;
     int bestEpNumber = 0;

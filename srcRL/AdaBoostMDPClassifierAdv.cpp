@@ -190,11 +190,11 @@ namespace MultiBoost {
 		
 		// loads them
 		us.loadHypotheses(shypFileName, _weakHypotheses, _pTrainData);			
-		if (_numIterations<_weakHypotheses.size())
+		if (_numIterations < _weakHypotheses.size())
 			_weakHypotheses.resize(_numIterations);
 		
 		if (_verbose > 0)
-			cout << "Done." << endl << flush;			
+			cout << "(" << _weakHypotheses.size() << " weak hypotheses kept)" << endl << endl;
 		
 		assert( _weakHypotheses.size() >= _numIterations );
 		
