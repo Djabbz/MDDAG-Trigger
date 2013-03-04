@@ -47,6 +47,11 @@ namespace MultiBoost {
             _positiveLabelIndex = namemap.getIdxFromName( _positiveLabelName );
 
         }
+        else
+        {
+            cout << "Error: the positive label must be given with --positivelabel" << endl;
+            exit(1);
+        }
 		
         _failOnNegativesPenalty = _failOnPositivesPenalty = 0.0;
         if ( args.hasArgument("failpenalties") )
@@ -195,7 +200,20 @@ namespace MultiBoost {
 	// -----------------------------------------------------------------------	
 	void AdaBoostMDPClassifierContinousBinary::getState(CState *state)
 	{
-		AdaBoostMDPClassifierContinous::getState(state);
+        // initializes the state object
+		CEnvironmentModel::getState ( state );
+		
+		
+		// not necessary since we do not store any additional information
+		
+        state->setNumActiveContinuousStates(1);
+		
+		// a reference for clarity and speed
+		vector<AlphaReal>& currVotesVector = _exampleResult->getVotesVector();
+			
+        double st = ((currVotesVector[_positiveLabelIndex] /_sumAlpha)+1)/2.0; // rescale between [0,1]
+        state->setContinuousState(_positiveLabelIndex, st);
+
 		state->setDiscreteState(0, _currentClassifier);
 	}
 	

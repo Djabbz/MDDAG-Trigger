@@ -53,6 +53,7 @@
 #include "AdaBoostMDPClassifierDiscrete.h"
 #include "AdaBoostMDPClassifierContinousBinary.h"
 #include "AdaBoostMDPClassifierContinousMultiClass.h"
+#include "BudgetClassifierBinary.h"
 //#include "AdaBoostMDPClassifierSubsetSelectorBinary.h"
 
 using namespace std;
@@ -505,8 +506,16 @@ int main(int argc, const char *argv[])
     AdaBoostMDPClassifierContinous* classifierContinous;
     if ( datahandler->getClassNumber() <= 2 )
     {
-        cout << endl << "---[ Binary classification ]---" << endl << endl;
-        classifierContinous = new AdaBoostMDPClassifierContinousBinary(args, verbose, datahandler );
+        cout << endl << "---[ Binary classification ]---" << endl << endl;        
+        if (args.hasArgument("budget")) {
+            cout << "--> Budget:" << endl;
+            
+            string featureCostFile = args.getValue<string>("budget", 0);
+            classifierContinous = new BudgetClassifierBinary(args, verbose, datahandler, featureCostFile);
+        }
+        else {
+            classifierContinous = new AdaBoostMDPClassifierContinousBinary(args, verbose, datahandler );
+        }
     }
     else
     {
@@ -695,7 +704,7 @@ int main(int argc, const char *argv[])
     int steps2 = 0;
     int usedClassifierNumber=0;
     int max_Steps = 100000;
-    double ovaccTrain, ovaccValid, ovaccTest;
+    double ovaccTrain = 0., ovaccValid = 0., ovaccTest = 0.;
     
     cout << "[+] Computing Adaboost performance..." << flush;
     classifierContinous->setCurrentDataToTrain();
