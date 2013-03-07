@@ -136,7 +136,6 @@ namespace MultiBoost {
 			bestEnergy = numeric_limits<AlphaReal>::signaling_NaN();
 		}
 		
-		
 		return bestEnergy;
 		
 	}

@@ -176,6 +176,18 @@ public:
    * \date 24/04/2007
    */
    const vector<BaseLearner*>& getBaseLearners() const { return _baseLearners; }
+    
+    virtual set<int> getUsedColumns()
+    {
+        set<int>::iterator sIt;
+        set<int> usedCols;
+        for (int i = 0; i < _baseLearners.size(); ++i) {
+            set<int> blUsedCols =  _baseLearners[i]->getUsedColumns();
+            for (sIt = usedCols.begin(); sIt != usedCols.end(); ++sIt)
+                usedCols.insert(*sIt);
+        }
+        return usedCols;    
+    }
 
 protected:
 

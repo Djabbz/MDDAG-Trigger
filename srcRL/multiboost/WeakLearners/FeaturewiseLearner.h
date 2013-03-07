@@ -164,6 +164,8 @@ namespace MultiBoost {
 		 * \date 25/05/2007
 		 */
 		virtual void subCopyState(BaseLearner *pBaseLearner);
+        
+        virtual set<int> getUsedColumns() { set<int> usedCols; usedCols.insert(_selectedColumn); return usedCols;}
 		
 	protected:
 		

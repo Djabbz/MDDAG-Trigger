@@ -198,6 +198,8 @@ namespace MultiBoost {
 		bool isBaseLearnerLeaf( int i ) const {
 			return ( ( _idxPairs[i][0] == -1 ) && ( _idxPairs[i][1] == -1 ) );
 		}
+        
+        virtual set<int> getUsedColumns();
 		
 	protected:
 		

@@ -395,5 +395,18 @@ namespace MultiBoost {
 	}
 	
 	// -----------------------------------------------------------------------
+    
+    set<int> TreeLearner::getUsedColumns() {
+        set<int>::iterator sIt;
+        set<int> usedCols;
+        for (int i = 0; i < _baseLearners.size(); ++i) {
+            set<int> blUsedCols =  _baseLearners[i]->getUsedColumns();
+            for (sIt = usedCols.begin(); sIt != usedCols.end(); ++sIt)
+                usedCols.insert(*sIt);
+        }
+        return usedCols;
+    }
+    
+    // -----------------------------------------------------------------------------------
 	
 } // end of namespace MultiBoost

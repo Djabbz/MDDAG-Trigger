@@ -163,6 +163,19 @@ public:
    * \date 25/05/2007
    */
    virtual void subCopyState(BaseLearner *pBaseLearner);
+    
+    virtual set<int> getUsedColumns()
+    {
+        set<int>::iterator sIt;
+        set<int> usedCols;
+        for (int i = 0; i < _baseLearners.size(); ++i) {
+            set<int> blUsedCols =  _baseLearners[i]->getUsedColumns();
+            for (sIt = usedCols.begin(); sIt != usedCols.end(); ++sIt)
+                usedCols.insert(*sIt);
+        }
+        return usedCols;
+    }
+
 
 protected:
 

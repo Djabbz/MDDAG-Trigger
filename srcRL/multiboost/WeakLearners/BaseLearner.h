@@ -41,6 +41,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <set>
 
 #include "Defaults.h"
 #include "Utils/Args.h"
@@ -408,7 +409,8 @@ namespace MultiBoost {
 		 */
 		virtual AlphaReal getEdge( bool isNormalized = true );
 		
-		
+        virtual set<int> getUsedColumns() = 0;
+        
 	protected:
 		
 		/**
@@ -526,6 +528,7 @@ namespace MultiBoost {
 		 */
 		AlphaReal getEnergy(AlphaReal eps_min, AlphaReal eps_pls, AlphaReal alpha, AlphaReal theta) const;
 		
+        
 		AlphaReal         _theta; //!< the value of the edge oofset theta. Default = 0;
 		AlphaReal         _alpha; //!< The coefficient of the current learner. 
 		string            _name;
@@ -533,7 +536,7 @@ namespace MultiBoost {
 		
 		static const AlphaReal  _smallVal; //!< A small value.
 		static int              _verbose; //!< The level of verbosity. 
-		InputData*              _pTrainingData; //!< The data, needed in run, save, and load 
+		InputData*              _pTrainingData; //!< The data, needed in run, save, and load
 		/**
 		 * The smoothing value for alpha.
 		 * \see setSmoothingVal
@@ -541,6 +544,7 @@ namespace MultiBoost {
 		 */
 		static AlphaReal        _smoothingVal; 
         
+//        set<int>             _usedColumns; //!< The indices of the columns used by the base learner.
 		
 	private:
 		/**

@@ -108,6 +108,8 @@ namespace MultiBoost {
 		 * \date 10/2/2006
 		 */
 		virtual void getStateData( vector<FeatureReal>& data, const string& /*reason = ""*/, InputData* pData = 0 );
+        
+        virtual set<int> getUsedColumns() {return set<int>(); };
 		
 	protected:
 		

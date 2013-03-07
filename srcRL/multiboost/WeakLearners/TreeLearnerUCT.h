@@ -219,6 +219,19 @@ namespace MultiBoost {
 		}
 
 		//virtual double getEdge();
+        
+        virtual set<int> getUsedColumns()
+        {
+            set<int>::iterator sIt;
+            set<int> usedCols;
+            for (int i = 0; i < _baseLearners.size(); ++i) {
+                set<int> blUsedCols =  _baseLearners[i]->getUsedColumns();
+                for (sIt = usedCols.begin(); sIt != usedCols.end(); ++sIt)
+                    usedCols.insert(*sIt);
+            }
+            return usedCols;
+        }
+
 
 	protected:
 		void calculateChildrenAndEnergies( NodePointUCT& bLearner, int depthIndex );
