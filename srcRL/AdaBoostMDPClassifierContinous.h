@@ -134,6 +134,7 @@ namespace MultiBoost {
 		
 		virtual void outPutStatistic(int ep, double acc, double curracc, double uc, double sumrew );
         virtual void outPutStatistic( BinaryResultStruct& bres ) {}
+        virtual AlphaReal getClassificationCost() { return (AlphaReal)_classifierNumber; }
 		
 		
 		// constructor
@@ -157,7 +158,7 @@ namespace MultiBoost {
 		virtual CStateModifier* getStateSpaceRBF(unsigned int partitionNumber);
 		virtual CStateModifier* getStateSpaceTileCoding(unsigned int partitionNumber);
 
-        virtual CStateModifier* getStateSpaceForGSBNFQFunction(int){};
+        virtual CStateModifier* getStateSpaceForGSBNFQFunction(int numOfFeatures, int multipleDescrete = 1) = 0;
 
         virtual void outHeader()
         {

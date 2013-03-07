@@ -83,7 +83,12 @@ namespace MultiBoost {
 		int getTrainNumExamples() const { return _pTrainData->getNumExamples(); }
 		int getTestNumExamples() const { return _pTestData->getNumExamples(); }				
 		
-		void setCurrentDataToTrain() { 
+        int getNumAttributes() const { return _pCurrentData->getNumAttributes();}
+        const NameMap& getAttributeNameMap() { return _pCurrentData->getAttributeNameMap();}
+        
+        set<int> getUsedColumns(int weakhypIdx) { return _weakHypotheses[weakhypIdx]->getUsedColumns();}
+        
+		void setCurrentDataToTrain() {
 			_pCurrentData = _pTrainData; 
 			if (_isDataStorageMatrix) _pCurrentMatrix = &_weakHypothesesMatrices[_pCurrentData];			
 		}

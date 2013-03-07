@@ -304,6 +304,7 @@ void setBasicOptions(nor_utils::Args& args)
     args.declareArgument("maxrbfnumber", "The maximum number of RBF per whyp per action.", 1, "<num>" );
     args.declareArgument("incrementalrewardQ", "Give a reward after each evalation.", 0, "" );
     args.declareArgument("qtable", "Load the GSBNF from a file.", 1, "<file>" );
+    args.declareArgument("budget", "Read the different costs of the features.", 1, "<file>" );
 }
 
 
@@ -503,15 +504,16 @@ int main(int argc, const char *argv[])
 		paramUpdate = args.getValue<double>("paramupdate", 0);
     }
     
+    int numDescreteStatesMultiplier = 1;
+    
     AdaBoostMDPClassifierContinous* classifierContinous;
     if ( datahandler->getClassNumber() <= 2 )
     {
-        cout << endl << "---[ Binary classification ]---" << endl << endl;        
-        if (args.hasArgument("budget")) {
-            cout << "--> Budget:" << endl;
-            
+        cout  << "---[ Binary classification ]---" << endl << endl;        
+        if (args.hasArgument("budget")) {            
             string featureCostFile = args.getValue<string>("budget", 0);
             classifierContinous = new BudgetClassifierBinary(args, verbose, datahandler, featureCostFile);
+            numDescreteStatesMultiplier = 2;
         }
         else {
             classifierContinous = new AdaBoostMDPClassifierContinousBinary(args, verbose, datahandler );
@@ -522,7 +524,7 @@ int main(int argc, const char *argv[])
         cout << endl << "---[ Multi-class classification ]---" << endl << endl;
         classifierContinous = new AdaBoostMDPClassifierContinousMH(args, verbose, datahandler, datahandler->getClassNumber() );
     }
-    
+     
     CRewardFunction *rewardFunctionContinous = classifierContinous;
     
     // Create the agent in our environmentModel.
@@ -566,7 +568,7 @@ int main(int argc, const char *argv[])
             qData = new CFeatureQFunction(agentContinous->getActions(), discState);
         }
         else if (sptype ==5 ) {
-            discState = classifierContinous->getStateSpaceForGSBNFQFunction(featnum);
+            discState = classifierContinous->getStateSpaceForGSBNFQFunction(featnum, numDescreteStatesMultiplier);
             agentContinous->addStateModifier(discState);
             qData = new GSBNFBasedQFunction(agentContinous->getActions(), discState);
             

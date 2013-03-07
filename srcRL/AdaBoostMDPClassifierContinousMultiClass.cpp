@@ -310,9 +310,9 @@ namespace MultiBoost {
 	// -----------------------------------------------------------------------
 	// -----------------------------------------------------------------------	
     
-    CStateModifier* AdaBoostMDPClassifierContinousMH::getStateSpaceForGSBNFQFunction( int numOfFeatures){
+    CStateModifier* AdaBoostMDPClassifierContinousMH::getStateSpaceForGSBNFQFunction( int numOfFeatures, int multipleDescrete){
         int numClasses = getNumClasses();
-		CStateModifier* retVal = new RBFStateModifier(numOfFeatures, numClasses, _data->getIterationNumber()+1 );
+		CStateModifier* retVal = new RBFStateModifier(numOfFeatures, numClasses, (_data->getIterationNumber() * multipleDescrete) +1 );
 		return retVal;
         
     }

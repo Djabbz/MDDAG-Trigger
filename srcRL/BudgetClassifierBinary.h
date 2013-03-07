@@ -10,7 +10,9 @@
 #define __MDDAG__BudgetClassifierBinary__
 
 #include <iostream>
+#include <fstream>
 
+#include "NameMap.h"
 #include "AdaBoostMDPClassifierContinousBinary.h"
 
 using namespace std;
@@ -23,16 +25,22 @@ namespace MultiBoost {
     class BudgetClassifierBinary : public AdaBoostMDPClassifierContinousBinary {
         
     public:
-        BudgetClassifierBinary( const nor_utils::Args& args, int verbose, DataReader* datareader, string featureCostFile) : AdaBoostMDPClassifierContinousBinary(args, verbose, datareader) {}
-        virtual ~BudgetClassifierBinary(){}
+        BudgetClassifierBinary( const nor_utils::Args& args, int verbose, DataReader* datareader, string featureCostFile);
+        
+        virtual ~BudgetClassifierBinary() {}
         
         double getReward(CStateCollection *oldState, CAction *action, CStateCollection *newState);
 		
 		///fetches the internal state and stores it in the state object
 		virtual void getState(CState *state); ///resets the model
+        void doNextState(CPrimitiveAction *act);
+        void doResetModel();
+        void outPutStatistic( BinaryResultStruct& bres );
+        AlphaReal getClassificationCost();
 
     protected:
         vector<AlphaReal> _featureCosts;
+        vector<bool> _featuresEvaluated;
         
     private:
         BudgetClassifierBinary& operator=( const BudgetClassifierBinary& ) {return *this;}

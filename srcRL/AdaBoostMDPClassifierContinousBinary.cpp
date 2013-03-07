@@ -469,10 +469,10 @@ namespace MultiBoost {
 	}
 	// -----------------------------------------------------------------------
 	// -----------------------------------------------------------------------	
-	CStateModifier* AdaBoostMDPClassifierContinousBinary::getStateSpaceForGSBNFQFunction(int numOfFeatures)
+	CStateModifier* AdaBoostMDPClassifierContinousBinary::getStateSpaceForGSBNFQFunction(int numOfFeatures, int multipleDescrete)
 	{
 		int numClasses = getNumClasses();
-		CStateModifier* retVal = new RBFStateModifier(numOfFeatures, numClasses-1, _data->getIterationNumber()+1 );
+		CStateModifier* retVal = new RBFStateModifier(numOfFeatures, numClasses-1, (_data->getIterationNumber() * multipleDescrete) +1 );
 		return retVal;
 	}
 	// -----------------------------------------------------------------------
