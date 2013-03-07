@@ -62,6 +62,8 @@ namespace MultiBoost {
 		
 		int iterNumber;
         double negNumEval;
+        
+        double classificationCost;
 	};
 
 	////////////////////////////////////////////////////////////////////////////////////////////////	
@@ -108,6 +110,11 @@ namespace MultiBoost {
 		
 		// contain the sum of alphas
 		double					_sumAlpha;
+        
+        bool                    _budgetedClassification;
+        vector<AlphaReal>       _featureCosts;
+        vector<bool>            _featuresEvaluated;
+
 	public:
 		// set randomzed element
 		void setCurrentRandomIsntace( int r ) { _currentRandomInstance = r; }		
@@ -134,9 +141,8 @@ namespace MultiBoost {
 		
 		virtual void outPutStatistic(int ep, double acc, double curracc, double uc, double sumrew );
         virtual void outPutStatistic( BinaryResultStruct& bres ) {}
-        virtual AlphaReal getClassificationCost() { return (AlphaReal)_classifierNumber; }
-		
-		
+        virtual double getClassificationCost() ;
+        
 		// constructor
 		AdaBoostMDPClassifierContinous(const nor_utils::Args& args, int verbose, DataReader* datareader, int classNum, int discState);
 		// destructor
@@ -158,7 +164,7 @@ namespace MultiBoost {
 		virtual CStateModifier* getStateSpaceRBF(unsigned int partitionNumber);
 		virtual CStateModifier* getStateSpaceTileCoding(unsigned int partitionNumber);
 
-        virtual CStateModifier* getStateSpaceForGSBNFQFunction(int numOfFeatures, int multipleDescrete = 1) = 0;
+        virtual CStateModifier* getStateSpaceForGSBNFQFunction(int numOfFeatures) = 0;
 
         virtual void outHeader()
         {

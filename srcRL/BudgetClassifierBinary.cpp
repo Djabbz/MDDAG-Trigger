@@ -295,7 +295,7 @@ namespace MultiBoost {
     
     // -----------------------------------------------------------------------------------
     
-    AlphaReal BudgetClassifierBinary::getClassificationCost()
+    double BudgetClassifierBinary::getClassificationCost()
     {
         AlphaReal cost = 0.;
         for (int i = 0; i < _featureCosts.size(); ++i)

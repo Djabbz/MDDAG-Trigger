@@ -37,7 +37,7 @@ namespace MultiBoost {
 		//properties->setMinValue(0, -1.0); // not needed
 		//properties->setMaxValue(0,  1.0);
 		
-		_exampleResult = NULL;
+//		_exampleResult = NULL;
         
         _positiveLabelIndex = 0;
         if ( args.hasArgument("positivelabel") )
@@ -63,7 +63,7 @@ namespace MultiBoost {
         }
 		
 		// set the dim of state space
-		properties->setDiscreteStateSize(0,datareader->getIterationNumber()+1);		
+//		properties->setDiscreteStateSize(0,datareader->getIterationNumber()+1);		
 		
 	}
 	// -----------------------------------------------------------------------
@@ -201,12 +201,12 @@ namespace MultiBoost {
 	void AdaBoostMDPClassifierContinousBinary::getState(CState *state)
 	{
         // initializes the state object
-		CEnvironmentModel::getState ( state );
+		AdaBoostMDPClassifierContinous::getState ( state );
 		
 		
 		// not necessary since we do not store any additional information
 		
-        state->setNumActiveContinuousStates(1);
+//        state->setNumActiveContinuousStates(1);
 		
 		// a reference for clarity and speed
 		vector<AlphaReal>& currVotesVector = _exampleResult->getVotesVector();
@@ -214,7 +214,7 @@ namespace MultiBoost {
         double st = ((currVotesVector[_positiveLabelIndex] /_sumAlpha)+1)/2.0; // rescale between [0,1]
         state->setContinuousState(_positiveLabelIndex, st);
 
-		state->setDiscreteState(0, _currentClassifier);
+//		state->setDiscreteState(0, _currentClassifier);
 	}
 	
 	// -----------------------------------------------------------------------
@@ -469,9 +469,14 @@ namespace MultiBoost {
 	}
 	// -----------------------------------------------------------------------
 	// -----------------------------------------------------------------------	
-	CStateModifier* AdaBoostMDPClassifierContinousBinary::getStateSpaceForGSBNFQFunction(int numOfFeatures, int multipleDescrete)
+	CStateModifier* AdaBoostMDPClassifierContinousBinary::getStateSpaceForGSBNFQFunction(int numOfFeatures)
 	{
 		int numClasses = getNumClasses();
+        
+        int multipleDescrete = 1;
+        if (_budgetedClassification) {
+            multipleDescrete = 2;
+        }
 		CStateModifier* retVal = new RBFStateModifier(numOfFeatures, numClasses-1, (_data->getIterationNumber() * multipleDescrete) +1 );
 		return retVal;
 	}

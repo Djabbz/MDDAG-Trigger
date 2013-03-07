@@ -161,6 +161,8 @@ namespace MultiBoost {
 			double value = 0.0;
             double negNumEval = 0.0;
             
+            double classificationCost = 0.;
+            
 			agent->addSemiMDPListener(this);
 			
 			CAgentController *tempController = NULL;
@@ -219,14 +221,14 @@ namespace MultiBoost {
 					if (clRes ) correctP++;			
 				}
 				
-				
+				classificationCost += classifier->getClassificationCost();
                 double numEval = classifier->getUsedClassifierNumber();
 				usedClassifierAvg += numEval;
 				value += this->getEpisodeValue();
 				
-                if (isNeg) {
-                    negNumEval += numEval;
-                }
+//                if (isNeg) {
+//                    negNumEval += numEval;
+//                }
 				
 				if ( !logFileName.empty() ) {
 					output << (clRes ? "1" : "0");
@@ -264,7 +266,9 @@ namespace MultiBoost {
 			
 			binRes.avgReward = value/(double)numTestExamples ;
 			binRes.usedClassifierAvg = (double)usedClassifierAvg/(double)numTestExamples ;
-			binRes.negNumEval = (double)negNumEval/(double)negNum;
+//			binRes.negNumEval = (double)negNumEval/(double)negNum;
+            
+            binRes.classificationCost = classificationCost/(double)numTestExamples;
             
             binRes.acc = ((double)correct/(double)numTestExamples)*100.0;
 			

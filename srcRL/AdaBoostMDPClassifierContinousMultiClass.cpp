@@ -32,20 +32,20 @@ namespace MultiBoost {
 		//properties->setMinValue(0, .0);
 		//properties->setMaxValue(0,  1.0);
 		
-		_exampleResult = NULL;
+//		_exampleResult = NULL;
 		
 		// set the dim of state space
-		properties->setDiscreteStateSize(0,datareader->getIterationNumber()+1);		
+//		properties->setDiscreteStateSize(0,datareader->getIterationNumber()+1);		
 		
 	}
 	
 	// -----------------------------------------------------------------------
 	// -----------------------------------------------------------------------	
-	void AdaBoostMDPClassifierContinousMH::getState(CState *state)
-	{
-		AdaBoostMDPClassifierContinous::getState(state);
-		state->setDiscreteState(0, _currentClassifier);
-	}
+//	void AdaBoostMDPClassifierContinousMH::getState(CState *state)
+//	{
+//		AdaBoostMDPClassifierContinous::getState(state);
+//		state->setDiscreteState(0, _currentClassifier);
+//	}
 
 	// -----------------------------------------------------------------------
 	// -----------------------------------------------------------------------		
@@ -310,8 +310,14 @@ namespace MultiBoost {
 	// -----------------------------------------------------------------------
 	// -----------------------------------------------------------------------	
     
-    CStateModifier* AdaBoostMDPClassifierContinousMH::getStateSpaceForGSBNFQFunction( int numOfFeatures, int multipleDescrete){
+    CStateModifier* AdaBoostMDPClassifierContinousMH::getStateSpaceForGSBNFQFunction( int numOfFeatures){
         int numClasses = getNumClasses();
+        
+        int multipleDescrete = 1;
+        if (_budgetedClassification) {
+            multipleDescrete = 2;
+        }
+
 		CStateModifier* retVal = new RBFStateModifier(numOfFeatures, numClasses, (_data->getIterationNumber() * multipleDescrete) +1 );
 		return retVal;
         

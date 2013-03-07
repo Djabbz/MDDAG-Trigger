@@ -304,7 +304,8 @@ void setBasicOptions(nor_utils::Args& args)
     args.declareArgument("maxrbfnumber", "The maximum number of RBF per whyp per action.", 1, "<num>" );
     args.declareArgument("incrementalrewardQ", "Give a reward after each evalation.", 0, "" );
     args.declareArgument("qtable", "Load the GSBNF from a file.", 1, "<file>" );
-    args.declareArgument("budget", "Read the different costs of the features.", 1, "<file>" );
+    args.declareArgument("budget", "Indicate to take features' cost into account.", 0, "" );
+    args.declareArgument("featurecosts", "Read the different costs of the features.", 1, "<file>" );
 }
 
 
@@ -504,20 +505,11 @@ int main(int argc, const char *argv[])
 		paramUpdate = args.getValue<double>("paramupdate", 0);
     }
     
-    int numDescreteStatesMultiplier = 1;
-    
     AdaBoostMDPClassifierContinous* classifierContinous;
     if ( datahandler->getClassNumber() <= 2 )
     {
         cout  << "---[ Binary classification ]---" << endl << endl;        
-        if (args.hasArgument("budget")) {            
-            string featureCostFile = args.getValue<string>("budget", 0);
-            classifierContinous = new BudgetClassifierBinary(args, verbose, datahandler, featureCostFile);
-            numDescreteStatesMultiplier = 2;
-        }
-        else {
-            classifierContinous = new AdaBoostMDPClassifierContinousBinary(args, verbose, datahandler );
-        }
+        classifierContinous = new AdaBoostMDPClassifierContinousBinary(args, verbose, datahandler );
     }
     else
     {
@@ -568,7 +560,7 @@ int main(int argc, const char *argv[])
             qData = new CFeatureQFunction(agentContinous->getActions(), discState);
         }
         else if (sptype ==5 ) {
-            discState = classifierContinous->getStateSpaceForGSBNFQFunction(featnum, numDescreteStatesMultiplier);
+            discState = classifierContinous->getStateSpaceForGSBNFQFunction(featnum);
             agentContinous->addStateModifier(discState);
             qData = new GSBNFBasedQFunction(agentContinous->getActions(), discState);
             

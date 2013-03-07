@@ -61,7 +61,7 @@ namespace MultiBoost {
 		double getReward(CStateCollection *oldState, CAction *action, CStateCollection *newState);
 		
 		///fetches the internal state and stores it in the state object
-		virtual void getState(CState *state); ///resets the model 
+//		virtual void getState(CState *state); ///resets the model 
 								
 		// get the discretized state space		
 		CStateModifier* getStateSpace();
@@ -72,7 +72,7 @@ namespace MultiBoost {
 		CStateModifier* getStateSpaceRBFAdaptiveCenters(unsigned int numberOfFeatures, CRBFCenterFeatureCalculator** rbfFC);
         CStateModifier* getStateSpaceNN();
 		
-        CStateModifier* getStateSpaceForGSBNFQFunction( int numOfFeatures, int multipleDescrete = 1 );
+        CStateModifier* getStateSpaceForGSBNFQFunction( int numOfFeatures);
         
         void outHeader()
         {

@@ -36,7 +36,7 @@ namespace MultiBoost {
         void doNextState(CPrimitiveAction *act);
         void doResetModel();
         void outPutStatistic( BinaryResultStruct& bres );
-        AlphaReal getClassificationCost();
+        double getClassificationCost();
 
     protected:
         vector<AlphaReal> _featureCosts;

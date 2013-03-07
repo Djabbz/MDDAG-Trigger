@@ -86,9 +86,69 @@ namespace MultiBoost {
         if (args.hasArgument("incrementalrewardQ")) {
             _incrementalReward = true;
         }
+
+        // for budgetted classification
+        
+        _budgetedClassification = false;
+        if (args.hasArgument("budget"))
+            _budgetedClassification = true;
+
+        string featureCostFile;
+        _featureCosts.clear();
+        _featuresEvaluated.clear();
+
+        if (args.hasArgument("featurecosts")) {
+            
+            _budgetedClassification = true;
+            
+            featureCostFile = args.getValue<string>("featurecosts", 0);
+        
+            ifstream ifs(featureCostFile.c_str());
+            if (! ifs) {
+                cout << "Error: could not open the feature cost file <" << featureCostFile << ">" << endl;
+                exit(1);
+            }
+            
+            AlphaReal cost;
+            while (ifs >> cost) {
+                _featureCosts.push_back(cost);
+            }
+            
+            assert(_featureCosts.size() == _data->getNumAttributes());
+            
+            if (verbose > 2) {
+                
+                const NameMap& namemap = _data->getAttributeNameMap();
+                cout << "[+] Feature Budget:" << endl;
+                
+                for (int i = 0 ; i < _featureCosts.size(); ++i) {
+                    cout << "--> " << namemap.getNameFromIdx(i) << "\t" << _featureCosts[i]  << endl;
+                }
+            }
+            
+            // init the vector of evaluated features
+            _featuresEvaluated.resize(_featureCosts.size(), false);
+            
+            properties->setDiscreteStateSize(0, (datareader->getIterationNumber() * 2)+1);
+        }
+
 	}
 	
 	// -----------------------------------------------------------------------
+    
+    double AdaBoostMDPClassifierContinous::getClassificationCost() {
+        if (_featureCosts.size() == 0) {
+            return (AlphaReal)_classifierNumber;
+        }
+        else
+        {
+            AlphaReal cost = 0.;
+            for (int i = 0; i < _featureCosts.size(); ++i)
+                if (_featuresEvaluated[i]) cost += _featureCosts[i];
+            return cost;
+        }
+    }
+
 	// -----------------------------------------------------------------------
 	void AdaBoostMDPClassifierContinous::getState(CState *state)
 	{
@@ -117,6 +177,17 @@ namespace MultiBoost {
 			st = ((currVotesVector[i] /_sumAlpha)+1)/2.0; // rescale between [0,1]
 			state->setContinuousState(i, st);
 		}
+        
+        if (_budgetedClassification) {
+            int idxBias = 0;
+            if (_featuresEvaluated[_currentClassifier])
+                idxBias = 1;
+            state->setDiscreteState(0, (_currentClassifier * 2) + idxBias);
+
+        }
+        else
+            state->setDiscreteState(0, _currentClassifier);
+        
 	}
 	// -----------------------------------------------------------------------
 	// -----------------------------------------------------------------------
@@ -133,6 +204,13 @@ namespace MultiBoost {
 		else if (mode == 1 ) // classify
 		{	
             double classifierOutput = _data->classifyKthWeakLearner(_currentClassifier,_currentRandomInstance,_exampleResult);
+            
+            if (_budgetedClassification) {
+                set<int> usedCols = _data->getUsedColumns(_currentClassifier);
+                for (set<int>::iterator it = usedCols.begin(); it != usedCols.end() ; ++it) {
+                    _featuresEvaluated[*it] = true;
+                }
+            }
 			_currentSumAlpha += classifierOutput;
 			_classifierUsed[_currentClassifier]=true;
             _classifiersOutput.push_back(classifierOutput);
@@ -172,6 +250,9 @@ namespace MultiBoost {
 		fill( currVotesVector.begin(), currVotesVector.end(), 0.0 );		
 		fill( _classifierUsed.begin(), _classifierUsed.end(), false );
         _classifiersOutput.clear();
+        
+        fill( _featuresEvaluated.begin(), _featuresEvaluated.end(), false );
+
 			
 	}
 	// -----------------------------------------------------------------------
