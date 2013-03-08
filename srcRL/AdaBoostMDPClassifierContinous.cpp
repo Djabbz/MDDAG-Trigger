@@ -9,6 +9,9 @@
 
 #include "AdaBoostMDPClassifierContinous.h"
 
+#include "RBFBasedQFunction.h"
+#include "RBFStateModifier.h"
+
 
 #include "cstate.h"
 #include "cstateproperties.h"
@@ -22,10 +25,11 @@ using namespace std;
 namespace MultiBoost {
 	
 	// -----------------------------------------------------------------------
-	// -----------------------------------------------------------------------	
-	AdaBoostMDPClassifierContinous::AdaBoostMDPClassifierContinous(const nor_utils::Args& args, int verbose, DataReader* datareader, int classNum, int discState)
+
+	AdaBoostMDPClassifierContinous::AdaBoostMDPClassifierContinous(const nor_utils::Args& args, int verbose, DataReader* datareader, int classNum, int discState )
 	: CEnvironmentModel(classNum,discState), _args(args), _verbose(verbose), _classNum(classNum), _data(datareader), _incrementalReward(false), _lastReward(0.0) //CEnvironmentModel(classNum+1,classNum)
 	{
+        cout << "+++[DEBUG] class num " << _classNum << endl;
 		// set the dim of state space
 		for( int i=0; i<_classNum;++i)
 		{
@@ -131,11 +135,44 @@ namespace MultiBoost {
             
             properties->setDiscreteStateSize(0, (datareader->getIterationNumber() * 2)+1);
         }
-//        else
-//            _featureCosts.resize(_data->getNumAttributes(), 1.);
 
+        // for binary
+        _positiveLabelIndex = 0;
+        if ( args.hasArgument("positivelabel") )
+		{
+			args.getValue("positivelabel", 0, _positiveLabelName);
+            const NameMap& namemap = datareader->getClassMap();
+            _positiveLabelIndex = namemap.getIdxFromName( _positiveLabelName );
+            
+        }
+        else
+        {
+            cout << "Error: the positive label must be given with --positivelabel" << endl;
+            exit(1);
+        }
+
+        
+        
 	}
-	
+    
+    // -----------------------------------------------------------------------------------
+    
+    void AdaBoostMDPClassifierContinous::outHeader()
+    {
+        if (_classNum == 2) {
+            _outputStream << "Ep" << "\t" <<  "AdaB" << "\t" << "Acc" << "\t" << "AvgEv" << "\t" << "AvgRwd" << "\t" << "TPR" << "\t" << "TNR" << "\t" << "Cost" <<  endl << setprecision(4) ;
+        }
+        else {
+            _outputStream << "Ep" << "\t" <<  "AdaB" << "\t" << "Acc" << "\t" << "AvgEv" << "\t" << "AvgRwd" << endl << setprecision(4) ;
+        }
+    }
+    
+    // -----------------------------------------------------------------------------------
+    
+    int AdaBoostMDPClassifierContinous::getPositiveLabelIndex() {
+        return _positiveLabelIndex;
+    }
+
 	// -----------------------------------------------------------------------
     
     double AdaBoostMDPClassifierContinous::getClassificationCost() {
@@ -153,6 +190,7 @@ namespace MultiBoost {
     }
 
 	// -----------------------------------------------------------------------
+
 	void AdaBoostMDPClassifierContinous::getState(CState *state)
 	{
 		// initializes the state object
@@ -161,26 +199,30 @@ namespace MultiBoost {
 		
 		// not necessary since we do not store any additional information
 		
-		
-		if (_classNum==2)
-			state->setNumActiveContinuousStates(1);
-		else 
-			state->setNumActiveContinuousStates(_classNum);
-
-		
-		// a reference for clarity and speed
 		vector<AlphaReal>& currVotesVector = _exampleResult->getVotesVector();
 		
-		// Set the internal state variables		
-		for ( int i=0; i<_classNum; ++i) {
-			
-			double st = 0.0;
-			//if ( !nor_utils::is_zero( _currentSumAlpha ) )
-			//	st = currVotesVector[i] / _currentSumAlpha;
-			st = ((currVotesVector[i] /_sumAlpha)+1)/2.0; // rescale between [0,1]
-			state->setContinuousState(i, st);
-		}
-        
+        // set the continuous state var
+		if (_classNum==2)
+        {
+			state->setNumActiveContinuousStates(1);
+            double st = ((currVotesVector[_positiveLabelIndex] /_sumAlpha)+1)/2.0; // rescale between [0,1]
+            state->setContinuousState(_positiveLabelIndex, st);
+        }
+		else
+        {
+			state->setNumActiveContinuousStates(_classNum);
+            // Set the internal state variables
+            for ( int i=0; i<_classNum; ++i) {
+                
+                double st = 0.0;
+                //if ( !nor_utils::is_zero( _currentSumAlpha ) )
+                //	st = currVotesVector[i] / _currentSumAlpha;
+                st = ((currVotesVector[i] /_sumAlpha)+1)/2.0; // rescale between [0,1]
+                state->setContinuousState(i, st);
+            }
+        }
+		
+        //  set the discrete state var
         if (_budgetedClassification) {
             int idxBias = 0;
             if (_featuresEvaluated[_currentClassifier])
@@ -192,9 +234,10 @@ namespace MultiBoost {
             state->setDiscreteState(0, _currentClassifier);
         
 	}
-	// -----------------------------------------------------------------------r
+
 	// -----------------------------------------------------------------------
-	void AdaBoostMDPClassifierContinous::doNextState(CPrimitiveAction *act)
+	
+    void AdaBoostMDPClassifierContinous::doNextState(CPrimitiveAction *act)
 	{
 		CAdaBoostAction* action = dynamic_cast<CAdaBoostAction*>(act);
 		
@@ -236,9 +279,10 @@ namespace MultiBoost {
 			}
 		}
 	}
-	// -----------------------------------------------------------------------
-	// -----------------------------------------------------------------------
-	void AdaBoostMDPClassifierContinous::doResetModel()
+	
+    // -----------------------------------------------------------------------
+	
+    void AdaBoostMDPClassifierContinous::doResetModel()
 	{
 		//_currentRandomInstance = (int) (rand() % _data->getNumExamples() );
 		_currentClassifier = 0;
@@ -258,9 +302,11 @@ namespace MultiBoost {
 
 			
 	}
+    
 	// -----------------------------------------------------------------------
-	// -----------------------------------------------------------------------		
-	double AdaBoostMDPClassifierContinous::getReward(CStateCollection *oldState, CAction *action, CStateCollection *newState) {
+
+	double AdaBoostMDPClassifierContinous::getReward(CStateCollection *oldState, CAction *action, CStateCollection *newState)
+    {
 		double rew = 0.0;
 		CAdaBoostAction* gridAction = dynamic_cast<CAdaBoostAction*>(action);
 		int mode = gridAction->getMode();
@@ -271,84 +317,130 @@ namespace MultiBoost {
 			{			
 				rew = _skipReward;
 			} else if ( mode == 1 )
-			{								
-				rew = _classificationReward;			
+			{
+                AlphaReal whypCost = 1.;
+                if (_budgetedClassification) {
+                    whypCost = 0.;
+                    set<int> usedCols = _data->getUsedColumns(_currentClassifier);
+                    for (set<int>::iterator it = usedCols.begin(); it != usedCols.end() ; ++it) {
+                        whypCost += _featureCosts[*it];
+                    }
+                }
+				rew = _classificationReward * whypCost;
+                
+                if (_incrementalReward) {
+                    
+                    rew -= _lastReward;
+                    if (_succRewardMode==RT_HAMMING)
+                    {
+                        if ( _data->currentClassifyingResult( _currentRandomInstance,  _exampleResult )  ) // classified correctly
+                        {
+                            _lastReward = _successReward;// /100.0;
+                        }
+                    }
+                    else if (_succRewardMode==RT_EXP)
+                    {
+                        double exploss;
+                        if (_classifierNumber>0)
+                        {
+                            exploss = _data->getExponentialLoss( _currentRandomInstance,  _exampleResult );
+                            _lastReward = 1/exploss;
+                        }
+                    }
+                    else if (_succRewardMode==RT_LOGIT)
+                    {
+                        double logitloss;
+                        if (_classifierNumber>0)
+                        {
+                            logitloss = _data->getLogisticLoss( _currentRandomInstance,  _exampleResult );
+                            _lastReward = logitloss;
+                        }
+                    }
+                    
+                    rew += _lastReward;
+                }
+
 			} else if ( mode == 2 )
 			{
 				rew = _jumpReward;			
 			}				
 			
 		} else {		
-			if (_verbose>3)
+			
+			if (_succRewardMode==RT_HAMMING)
 			{
-				// restore somehow the history
-				//cout << "Get the history(sequence of actions in this episode)" << endl;
-				//cout << "Size of action history: " << _history.size() << endl;
+				if ( _data->currentClassifyingResult( _currentRandomInstance,  _exampleResult )  ) // classified correctly
+				{
+					failed = false;
+					rew += _successReward;// /100.0;
+				} else
+				{
+					failed = true;
+					//rew += -_successReward;
+					rew += 0.0;
+				}
+			} else if (_succRewardMode==RT_EXP)
+			{
+				// since the AdaBoost minimize the margin e(-y_i f(x_i)
+				// we will maximize -1/e(y_i * f(x_i)
+				double exploss;
+				if (_classifierNumber>0)
+				{
+					exploss = _data->getExponentialLoss( _currentRandomInstance,  _exampleResult );
+					rew += 1/exploss;
+				}
+				else
+				{
+					//exploss = exp(_data->getSumOfAlphas());
+					//rew -= _successReward;
+				}
+				
+				/*
+				 cout << "Instance index: " << _currentRandomInstance << " ";
+				 bool clRes =  _data->currentClassifyingResult( _currentRandomInstance,  _exampleResult );
+				 if (clRes)
+				 cout << "[+] exploss: " << exploss << endl << flush;
+				 else
+				 cout << "[-] exploss: " << exploss << endl << flush;
+				 */
+				
+				
+				
 			}
-			
-			// if clRes true then the this instance is classified correctly
-			bool clRes = _data->currentClassifyingResult( _currentRandomInstance,  _exampleResult ); // classified correctly
-			
-			
-			if (clRes)
-			{
-				failed = false;
-				rew += _successReward;
-			} else 
-			{
-				failed = true;
-				//rew -= _successReward;
-				rew += 0.0;
+            else if (_succRewardMode==RT_LOGIT)
+            {
+                double logitloss;
+                if (_classifierNumber>0)
+                {
+                    logitloss = _data->getLogisticLoss( _currentRandomInstance,  _exampleResult );
+                    rew += logitloss;
+                }
+            }
+            
+            else {
+				cout << "Unknown succes reward type!!! Maybe it is not implemented! " << endl;
+				exit(-1);
 			}
 		}
 		return rew;
-	} 
+	}
+    
 	// -----------------------------------------------------------------------
-	// -----------------------------------------------------------------------
+    
 	bool AdaBoostMDPClassifierContinous::classifyCorrectly()
 	{
 		return  _data->currentClassifyingResult( _currentRandomInstance,  _exampleResult );
 	}
+
 	// -----------------------------------------------------------------------
-	// -----------------------------------------------------------------------
+    
 	bool AdaBoostMDPClassifierContinous::hasithLabelCurrentElement( int i )
 	{
 		return  _data->hasithLabel( _currentRandomInstance, i ); 
 	}		
-	// -----------------------------------------------------------------------
-	// -----------------------------------------------------------------------
-	void AdaBoostMDPClassifierContinous::outPutStatistic(int ep, double acc, double curracc, double uc, double sumrew )
-	{
-		_outputStream << ep << "\t" << acc << "\t" << curracc << "\t" << uc << "\t" << sumrew << endl << flush;
-	}
-	// -----------------------------------------------------------------------
-	// -----------------------------------------------------------------------
-	CStateModifier* AdaBoostMDPClassifierContinous::getStateSpace()
-	{
-		// create the discretizer with the build in classes
-		// create the partition arrays
-		//double partitions[] = {-0.9,-0.8,-0.7,-0.6,-0.5,-0.4,-0.3,-0.2,-0.1,
-		//						0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9}; // partition for states
-		
-		double partitions[] = {0.2,0.5,0.75}; // partition for states
-		//double partitions[] = {-0.2,0.0,0.2}; // partition for states
-		//double partitions[] = {-0.75,-0.4,-0.2,0.0,0.2,0.4,0.75}; // partition for states
-		
-		
-		CAbstractStateDiscretizer** disc = new CAbstractStateDiscretizer*[getNumClasses()];
-		for( int i=0; i<getNumClasses(); ++i)
-			disc[i] = new CSingleStateDiscretizer(i,3,partitions);
-		//disc[i] = new CSingleStateDiscretizer(i,19,partitions);
-		
-		// Merge the discretizers
-		CDiscreteStateOperatorAnd *andCalculator = new CDiscreteStateOperatorAnd();
-		
-		for( int i=0; i<getNumClasses(); ++i)
-			andCalculator->addStateModifier(disc[i]);
-		return andCalculator;
-	}
-	// -----------------------------------------------------------------------
-	// -----------------------------------------------------------------------
+	
+    // -----------------------------------------------------------------------
+
 	CStateModifier* AdaBoostMDPClassifierContinous::getStateSpaceRBF(unsigned int partitionNumber)
 	{
 		// Now we can already create our RBF network
@@ -357,8 +449,9 @@ namespace MultiBoost {
 		// For the calculation of useful sigmas we have to consider that the CRBFFeatureCalculator always uses the 
 		// normalized state representation, so the state variables are scaled to the intervall [0,1]
 		
-		int numClasses = getNumClasses();
-		
+		int numClasses = _classNum;
+		if (numClasses == 2) numClasses = 1;
+        
 		unsigned int* dimensions = new unsigned int[numClasses];
 		unsigned int* partitions = new unsigned int[numClasses];
 		double* offsets = new double[numClasses];
@@ -369,15 +462,110 @@ namespace MultiBoost {
 			dimensions[i]=i;
 			partitions[i]=partitionNumber;
 			offsets[i]=0.0;
-			sigma[i]=0.025;
+			sigma[i]=1.0/(2.0*partitionNumber);;
 		}
 		
 		
 		// Now we can create our Feature Calculator
-		CStateModifier *rbfCalc = new CRBFFeatureCalculator(numClasses, dimensions, partitions, offsets, sigma);	
-		return rbfCalc;
+		CStateModifier *rbfCalc = new CRBFFeatureCalculator(numClasses, dimensions, partitions, offsets, sigma);
+        CAbstractStateDiscretizer* disc= new AdaBoostMDPClassifierSimpleDiscreteSpace(_data->getIterationNumber()+1);
+        CFeatureOperatorAnd *andCalculator = new CFeatureOperatorAnd();
+        andCalculator->addStateModifier(disc);
+        andCalculator->addStateModifier(rbfCalc);
+        
+        andCalculator->initFeatureOperator();
+        
+		return andCalculator;
 	}
 	// -----------------------------------------------------------------------
+    
+    CStateModifier* AdaBoostMDPClassifierContinous::getStateSpace( int divNum )
+	{
+		// create the discretizer with the build in classes
+		// create the partition arrays
+		int numClasses = _classNum;
+        if (numClasses == 2) numClasses = 1;
+        
+		double *partitions = new double[divNum-1];
+		double step = 1.0/divNum;
+		for(int i=0;i<divNum-1;++i)
+		{
+			//cout << (i+1)*step << " " << endl << flush;
+			partitions[i]= (i+1)*step;
+		}
+		//double partitions[] = {-0.5,-0.2,0.0,0.2,0.5}; // partition for states
+		//double partitions[] = {-0.2,0.0,0.2}; // partition for states
+		
+        
+		CAbstractStateDiscretizer** disc = new CAbstractStateDiscretizer*[numClasses+1];
+		
+		//disc[0] = new CSingleStateDiscretizer(0,5,partitions);
+		disc[0]= new AdaBoostMDPClassifierSimpleDiscreteSpace(_data->getIterationNumber()+1);
+		for(int l=0;l<numClasses;++l) disc[l+1] = new CSingleStateDiscretizer(0,divNum-1,partitions);
+		
+		// Merge the discretizers
+		CDiscreteStateOperatorAnd *andCalculator = new CDiscreteStateOperatorAnd();
+		
+		for(int l=0;l<=numClasses;++l) andCalculator->addStateModifier(disc[l]);
+		
+		
+		return andCalculator;
+		
+	}
+    
+    // -----------------------------------------------------------------------------------
+    
+    CStateModifier* AdaBoostMDPClassifierContinous::getStateSpaceExp( int divNum, int e )
+	{
+		// create the discretizer with the build in classes
+		// create the partition arrays
+		int numClasses = getNumClasses();
+		double *partitions = new double[divNum-1];
+		for(int i=1;i<divNum;++i)
+		{
+			partitions[i-1] = pow(i,e)/pow(divNum,e);
+			partitions[i-1] = (partitions[i-1]/2.0);
+			cout << partitions[i-1] << " ";
+		}
+		cout << endl << flush;
+		
+		double* realPartitions = new double[(divNum-1)*2+1];
+		realPartitions[divNum-1]=0.5;
+		for(int i=0;i<divNum-1;++i)
+		{
+			realPartitions[i]= 0.5 - partitions[divNum-2-i];
+		}
+		for(int i=0;i<divNum-1;++i)
+		{
+			realPartitions[divNum+i]= 0.5 + partitions[i];
+		}
+		
+		for(int i=0; i<(divNum-1)*2+1; ++i)
+		{
+			cout << realPartitions[i] << " ";
+		}
+		cout << endl;
+		
+		//double partitions[] = {-0.5,-0.2,0.0,0.2,0.5}; // partition for states
+		//double partitions[] = {-0.2,0.0,0.2}; // partition for states
+		
+		CAbstractStateDiscretizer** disc = new CAbstractStateDiscretizer*[numClasses+1];
+		
+		//disc[0] = new CSingleStateDiscretizer(0,5,partitions);
+		disc[0]= new AdaBoostMDPClassifierSimpleDiscreteSpace(_data->getIterationNumber()+1);
+		for(int l=0;l<numClasses;++l) disc[l+1] = new CSingleStateDiscretizer(0,(divNum-1)*2+1,realPartitions);
+		
+		// Merge the discretizers
+		CDiscreteStateOperatorAnd *andCalculator = new CDiscreteStateOperatorAnd();
+		
+		for(int l=0;l<=numClasses;++l) andCalculator->addStateModifier(disc[l]);
+		
+		
+		return andCalculator;
+		
+	}
+
+
 	// -----------------------------------------------------------------------
 	CStateModifier* AdaBoostMDPClassifierContinous::getStateSpaceTileCoding(unsigned int partitionNumber)
 	{
@@ -407,8 +595,26 @@ namespace MultiBoost {
 		CStateModifier *tileCodeCalc = new CTilingFeatureCalculator(numClasses, dimensions, partitions, offsets );	
 		return tileCodeCalc;
 	}	
+
+    
+    // -----------------------------------------------------------------------
+    
+    CStateModifier* AdaBoostMDPClassifierContinous::getStateSpaceForGSBNFQFunction( int numOfFeatures){
+        int numClasses = _classNum;
+        if (numClasses == 2) numClasses = 1;
+        
+        int multipleDescrete = 1;
+        if (_budgetedClassification) {
+            multipleDescrete = 2;
+        }
+        
+		CStateModifier* retVal = new RBFStateModifier(numOfFeatures, numClasses, (_data->getIterationNumber() * multipleDescrete) +1 );
+		return retVal;
+        
+    }
+    
 	// -----------------------------------------------------------------------
-	// -----------------------------------------------------------------------
+
 	void AdaBoostMDPClassifierContinous::getHistory( vector<bool>& history )
 	{
 		history.resize( _classifierUsed.size() );
@@ -416,14 +622,15 @@ namespace MultiBoost {
 	}
 
     // -----------------------------------------------------------------------
-	// -----------------------------------------------------------------------
+	
 	void AdaBoostMDPClassifierContinous::getClassifiersOutput( vector<double>& classifiersOutput )
 	{
 		classifiersOutput.resize( _classifiersOutput.size() );
 		copy( _classifiersOutput.begin(), _classifiersOutput.end(), classifiersOutput.begin() );
 	}
+
     // -----------------------------------------------------------------------
-	// -----------------------------------------------------------------------	
+
 	void AdaBoostMDPClassifierContinous::getCurrentExmapleResult( vector<double>& result )
 	{
 		vector<AlphaReal>& currVotesVector = _exampleResult->getVotesVector();
@@ -436,12 +643,21 @@ namespace MultiBoost {
 		}
 		
 	}
+
 	// -----------------------------------------------------------------------
+        
+    void AdaBoostMDPClassifierContinous::outPutStatistic(int ep, double acc, double curracc, double uc, double sumrew )
+	{
+		_outputStream << ep << "\t" << acc << "\t" << curracc << "\t" << uc << "\t" << sumrew << endl << flush;
+	}
+
 	// -----------------------------------------------------------------------
-	// -----------------------------------------------------------------------
-	// -----------------------------------------------------------------------
-	// -----------------------------------------------------------------------
-	// -----------------------------------------------------------------------
-	
-	
+        
+    void AdaBoostMDPClassifierContinous::outPutStatistic( BinaryResultStruct& bres )
+    {
+        //		_outputStream << bres.iterNumber << " " <<  bres.origAcc << " " << bres.acc << " " << bres.usedClassifierAvg << " " << bres.avgReward << " " << bres.TP << " " << bres.TN << " " << bres.negNumEval <<  endl;
+        _outputStream << bres.iterNumber << "\t" <<  bres.origAcc << "\t" << bres.acc << "\t" << bres.usedClassifierAvg << "\t" << bres.avgReward << "\t" << bres.TP << "\t" << bres.TN << "\t" << bres.classificationCost <<  endl;
+    }
+
+
 } // end of namespace MultiBoost

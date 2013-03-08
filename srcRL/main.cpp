@@ -42,19 +42,11 @@
 #include "Defaults.h"
 #include "Utils/Args.h"
 
-#include "StrongLearners/GenericStrongLearner.h"
 #include "WeakLearners/BaseLearner.h" // To get the list of the registered weak learners
-
 #include "IO/Serialization.h" // for unserialization
 #include "Bandits/GenericBanditAlgorithm.h"
-//#include "AdaBoostMDPClassifier.h"
 #include "AdaBoostMDPClassifierAdv.h"
-//#include "AdaBoostMDPClassifierContinous.h"
-#include "AdaBoostMDPClassifierDiscrete.h"
-#include "AdaBoostMDPClassifierContinousBinary.h"
-#include "AdaBoostMDPClassifierContinousMultiClass.h"
-#include "BudgetClassifierBinary.h"
-//#include "AdaBoostMDPClassifierSubsetSelectorBinary.h"
+#include "AdaBoostMDPClassifierContinous.h"
 
 using namespace std;
 using namespace MultiBoost;
@@ -144,7 +136,7 @@ void showOptionalHelp(nor_utils::Args& args)
 {
 	string helpType = args.getValue<string>("h", 0);
 	
-	cout << "MultiBoost (v" << CURRENT_VERSION << "). An obvious name for a multi-class AdaBoost learner." << endl;
+	cout << "MDDAG (v" << CURRENT_VERSION << ")." << endl;
 	cout << "---------------------------------------------------------------------------" << endl;
 	
 	if (helpType == "general")
@@ -153,8 +145,6 @@ void showOptionalHelp(nor_utils::Args& args)
 		args.printGroup("I/O Options");
 	else if (helpType == "algo")
 		args.printGroup("Basic Algorithm Options");
-	else if (helpType == "bandits")
-		args.printGroup("Bandit Algorithm Options");
 	else if ( BaseLearner::RegisteredLearners().hasLearner(helpType) )
 		args.printGroup(helpType + " Options");
 	else
@@ -432,19 +422,12 @@ int main(int argc, const char *argv[])
 	}
 	
 	//////////////////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////////////////
-	string gridworldFileName = "Gridworld_10x10.txt";
 	
 	// Console Input Processing
 	if (verbose>5)
 	{
 		char *debugFile = "debug.txt";
 		DebugInit("debug.txt", "+", false);
-	}
-	
-	if (args.hasArgument("gridworldfilename"))
-	{
-		args.getValue("gridworldfilename", 0, gridworldFileName);
 	}
 	
 	
@@ -505,18 +488,16 @@ int main(int argc, const char *argv[])
 		paramUpdate = args.getValue<double>("paramupdate", 0);
     }
     
-    AdaBoostMDPClassifierContinous* classifierContinous;
     if ( datahandler->getClassNumber() <= 2 )
     {
-        cout  << "---[ Binary classification ]---" << endl << endl;        
-        classifierContinous = new AdaBoostMDPClassifierContinousBinary(args, verbose, datahandler );
+        cout  << "---[ Binary classification ]---" << endl << endl;
     }
     else
     {
         cout << endl << "---[ Multi-class classification ]---" << endl << endl;
-        classifierContinous = new AdaBoostMDPClassifierContinousMH(args, verbose, datahandler, datahandler->getClassNumber() );
     }
-     
+    
+    AdaBoostMDPClassifierContinous* classifierContinous = new AdaBoostMDPClassifierContinous(args, verbose, datahandler,  datahandler->getClassNumber() );    
     CRewardFunction *rewardFunctionContinous = classifierContinous;
     
     // Create the agent in our environmentModel.
@@ -546,6 +527,8 @@ int main(int argc, const char *argv[])
     
     CAbstractQFunction * qData;
     
+    #pragma mark State space selection
+    
     int sptype = -1;
     if ( args.hasArgument("statespace") )
     {
@@ -555,7 +538,7 @@ int main(int argc, const char *argv[])
             if ( datahandler->getClassNumber() <= 2 )
                 discState = classifierContinous->getStateSpace(featnum);
             else
-                discState = dynamic_cast<AdaBoostMDPClassifierContinousMH*>(classifierContinous)->getStateSpaceExp(featnum,2.0);
+                discState = classifierContinous->getStateSpaceExp(featnum,2.0);
             agentContinous->addStateModifier(discState);
             qData = new CFeatureQFunction(agentContinous->getActions(), discState);
         }
@@ -713,7 +696,6 @@ int main(int argc, const char *argv[])
     cout << " done!" << endl;
     if (args.hasArgument("testmdp"))
     {
-        //FIXME: works only with binary classification
         agentContinous->removeSemiMDPListener(qFunctionLearner);
         
         CAgentController* greedypolicy = new CQGreedyPolicy(agentContinous->getActions(), qData);
@@ -722,7 +704,7 @@ int main(int argc, const char *argv[])
         dynamic_cast<GSBNFBasedQFunction*>( qData )->loadQFunction(args.getValue<string>("testmdp", 0));
         
         classifierContinous->setCurrentDataToTrain();
-        AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinousBinary> evalTrain( agentContinous, rewardFunctionContinous );
+        AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalTrain( agentContinous, rewardFunctionContinous );
         BinaryResultStruct bres;
         bres.iterNumber=0;
         bres.origAcc = ovaccTrain;
@@ -731,7 +713,7 @@ int main(int argc, const char *argv[])
         evalTrain.classficationAccruacy(bres,logFileName, true);
         
         classifierContinous->setCurrentDataToTest();
-        AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinousBinary> evalTest( agentContinous, rewardFunctionContinous );
+        AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalTest( agentContinous, rewardFunctionContinous );
         
         bres.origAcc = ovaccTest;
         //            bres.iterNumber=0;
@@ -760,6 +742,7 @@ int main(int argc, const char *argv[])
     
     classifierContinous->outHeader();
     
+    #pragma mark Main loop
     // Learn for 500 Episodes
     for (int i = 0; i < episodeNumber; i++)
     {
@@ -822,7 +805,7 @@ int main(int argc, const char *argv[])
                 // TRAIN stats
                 classifierContinous->setCurrentDataToTrain();
                 //AdaBoostMDPClassifierContinousBinaryEvaluator evalTrain( agentContinous, rewardFunctionContinous );
-                AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinousBinary> evalTrain( agentContinous, rewardFunctionContinous );
+                AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalTrain( agentContinous, rewardFunctionContinous );
                 
                 BinaryResultStruct bres;
                 bres.origAcc = ovaccTrain;
@@ -844,7 +827,7 @@ int main(int argc, const char *argv[])
                 
                 classifierContinous->setCurrentDataToTest();
                 //AdaBoostMDPClassifierContinousBinaryEvaluator evalTrain( agentContinous, rewardFunctionContinous );
-                AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinousBinary> evalValid( agentContinous, rewardFunctionContinous );
+                AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalValid( agentContinous, rewardFunctionContinous );
                 
                 bres.origAcc = ovaccValid;
                 bres.iterNumber=i;
@@ -880,7 +863,7 @@ int main(int argc, const char *argv[])
                 if (classifierContinous->setCurrentDataToTest2() )
                 {
                     //AdaBoostMDPClassifierContinousBinaryEvaluator evalTest( agentContinous, rewardFunctionContinous );
-                    AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinousBinary> evalTest( agentContinous, rewardFunctionContinous );
+                    AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalTest( agentContinous, rewardFunctionContinous );
                     
                     bres.origAcc = ovaccTest;
                     
