@@ -79,8 +79,17 @@ namespace MultiBoost {
 			{			
 				rew = _skipReward;
 			} else if ( mode == 1 )
-			{								
-				rew = _classificationReward;
+			{
+                
+                AlphaReal whypCost = 1.;
+                if (_budgetedClassification) {
+                    whypCost = 0.;
+                    set<int> usedCols = _data->getUsedColumns(_currentClassifier);
+                    for (set<int>::iterator it = usedCols.begin(); it != usedCols.end() ; ++it) {
+                        whypCost += _featureCosts[*it];
+                    }
+                }
+				rew = _classificationReward * whypCost;
                 
                 if (_incrementalReward) {    
                     
@@ -465,7 +474,7 @@ namespace MultiBoost {
 	void AdaBoostMDPClassifierContinousBinary::outPutStatistic( BinaryResultStruct& bres )
 	{
 //		_outputStream << bres.iterNumber << " " <<  bres.origAcc << " " << bres.acc << " " << bres.usedClassifierAvg << " " << bres.avgReward << " " << bres.TP << " " << bres.TN << " " << bres.negNumEval <<  endl;
-		_outputStream << bres.iterNumber << "\t" <<  bres.origAcc << "\t" << bres.acc << "\t" << bres.usedClassifierAvg << "\t" << bres.avgReward << "\t" << bres.TP << "\t" << bres.TN << "\t" << bres.negNumEval <<  endl;
+		_outputStream << bres.iterNumber << "\t" <<  bres.origAcc << "\t" << bres.acc << "\t" << bres.usedClassifierAvg << "\t" << bres.avgReward << "\t" << bres.TP << "\t" << bres.TN << "\t" << bres.classificationCost <<  endl;
 	}
 	// -----------------------------------------------------------------------
 	// -----------------------------------------------------------------------	

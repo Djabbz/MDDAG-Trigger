@@ -88,19 +88,19 @@ namespace MultiBoost {
         }
 
         // for budgetted classification
-        
         _budgetedClassification = false;
-        if (args.hasArgument("budget"))
+        if (args.hasArgument("budgeted"))
+        {
             _budgetedClassification = true;
+            cout << "[+] Budgeted Classification" << endl;
+        }
 
         string featureCostFile;
         _featureCosts.clear();
         _featuresEvaluated.clear();
 
         if (args.hasArgument("featurecosts")) {
-            
-            _budgetedClassification = true;
-            
+                        
             featureCostFile = args.getValue<string>("featurecosts", 0);
         
             ifstream ifs(featureCostFile.c_str());
@@ -131,6 +131,8 @@ namespace MultiBoost {
             
             properties->setDiscreteStateSize(0, (datareader->getIterationNumber() * 2)+1);
         }
+//        else
+//            _featureCosts.resize(_data->getNumAttributes(), 1.);
 
 	}
 	
@@ -143,8 +145,9 @@ namespace MultiBoost {
         else
         {
             AlphaReal cost = 0.;
-            for (int i = 0; i < _featureCosts.size(); ++i)
+            for (int i = 0; i < _featureCosts.size(); ++i) {
                 if (_featuresEvaluated[i]) cost += _featureCosts[i];
+            }
             return cost;
         }
     }
@@ -189,7 +192,7 @@ namespace MultiBoost {
             state->setDiscreteState(0, _currentClassifier);
         
 	}
-	// -----------------------------------------------------------------------
+	// -----------------------------------------------------------------------r
 	// -----------------------------------------------------------------------
 	void AdaBoostMDPClassifierContinous::doNextState(CPrimitiveAction *act)
 	{
@@ -205,7 +208,7 @@ namespace MultiBoost {
 		{	
             double classifierOutput = _data->classifyKthWeakLearner(_currentClassifier,_currentRandomInstance,_exampleResult);
             
-            if (_budgetedClassification) {
+            if (_featuresEvaluated.size() != 0) {
                 set<int> usedCols = _data->getUsedColumns(_currentClassifier);
                 for (set<int>::iterator it = usedCols.begin(); it != usedCols.end() ; ++it) {
                     _featuresEvaluated[*it] = true;

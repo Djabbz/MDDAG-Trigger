@@ -77,7 +77,7 @@ namespace MultiBoost {
 		void outPutStatistic( BinaryResultStruct& bres );
 		void outHeader()
         {
-            _outputStream << "Ep" << "\t" <<  "AdaB" << "\t" << "Acc" << "\t" << "AvgEv" << "\t" << "AvgRwd" << "\t" << "TPR" << "\t" << "TNR" << "\t" << "AvgNegEv" <<  endl << setprecision(4) ;
+            _outputStream << "Ep" << "\t" <<  "AdaB" << "\t" << "Acc" << "\t" << "AvgEv" << "\t" << "AvgRwd" << "\t" << "TPR" << "\t" << "TNR" << "\t" << "Cost" <<  endl << setprecision(4) ;
         }
     
         int getPositiveLabelIndex() {

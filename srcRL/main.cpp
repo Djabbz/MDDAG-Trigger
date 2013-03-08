@@ -304,7 +304,7 @@ void setBasicOptions(nor_utils::Args& args)
     args.declareArgument("maxrbfnumber", "The maximum number of RBF per whyp per action.", 1, "<num>" );
     args.declareArgument("incrementalrewardQ", "Give a reward after each evalation.", 0, "" );
     args.declareArgument("qtable", "Load the GSBNF from a file.", 1, "<file>" );
-    args.declareArgument("budget", "Indicate to take features' cost into account.", 0, "" );
+    args.declareArgument("budgeted", "Indicate to take features' cost into account.", 0, "" );
     args.declareArgument("featurecosts", "Read the different costs of the features.", 1, "<file>" );
 }
 
