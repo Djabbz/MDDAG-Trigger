@@ -239,6 +239,24 @@ namespace MultiBoost {
 	}
 	// -----------------------------------------------------------------------
 	// -----------------------------------------------------------------------
+    
+    double DataReader::getWhypClassification( const int wHypInd, const int instance )
+	{
+		const int numClasses = _pCurrentData->getNumClasses();
+		
+        BaseLearner* currWeakHyp = _weakHypotheses[wHypInd];
+        AlphaReal alpha = currWeakHyp->getAlpha();
+        int vote = currWeakHyp->classify(_pCurrentData, instance, 0);
+        
+        vector<AlphaReal> scoreVector(numClasses);
+        for (int l = 0; l < numClasses; ++l)
+            scoreVector[l] = alpha * currWeakHyp->classify(_pCurrentData, instance, l);
+		
+		return alpha * vote;
+	}
+	// -----------------------------------------------------------------------
+	// -----------------------------------------------------------------------
+
 	bool DataReader::currentClassifyingResult( const int currentIstance, ExampleResults* exampleResult )
 	{
 		vector<Label>::const_iterator lIt;
@@ -263,7 +281,6 @@ namespace MultiBoost {
 				minPosClass = currVotesVector[lIt->idx];
 		}
 		
-		
 		if ( nor_utils::is_zero( minPosClass - maxNegClass )) return false;
 		
 		// if the vote for the worst positive label is lower than the
@@ -276,6 +293,7 @@ namespace MultiBoost {
 	}
 	// -----------------------------------------------------------------------
 	// -----------------------------------------------------------------------
+    
 	double DataReader::getExponentialLoss( const int currentIstance, ExampleResults* exampleResult )
 	{
 		double exploss = 0.0;
@@ -312,6 +330,42 @@ namespace MultiBoost {
 	}	
 	// -----------------------------------------------------------------------
 	// -----------------------------------------------------------------------
+    
+	double DataReader::getMargin( const int currentIstance, ExampleResults* exampleResult )
+	{		
+		vector<Label>::const_iterator lIt;
+		
+		const int numClasses = _pCurrentData->getNumClasses();
+		const vector<Label>& labels = _pCurrentData->getLabels(currentIstance);
+		vector<double> yfx(numClasses);
+        
+		vector<AlphaReal>& currVotesVector = exampleResult->getVotesVector();
+		
+        AlphaReal mean = 0;
+        int num = 0;
+		for ( lIt = labels.begin(); lIt != labels.end(); ++lIt )
+		{
+            yfx[lIt->idx] = currVotesVector[lIt->idx];
+            mean += currVotesVector[lIt->idx];
+            ++num;
+		}
+        
+        // normalize, because of the weird base classifiers who vote for both classes
+        mean /= num;
+        for ( lIt = labels.begin(); lIt != labels.end(); ++lIt )
+		{
+			yfx[lIt->idx] -= mean;
+            yfx[lIt->idx] *= lIt->y;
+		}
+		
+        AlphaReal minMargin = *min_element(yfx.begin(), yfx.end());
+
+		return minMargin;
+	}
+    
+	// -----------------------------------------------------------------------
+    // -----------------------------------------------------------------------
+    
     
     double DataReader::getLogisticLoss( const int currentIstance, ExampleResults* exampleResult )
 	{

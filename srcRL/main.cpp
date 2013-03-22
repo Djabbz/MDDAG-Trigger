@@ -645,7 +645,7 @@ int main(int argc, const char *argv[])
     
     
     CTDLearner *qFunctionLearner = new CQLearner(classifierContinous, qData);
-    //		CSarsaLearner *qFunctionLearner = new CSarsaLearner(rewardFunctionContinous, qData, agentContinous);
+//    CSarsaLearner *qFunctionLearner = new CSarsaLearner(rewardFunctionContinous, qData, agentContinous);
     
     //gradient stuff !!!
     //        CDiscreteResidual* residualFunction = new CDiscreteResidual(0.95);
@@ -742,10 +742,18 @@ int main(int argc, const char *argv[])
     
     classifierContinous->outHeader();
     
+    //TMP
+//    currentEpsilon = 0.97;
+//    policy->setParameter("EpsilonGreedy", currentEpsilon);
+    
     #pragma mark Main loop
     // Learn for 500 Episodes
     for (int i = 0; i < episodeNumber; i++)
     {
+//        currentAlpha = 1./(i + 1);
+//        qFunctionLearner->setParameter("QLearningRate", currentAlpha );
+//        qData->setParameter("QLearningRate", currentAlpha);
+
         agentContinous->startNewEpisode();
         classifierContinous->setRandomizedInstance();
         steps2 = agentContinous->doControllerEpisode(1, max_Steps);

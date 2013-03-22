@@ -29,7 +29,6 @@ namespace MultiBoost {
 	AdaBoostMDPClassifierContinous::AdaBoostMDPClassifierContinous(const nor_utils::Args& args, int verbose, DataReader* datareader, int classNum, int discState )
 	: CEnvironmentModel(classNum,discState), _args(args), _verbose(verbose), _classNum(classNum), _data(datareader), _incrementalReward(false), _lastReward(0.0) //CEnvironmentModel(classNum+1,classNum)
 	{
-        cout << "+++[DEBUG] class num " << _classNum << endl;
 		// set the dim of state space
 		for( int i=0; i<_classNum;++i)
 		{
@@ -257,14 +256,16 @@ namespace MultiBoost {
                     _featuresEvaluated[*it] = true;
                 }
             }
+            
 			_currentSumAlpha += classifierOutput;
 			_classifierUsed[_currentClassifier]=true;
             _classifiersOutput.push_back(classifierOutput);
 			_classifierNumber++; 
-			_currentClassifier++;						
+			_currentClassifier++;			
 		} else if (mode == 2 ) // jump to end			
 		{
-			_currentClassifier = _data->getIterationNumber();			
+//            _currentClassifier++;
+			_currentClassifier = _data->getIterationNumber();
 		}
 		
 		
@@ -273,9 +274,9 @@ namespace MultiBoost {
 			reset = true;
 			if ( _data->currentClassifyingResult( _currentRandomInstance,  _exampleResult ) )
 			{
-				failed = true;
-			} else {
 				failed = false;
+			} else {
+				failed = true;
 			}
 		}
 	}
@@ -326,6 +327,7 @@ namespace MultiBoost {
                         whypCost += _featureCosts[*it];
                     }
                 }
+                
 				rew = _classificationReward * whypCost;
                 
                 if (_incrementalReward) {
@@ -333,6 +335,7 @@ namespace MultiBoost {
                     rew -= _lastReward;
                     if (_succRewardMode==RT_HAMMING)
                     {
+                        
                         if ( _data->currentClassifyingResult( _currentRandomInstance,  _exampleResult )  ) // classified correctly
                         {
                             _lastReward = _successReward;// /100.0;
@@ -362,22 +365,67 @@ namespace MultiBoost {
 
 			} else if ( mode == 2 )
 			{
-				rew = _jumpReward;			
-			}				
+				rew = _jumpReward;
+//                {
+//                    
+//                    if (_succRewardMode==RT_HAMMING)
+//                    {
+//                        if ( _data->currentClassifyingResult( _currentRandomInstance,  _exampleResult )  ) // classified correctly
+//                        {
+//                            rew += _successReward;// /100.0;
+//                        } else
+//                        {
+//                            rew -= _successReward;
+//                        }
+//                    } else if (_succRewardMode==RT_EXP)
+//                    {
+//                        // since the AdaBoost minimize the margin e(-y_i f(x_i)
+//                        // we will maximize -1/e(y_i * f(x_i)
+//                        double exploss;
+//                        if (_classifierNumber>0)
+//                        {
+//                            exploss = _data->getExponentialLoss( _currentRandomInstance,  _exampleResult );
+//                            rew += 1/exploss;
+//                        }
+//                        else
+//                        {
+//                            //exploss = exp(_data->getSumOfAlphas());
+//                            //rew -= _successReward;
+//                        }
+//                        
+//                        /*
+//                         cout << "Instance index: " << _currentRandomInstance << " ";
+//                         bool clRes =  _data->currentClassifyingResult( _currentRandomInstance,  _exampleResult );
+//                         if (clRes)
+//                         cout << "[+] exploss: " << exploss << endl << flush;
+//                         else
+//                         cout << "[-] exploss: " << exploss << endl << flush;
+//                         */
+//                        
+//                        
+//                        
+//                    }
+//                }
+			}
 			
 		} else {		
 			
 			if (_succRewardMode==RT_HAMMING)
 			{
+//                AlphaReal margin = _data->getMargin(_currentRandomInstance, _exampleResult);
+//                rew += margin;
 				if ( _data->currentClassifyingResult( _currentRandomInstance,  _exampleResult )  ) // classified correctly
 				{
 					failed = false;
 					rew += _successReward;// /100.0;
-				} else
+//                    assert(margin > 0);
+				}
+                else
 				{
 					failed = true;
 					//rew += -_successReward;
-					rew += 0.0;
+//					assert(margin <= 0);
+                    
 				}
 			} else if (_succRewardMode==RT_EXP)
 			{
