@@ -31,6 +31,7 @@
 #include "Linear.h"
 #include "Tanh.h"
 #include "RBFBasedQFunction.h"
+#include "HashTable.h"
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -542,7 +543,7 @@ int main(int argc, const char *argv[])
             agentContinous->addStateModifier(discState);
             qData = new CFeatureQFunction(agentContinous->getActions(), discState);
         }
-        else if (sptype ==5 ) {
+        else if (sptype == 5 ) {
             discState = classifierContinous->getStateSpaceForGSBNFQFunction(featnum);
             agentContinous->addStateModifier(discState);
             qData = new GSBNFBasedQFunction(agentContinous->getActions(), discState);
@@ -599,18 +600,6 @@ int main(int argc, const char *argv[])
             cout << "[+] Meta parameters:" << endl;
             cout << "\t--> Normalized RBF: " << normalizeRbf << endl;
             cout << "\t--> RBF Sigma: " << initSigma << endl;
-
-            cout << "\t--> Learning rate:" << endl;
-            cout << "\t\t--> Numerator: " << qRateNumerator << endl;
-            cout << "\t\t--> Divisor: " << qRateDivisor << endl;
-            cout << "\t\t--> Increment of the divisor: " << qRateIncrement << endl;
-            
-            cout << "\t--> Exploration rate:" << endl;
-            cout << "\t\t--> Numerator: " << epsNumerator << endl;
-            cout << "\t\t--> Divisor: " << epsDivisor << endl;
-            cout << "\t\t--> Increment of the divisor: " << epsDivisor << endl;
-            
-            cout << "\t--> Update frequency: " << paramUpdate << endl;
             
             if (addCenter != 0)
             {
@@ -634,15 +623,34 @@ int main(int argc, const char *argv[])
             dynamic_cast<GSBNFBasedQFunction*>( qData )->setMuMean(0.00) ;
             dynamic_cast<GSBNFBasedQFunction*>( qData )->setMuSigma(0.00) ;
         }
+        else if (sptype == 6) {
+            discState = classifierContinous->getStateSpaceForGSBNFQFunction(featnum);
+            agentContinous->addStateModifier(discState);
+            qData = new HashTable(agentContinous->getActions(), discState);
+        }
         else {
             cout << "unkown statespcae" << endl;
+            exit(1);
         }
         
     } else {
-        cout << "No state space resresantion is given, the default is used" << endl;
-        discState = classifierContinous->getStateSpace(featnum);
+        cout << "No state space resresantion is given. Use --statespace" << endl;
+//        discState = classifierContinous->getStateSpace(featnum);
+        exit(1);
     }
     
+    cout << "\t--> Learning rate:" << endl;
+    cout << "\t\t--> Numerator: " << qRateNumerator << endl;
+    cout << "\t\t--> Divisor: " << qRateDivisor << endl;
+    cout << "\t\t--> Increment of the divisor: " << qRateIncrement << endl;
+    
+    cout << "\t--> Exploration rate:" << endl;
+    cout << "\t\t--> Numerator: " << epsNumerator << endl;
+    cout << "\t\t--> Divisor: " << epsDivisor << endl;
+    cout << "\t\t--> Increment of the divisor: " << epsDivisor << endl;
+    
+    cout << "\t--> Update frequency: " << paramUpdate << endl;
+
     
     CTDLearner *qFunctionLearner = new CQLearner(classifierContinous, qData);
 //    CSarsaLearner *qFunctionLearner = new CSarsaLearner(rewardFunctionContinous, qData, agentContinous);
