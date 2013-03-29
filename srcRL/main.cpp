@@ -626,7 +626,7 @@ int main(int argc, const char *argv[])
         else if (sptype == 6) {
             discState = classifierContinous->getStateSpaceForGSBNFQFunction(featnum);
             agentContinous->addStateModifier(discState);
-            qData = new HashTable(agentContinous->getActions(), discState);
+            qData = new HashTable(agentContinous->getActions(), discState, classifierContinous);
         }
         else {
             cout << "unkown statespcae" << endl;
@@ -914,7 +914,15 @@ int main(int argc, const char *argv[])
                     dynamic_cast<GSBNFBasedQFunction*>(qData)->saveActionValueTable(qTableFile2);
                     fclose(qTableFile2);
                 }                
-                
+
+                else if (sptype == 6) {
+                    std::stringstream ss;
+                    ss << "qtables/QTable_" << i << ".dta";
+                    FILE *qTableFile2 = fopen(ss.str().c_str(), "w");
+                    dynamic_cast<HashTable*>(qData)->saveActionValueTable(qTableFile2);
+                    fclose(qTableFile2);
+                }
+
                 agentContinous->setController(policy);
                 agentContinous->addSemiMDPListener(qFunctionLearner);
                 classifierContinous->setCurrentDataToTrain();

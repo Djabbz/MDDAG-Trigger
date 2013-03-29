@@ -669,6 +669,18 @@ namespace MultiBoost {
 		copy( _classifierUsed.begin(), _classifierUsed.end(), history.begin() );
 	}
 
+	// -----------------------------------------------------------------------
+    
+	void AdaBoostMDPClassifierContinous::getHistory( vector<int>& history )
+	{
+		history.clear();
+
+        for (int i = 0; i < _classifierUsed.size(); ++i) {
+            if (_classifierUsed[i] != false)
+                history.push_back(i);
+        }
+	}
+
     // -----------------------------------------------------------------------
 	
 	void AdaBoostMDPClassifierContinous::getClassifiersOutput( vector<double>& classifiersOutput )

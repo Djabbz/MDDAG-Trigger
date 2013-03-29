@@ -17,20 +17,11 @@
 #include "cstatecollection.h"
 
 #include "AdaBoostMDPClassifierAdv.h"
-#include "RBFBasedQFunction.h"
+#include "HashTable.h"
 #include <vector>
 #include <list>
 
-class RBFBasedQFunctionBinary;
 using namespace std;
-
-typedef vector<double> RBFParams;
-
-typedef vector<vector<RBFParams> > OneIterETraceMulti;
-typedef list<OneIterETraceMulti > CustomETraceMulti;
-typedef CustomETraceMulti::iterator ETMIterator;
-typedef CustomETraceMulti::reverse_iterator ETMReverseIterator;
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //TODO: this structure supposes that we never come back to a state. It's fine for now.
@@ -42,13 +33,13 @@ protected:
 //    CustomETraceMulti _eTraces;
 //    int _numDimensions;
 
-	list<CAction*>                   _actions;
+	list<CAction*>                  _actions;
 //    double                      _learningRate;
 //	CStateCollection*           _currentState;
     
 //    CStateCollectionList*       _eTraceStates;
-    list<CStateCollection*>       _eTraceStates;
-    list<double>                _eTraces;
+    list<CStateCollection*>         _eTraceStates;
+    list<double>                    _eTraces;
     
     
 public:
@@ -96,18 +87,17 @@ public:
     
     virtual void updateQFunction(double td) 
 	{
-        
         double tderror = td; // / _learningRate;
+  
+//        dynamic_cast<HashTable * >(qFunction)->addTableEntry(tderror, _eTraceStates.back(), _actions.back());
         
 		list<CAction*>::iterator itAction = _actions.begin();
         list<double>::iterator itTrace = _eTraces.begin();
         list<CStateCollection*>::iterator itState = _eTraceStates.begin();
-        int state = 0;
         
-		for (; itTrace != _eTraces.end(); ++itTrace, ++itAction, ++state)
+		for (; itTrace != _eTraces.end(); ++itTrace, ++itAction, ++itState)
 		{
 //            _eTraceStates->getStateCollection(_eTraceStates->getNumStateCollections() - state, buffState);
-            
             
             //dynamic_cast<HashTable * >
             (qFunction)->updateValue(*itState, *itAction, (*itTrace)*td);

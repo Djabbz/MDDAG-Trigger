@@ -11,6 +11,8 @@
 
 #include <map>
 #include <vector>
+#include <cmath> //for round
+#include <algorithm>
 
 #include "Defaults.h"
 
@@ -25,12 +27,13 @@
 #include <newmat/newmatio.h>
 
 #include "HashTableETraces.h"
+#include "AdaBoostMDPClassifierContinous.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-typedef vector<AlphaReal> ValueKey;
-typedef map<ValueKey, AlphaReal> ValueTableType;
+typedef vector<int> ValueKey;
+typedef map<ValueKey, vector<AlphaReal> > ValueTableType;
 
 class RBFStateModifier;
 
@@ -38,35 +41,24 @@ class HashTable : public CAbstractQFunction//: public RBFBasedQFunctionBinary
 {
 protected:
     
-    vector<ValueTableType>          _valueTable;
-	CActionSet*                     _actions;
-
-	int                             _numberOfActions;
-    int                             _numberOfIterations;
+    ValueTableType                      _valueTable;
+	CActionSet*                         _actions;
+	int                                 _numberOfActions;
+    AlphaReal                           _learningRate;
+    CStateModifier*                     _stateProperties;
+    MultiBoost::AdaBoostMDPClassifierContinous*     _classifier;
     
-    int                             _numDimensions;
-    
-    AlphaReal                       _learningRate;
-    
-    RBFStateModifier*               _stateProperties;
 public:
     
     // -----------------------------------------------------------------------------------
     
-    HashTable(CActionSet *actions, CStateModifier* sm ) : CAbstractQFunction(actions)
+    HashTable(CActionSet *actions, CStateModifier* sm,  MultiBoost::AdaBoostMDPClassifierContinous* classifier) : CAbstractQFunction(actions)
     {
-        _stateProperties = dynamic_cast<RBFStateModifier *>(sm);
-        
-        const int iterationNumber = _stateProperties->getNumOfIterations();
-        const int numOfClasses = _stateProperties->getNumOfClasses();
-        
-        _numberOfIterations = iterationNumber;
-        _numDimensions = numOfClasses;
-        
+        _stateProperties = sm;
+        _classifier = classifier;
         _actions = actions;
-        _numberOfActions = actions->size();
+        _numberOfActions = (int)actions->size();
         
-        _valueTable.resize(_numberOfActions);
         addParameter("QLearningRate", 0.2);
 
         
@@ -81,7 +73,9 @@ public:
         int actionIndex = dynamic_cast<MultiBoost::CAdaBoostAction*>(action)->getMode();        
         ValueKey key;
         getKey(state, key);
-        return getValue(actionIndex, key);
+        AlphaReal value;
+        getTableValue(actionIndex, key, value);
+        return value;
     };
     
     // -----------------------------------------------------------------------------------
@@ -91,14 +85,16 @@ public:
      * or a default value if the state has never
      * been visited.
      */
-    double getValue(int actionIndex, ValueKey& key, AlphaReal defaultValue = 0.)
+    bool getTableValue(int actionIndex, ValueKey& key, AlphaReal& outValue, AlphaReal defaultValue = 0.)
     {
-        ValueTableType::const_iterator it = _valueTable[actionIndex].find(key);
-        if (it == _valueTable[actionIndex].end()) {
-            return defaultValue;
+        ValueTableType::const_iterator it = _valueTable.find(key);
+        if (it == _valueTable.end()) {
+            outValue = defaultValue;
+            return false;
         }
         else {
-            return it->second;
+            outValue = it->second[actionIndex];
+            return true;
         }
     }
     
@@ -111,10 +107,38 @@ public:
     void getKey(CStateCollection *state, ValueKey& key)
     {
         CState* currState = state->getState();
-        key.resize(_numDimensions);
-        for (int i = 0; i < _numDimensions; ++i) {
-            key[i] = currState->getContinuousState(i);
+        
+        vector<int> history;
+//        _classifier->getHistory( history );
+
+        const size_t numDimensions = currState->getNumActiveContinuousStates();
+        const size_t numEvaluations = 0; //history.size() < 2 ? history.size() : 2 ;
+
+        key.clear();
+        key.resize(numDimensions + numEvaluations + 1);//+ 1
+        
+        int i = 0;
+        key[i] = currState->getDiscreteState(0);
+        ++i;
+        
+        for (int j = 0; j < numDimensions; ++i, ++j) {
+            
+            // rounding operation
+            int score = (int)(currState->getContinuousState(j) * 1000);
+            key[i] = score;
+            key[i] = currState->getContinuousState(j);
         }
+        
+
+//        vector<int>::reverse_iterator rIt = history.rbegin();
+        
+        for (int k = 0; k < numEvaluations; ++i, ++k) { //,++rIt
+            key[i] = history[k]; //*rIt
+        }
+        
+//        cout << "+++[DEBUG] curr " << currState->getDiscreteState(0) << endl;
+//        if (history.size()) cout << "+++[DEBUG] first " << history[0] << endl;
+//        char c; cin >> c;
     }
     
     // -----------------------------------------------------------------------------------
@@ -137,7 +161,8 @@ public:
         
         for( int i=0; i < _numberOfActions; ++i )
         {
-            AlphaReal value = getValue(i, key);
+            AlphaReal value;
+            getTableValue(i, key, value);
             if (value > maxVal) {
                 maxVal = value;
             }
@@ -153,10 +178,11 @@ public:
         ValueKey key;
         getKey(state, key);
         
-        ValueTableType::const_iterator it = _valueTable[actionIndex].find(key);
-        assert(it == _valueTable[actionIndex].end());
+        ValueTableType::const_iterator it = _valueTable.find(key);
+        assert(it == _valueTable.end());
 
-        _valueTable[actionIndex][key] = tderror;
+        _valueTable[key].resize(_numberOfActions);
+        _valueTable[key][actionIndex] = tderror;
     }
     
     // -----------------------------------------------------------------------------------
@@ -172,7 +198,13 @@ public:
         ValueKey key;
         getKey(state, key);
         
-        _valueTable[actionIndex][key] += td; //* _learningRate;
+        AlphaReal value;
+        bool entryExists = getTableValue(actionIndex, key, value);
+        
+        if (entryExists)
+            _valueTable[key][actionIndex] += td; //* _learningRate;
+        else
+            addTableEntry(td, state, actionIndex);
     };
     
     // -----------------------------------------------------------------------------------
@@ -185,23 +217,20 @@ public:
         
         for (; tableIt != _valueTable.end(); ++tableIt) {
             
-            ValueKey& key = (*tableIt)->first;
-            AlphaReal value = (*tableIt)->second;
+            ValueKey key = tableIt->first;
+            vector<AlphaReal> values = tableIt->second;
             
             fprintf(stream, "( ");
             for (ValueKey::iterator keyIt = key.begin(); keyIt != key.end(); ++keyIt) {
-                fprintf(stream, "%f ", *keyIt);
+                fprintf(stream, "%d ", *keyIt);
             }
             fprintf(stream, ")\t");
             
-            for (int k = 0; k < _numberOfActions; ++k) {
-                fprintf(stream,"classifier %d action %d: ", j,k);
-                for (int i = 0; i < _rbfs[k][j].size(); ++i) {
-                    fprintf(stream,"%f %f %f ", _rbfs[k][j][i].getAlpha()[dim], _rbfs[k][j][i].getMean()[dim], _rbfs[k][j][i].getSigma()[dim]);
-                }
-                fprintf(stream, "\n");
+            for (int i = 0; i < values.size(); ++i) {
+                fprintf(stream, "%f ", values[i]);
             }
             
+            fprintf(stream, "\n");            
         }
 
     }

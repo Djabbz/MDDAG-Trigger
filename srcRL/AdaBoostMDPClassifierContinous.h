@@ -134,6 +134,7 @@ namespace MultiBoost {
 		int getNumClasses() { return _data->getClassNumber(); };
 		int getNumExamples() { return _data->getNumExamples(); }
 		void getHistory( vector<bool>& history );
+		void getHistory( vector<int>& history );
         void getClassifiersOutput( vector<double>& classifiersOutput );
 		void getCurrentExmapleResult( vector<double>& result );
 		
