@@ -63,11 +63,14 @@ public:
         double mult = getParameter("Lambda") * getParameter("DiscountFactor");
         list<double>::iterator eIt = _eTraces.begin();
         
+//        DebugPrint('e',"\nUpdate e-traces. Factor: %f\n[", mult);
         while (eIt != _eTraces.end())
         {
-            *eIt *= mult;
+//            DebugPrint('e',"%f ", *eIt);
+            (*eIt) *= mult;
             ++eIt;
         }
+//        DebugPrint('e',"]\n");
 	}
     
     // -----------------------------------------------------------------------------------
@@ -75,7 +78,7 @@ public:
     virtual void addETrace(CStateCollection *state, CAction *action, double factor = 1.0, CActionData *data = NULL) 
 	{
 //		_currentState = state;
-        _eTraces.push_back(1.);
+        _eTraces.push_back(factor);
         _eTraceStates.push_back(state);
 //        _eTraceStates->addStateCollection(state);
         

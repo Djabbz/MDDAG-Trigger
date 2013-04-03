@@ -197,21 +197,24 @@ namespace MultiBoost {
 	}				
 	// -----------------------------------------------------------------------
 	// -----------------------------------------------------------------------
-	double DataReader::classifyKthWeakLearner( const int wHypInd, const int instance, ExampleResults* exampleResult )		
+	int DataReader::classifyKthWeakLearner( const int wHypInd, const int instance, ExampleResults* exampleResult )
 	{		
 		if (_verbose>3) {
 			//cout << "Classifiying: " << wHypInd << endl;
 		}
 		
-        //tmp
-        int vote = 0;
-        
-		if ( wHypInd >= _numIterations ) return -1.0; // indicating error						
+		if ( wHypInd >= _numIterations ) {
+            assert(false);
+            return 0; // indicating error
+        }
 		
 		const int numClasses = _pCurrentData->getNumClasses();				
 		
 		// a reference for clarity and speed
 		vector<AlphaReal>& currVotesVector = exampleResult->getVotesVector();
+        
+        vector<int> ternaryPhis(numClasses);
+        
 		float alpha;
 		
 		// for every class
@@ -221,21 +224,27 @@ namespace MultiBoost {
 			//for (int l = 0; l < numClasses; ++l)
 				//currVotesVector[l] += alpha * _vs[wHypInd][l] * (_pCurrentBitset->at(instance)[wHypInd]? +1.0 : -1.0);
 			alpha = _alphas[wHypInd];
-			for (int l = 0; l < numClasses; ++l)
-				currVotesVector[l] += _vs[wHypInd][l] * (*_pCurrentMatrix)[instance][wHypInd];			
+			for (int l = 0; l < numClasses; ++l) {
+				currVotesVector[l] += _vs[wHypInd][l] * (*_pCurrentMatrix)[instance][wHypInd];
+                //TODO: To be checked
+                ternaryPhis[l] = (*_pCurrentMatrix)[instance][wHypInd];
+            }
+            
 			
 		} else
 		{
 			BaseLearner* currWeakHyp = _weakHypotheses[wHypInd];
 			alpha = currWeakHyp->getAlpha();
             
-            vote = currWeakHyp->classify(_pCurrentData, instance, 0);
+//            vote = currWeakHyp->classify(_pCurrentData, instance, 0);
 
-			for (int l = 0; l < numClasses; ++l)
+			for (int l = 0; l < numClasses; ++l) {
 				currVotesVector[l] += alpha * currWeakHyp->classify(_pCurrentData, instance, l);
+                ternaryPhis[l] = (currVotesVector[l] > 0) ? 1 : ((currVotesVector[l] < 0) ? -1 : 0) ;
+            }
 		}
 		
-		return alpha * vote;
+		return ternaryPhis[0];
 	}
 	// -----------------------------------------------------------------------
 	// -----------------------------------------------------------------------

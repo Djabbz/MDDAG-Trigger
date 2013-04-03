@@ -32,7 +32,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-typedef vector<int> ValueKey;
+typedef vector<double> ValueKey;
 typedef map<ValueKey, vector<AlphaReal> > ValueTableType;
 
 class RBFStateModifier;
@@ -46,13 +46,14 @@ protected:
 	int                                 _numberOfActions;
     AlphaReal                           _learningRate;
     CStateModifier*                     _stateProperties;
+    int                                 _numDimensions;
     MultiBoost::AdaBoostMDPClassifierContinous*     _classifier;
-    
+        
 public:
     
     // -----------------------------------------------------------------------------------
     
-    HashTable(CActionSet *actions, CStateModifier* sm,  MultiBoost::AdaBoostMDPClassifierContinous* classifier) : CAbstractQFunction(actions)
+    HashTable(CActionSet *actions, CStateModifier* sm,  MultiBoost::AdaBoostMDPClassifierContinous* classifier, int numDim) : CAbstractQFunction(actions)
     {
         _stateProperties = sm;
         _classifier = classifier;
@@ -61,6 +62,8 @@ public:
         
         addParameter("QLearningRate", 0.2);
 
+        _numDimensions = numDim;
+        if (_numDimensions == 2) --_numDimensions;
         
     }
 
@@ -108,33 +111,39 @@ public:
     {
         CState* currState = state->getState();
         
+        
         vector<int> history;
 //        _classifier->getHistory( history );
+//        _classifier->getClassifiersOutput(history);
 
+//        const size_t numDimensions = 0;// currState->getNumActiveContinuousStates();
         const size_t numDimensions = currState->getNumActiveContinuousStates();
-        const size_t numEvaluations = 0; //history.size() < 2 ? history.size() : 2 ;
+        size_t numEvaluations ;
+        
+//        numEvaluations = history.size() == 0 ? 0 : history.size() - 1; // minus one to delete the last weakhyp evaluated //history.size() < 2 ? history.size() : 2 ;
+        numEvaluations = history.size();
 
         key.clear();
         key.resize(numDimensions + numEvaluations + 1);//+ 1
         
         int i = 0;
-        key[i] = currState->getDiscreteState(0);
-        ++i;
-        
+        key[i++] = currState->getDiscreteState(0);
+
         for (int j = 0; j < numDimensions; ++i, ++j) {
             
             // rounding operation
             int score = (int)(currState->getContinuousState(j) * 1000);
-            key[i] = score;
+//            key[i] = score;
             key[i] = currState->getContinuousState(j);
         }
         
-
 //        vector<int>::reverse_iterator rIt = history.rbegin();
         
         for (int k = 0; k < numEvaluations; ++i, ++k) { //,++rIt
             key[i] = history[k]; //*rIt
         }
+        
+
         
 //        cout << "+++[DEBUG] curr " << currState->getDiscreteState(0) << endl;
 //        if (history.size()) cout << "+++[DEBUG] first " << history[0] << endl;
@@ -178,6 +187,18 @@ public:
         ValueKey key;
         getKey(state, key);
         
+//        cout << "+++[DEBUG] new entry: " ;
+//        for (int i = 0; i < key.size(); ++i) {
+//            cout << key[i] << flush;
+//        }
+//        cout << endl;
+        
+//        cout << "+++[DEBUG] New entry: " ;
+//        for (int i = 0; i < key.size(); ++i) {
+//            cout << key[i] << " ";
+//        }
+//        cout << endl;
+        
         ValueTableType::const_iterator it = _valueTable.find(key);
         assert(it == _valueTable.end());
 
@@ -211,7 +232,7 @@ public:
     
     void saveActionValueTable(FILE* stream, int dim=0)
     {
-        fprintf(stream, "Q-Hash Table\n");
+//        fprintf(stream, "Q-Hash Table\n");
 
         ValueTableType::iterator tableIt = _valueTable.begin();
         
@@ -221,9 +242,18 @@ public:
             vector<AlphaReal> values = tableIt->second;
             
             fprintf(stream, "( ");
-            for (ValueKey::iterator keyIt = key.begin(); keyIt != key.end(); ++keyIt) {
-                fprintf(stream, "%d ", *keyIt);
+            ValueKey::iterator keyIt = key.begin();
+            fprintf(stream, "%d ", (int)*(keyIt++));
+            
+            //TMP
+            for (int d = 0; d < _numDimensions; ++d, ++keyIt) {
+                fprintf(stream, "%f ", ((*keyIt)*2) - 1);
             }
+
+            for (; keyIt != key.end(); ++keyIt) {
+                fprintf(stream, "%d ", (int)(*keyIt));
+            }
+
             fprintf(stream, ")\t");
             
             for (int i = 0; i < values.size(); ++i) {

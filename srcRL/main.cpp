@@ -498,7 +498,10 @@ int main(int argc, const char *argv[])
         cout << endl << "---[ Multi-class classification ]---" << endl << endl;
     }
     
-    AdaBoostMDPClassifierContinous* classifierContinous = new AdaBoostMDPClassifierContinous(args, verbose, datahandler,  datahandler->getClassNumber() );    
+    int numClasses = datahandler->getClassNumber();
+    if (numClasses == 2) --numClasses;
+    
+    AdaBoostMDPClassifierContinous* classifierContinous = new AdaBoostMDPClassifierContinous(args, verbose, datahandler, numClasses, 2);
     CRewardFunction *rewardFunctionContinous = classifierContinous;
     
     // Create the agent in our environmentModel.
@@ -626,7 +629,7 @@ int main(int argc, const char *argv[])
         else if (sptype == 6) {
             discState = classifierContinous->getStateSpaceForGSBNFQFunction(featnum);
             agentContinous->addStateModifier(discState);
-            qData = new HashTable(agentContinous->getActions(), discState, classifierContinous);
+            qData = new HashTable(agentContinous->getActions(), discState, classifierContinous, datahandler->getClassNumber());
         }
         else {
             cout << "unkown statespcae" << endl;

@@ -346,12 +346,12 @@ CAction *CStochasticPolicy::getNextAction(CStateCollection *state, CActionDataSe
 		getActionStatistics(state, (*it), stat);
 	}
 
-	DebugPrint('p', "ActionPropabilities: ");
+	DebugPrint('p', "\nActionPropabilities: ");
 	for (unsigned int j = 0; j < availableActions->size(); j++)
 	{
 		DebugPrint('p', "%f ", actionValues[j]);
 	}
-	DebugPrint('p', "\nChoosed Action: %d\n", actions->getIndex(*it));
+	DebugPrint('p', "\nChoosen Action: %d\n", actions->getIndex(*it));
 
 	CAction *action = *it;
 	return action;

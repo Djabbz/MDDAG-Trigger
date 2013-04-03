@@ -65,6 +65,9 @@ namespace MultiBoost {
         
         double classificationCost;
 	};
+    
+    typedef vector<int> KeyType;
+    typedef map<KeyType, int> KeyIndicesType;
 
 	////////////////////////////////////////////////////////////////////////////////////////////////	
 	////////////////////////////////////////////////////////////////////////////////////////////////	
@@ -77,7 +80,7 @@ namespace MultiBoost {
 		int						_classNum;
 		int						_classifierNumber; // number of classifier used during the episode
 		vector<bool>			_classifierUsed; // store which classifier was used during the process
-		vector<double>			_classifiersOutput;
+		vector<int> 			_classifiersOutput;
         
 		// rewards
 		double					_classificationReward;
@@ -117,6 +120,9 @@ namespace MultiBoost {
 
         string                  _positiveLabelName;
         int                     _positiveLabelIndex;
+        
+        KeyIndicesType    _keysIndices;
+        int                    _currentKeyIndex;
 
 	public:
 		// set randomzed element
@@ -135,7 +141,18 @@ namespace MultiBoost {
 		int getNumExamples() { return _data->getNumExamples(); }
 		void getHistory( vector<bool>& history );
 		void getHistory( vector<int>& history );
-        void getClassifiersOutput( vector<double>& classifiersOutput );
+        
+        KeyType getHistoryFromState(int i) {
+            KeyIndicesType::const_iterator kIt = _keysIndices.begin();
+            for (; kIt != _keysIndices.end(); ++kIt) {
+                if (kIt->second == i) {
+                    return kIt->first;
+                }
+            }
+            return KeyType();
+        }
+        
+        void getClassifiersOutput( vector<int>& classifiersOutput );
 		void getCurrentExmapleResult( vector<double>& result );
 		
 		void setCurrentDataToTrain() { _data->setCurrentDataToTrain(); }
@@ -416,14 +433,14 @@ namespace MultiBoost {
                     
 					output << endl << flush;
                     
-                    if (detailed) {
-                        vector<double> classifiersOutput;
-                        classifier->getClassifiersOutput(classifiersOutput);
-                        for (int i = 0; i < classifiersOutput.size(); ++i) {
-                            detailedOutput << classifiersOutput[i] << " ";
-                        }
-                        detailedOutput << endl << flush;
-                    }
+//                    if (detailed) {
+//                        vector<double> classifiersOutput;
+//                        classifier->getClassifiersOutput(classifiersOutput);
+//                        for (int i = 0; i < classifiersOutput.size(); ++i) {
+//                            detailedOutput << classifiersOutput[i] << " ";
+//                        }
+//                        detailedOutput << endl << flush;
+//                    }
 				}
 				
 				//if ((i>10)&&((i%100)==0))

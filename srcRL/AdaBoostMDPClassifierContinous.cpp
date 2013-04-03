@@ -27,7 +27,7 @@ namespace MultiBoost {
 	// -----------------------------------------------------------------------
 
 	AdaBoostMDPClassifierContinous::AdaBoostMDPClassifierContinous(const nor_utils::Args& args, int verbose, DataReader* datareader, int classNum, int discState )
-	: CEnvironmentModel(classNum,discState), _args(args), _verbose(verbose), _classNum(classNum), _data(datareader), _incrementalReward(false), _lastReward(0.0) //CEnvironmentModel(classNum+1,classNum)
+	: CEnvironmentModel(classNum, discState), _args(args), _verbose(verbose), _classNum(classNum), _data(datareader), _incrementalReward(false), _lastReward(0.0) //CEnvironmentModel(classNum+1,classNum)
 	{
 		// set the dim of state space
 		for( int i=0; i<_classNum;++i)
@@ -102,6 +102,9 @@ namespace MultiBoost {
         _featureCosts.clear();
         _featuresEvaluated.clear();
 
+        properties->setDiscreteStateSize(0, datareader->getIterationNumber()+1);
+        if (discState > 1) properties->setDiscreteStateSize(1, pow(2, datareader->getIterationNumber()));
+        
         if (args.hasArgument("featurecosts")) {
                         
             featureCostFile = args.getValue<string>("featurecosts", 0);
@@ -150,7 +153,7 @@ namespace MultiBoost {
             exit(1);
         }
 
-        
+        _currentKeyIndex = 0;
         
 	}
     
@@ -158,7 +161,7 @@ namespace MultiBoost {
     
     void AdaBoostMDPClassifierContinous::outHeader()
     {
-        if (_classNum == 2) {
+        if (_classNum <= 2) {
             _outputStream << "Ep" << "\t" <<  "AdaB" << "\t" << "Acc" << "\t" << "AvgEv" << "\t" << "AvgRwd" << "\t" << "TPR" << "\t" << "TNR" << "\t" << "Cost" <<  endl << setprecision(4) ;
         }
         else {
@@ -201,7 +204,7 @@ namespace MultiBoost {
 		vector<AlphaReal>& currVotesVector = _exampleResult->getVotesVector();
 		
         // set the continuous state var
-		if (_classNum==2)
+		if (_classNum<=2)
         {
 			state->setNumActiveContinuousStates(1);
             double st = ((currVotesVector[_positiveLabelIndex] /_sumAlpha)+1)/2.0; // rescale between [0,1]
@@ -232,6 +235,8 @@ namespace MultiBoost {
         else
             state->setDiscreteState(0, _currentClassifier);
         
+        state->setDiscreteState(1, _keysIndices[_classifiersOutput]);
+        
 	}
 
 	// -----------------------------------------------------------------------
@@ -245,10 +250,12 @@ namespace MultiBoost {
 		if ( mode == 0 ) // skip
 		{			
 			_currentClassifier++;
+            _classifiersOutput.push_back(0);
+            
 		}
 		else if (mode == 1 ) // classify
 		{	
-            double classifierOutput = _data->classifyKthWeakLearner(_currentClassifier,_currentRandomInstance,_exampleResult);
+            int classifierOutput = _data->classifyKthWeakLearner(_currentClassifier,_currentRandomInstance,_exampleResult);
             
             if (_featuresEvaluated.size() != 0) {
                 set<int> usedCols = _data->getUsedColumns(_currentClassifier);
@@ -256,12 +263,17 @@ namespace MultiBoost {
                     _featuresEvaluated[*it] = true;
                 }
             }
+                        
+            KeyIndicesType::const_iterator kIt = _keysIndices.find(_classifiersOutput);
+            if (kIt == _keysIndices.end()) {
+                _keysIndices[_classifiersOutput] = _currentKeyIndex++;
+            }
             
-			_currentSumAlpha += classifierOutput;
-			_classifierUsed[_currentClassifier]=true;
+			_classifierUsed[_currentClassifier] = true;
             _classifiersOutput.push_back(classifierOutput);
-			_classifierNumber++; 
-			_currentClassifier++;			
+			_classifierNumber++;
+			_currentClassifier++;
+			
 		} else if (mode == 2 ) // jump to end			
 		{
 //            _currentClassifier++;
@@ -683,7 +695,7 @@ namespace MultiBoost {
 
     // -----------------------------------------------------------------------
 	
-	void AdaBoostMDPClassifierContinous::getClassifiersOutput( vector<double>& classifiersOutput )
+	void AdaBoostMDPClassifierContinous::getClassifiersOutput( vector<int>& classifiersOutput )
 	{
 		classifiersOutput.resize( _classifiersOutput.size() );
 		copy( _classifiersOutput.begin(), _classifiersOutput.end(), classifiersOutput.begin() );
