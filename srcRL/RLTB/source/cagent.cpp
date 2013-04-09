@@ -556,7 +556,7 @@ void CAgent::setLogEpisode(bool bLogEpisode)
 
 void CAgent::startNewEpisode()
 {
-	DebugPrint('a', "Starting new Episode\n");
+	DebugPrint('a', "------------------------------------------\nStarting new Episode\n");
 	CSemiMarkovDecisionProcess::startNewEpisode();
 	model->resetModel();
 }

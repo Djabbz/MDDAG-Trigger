@@ -66,6 +66,8 @@ namespace MultiBoost {
 		if (_numIterations < _weakHypotheses.size())
 			_weakHypotheses.resize(_numIterations);
 		
+        else _numIterations = _weakHypotheses.size();
+        
 		if (_verbose > 0)
 			cout << "(" << _weakHypotheses.size() << " weak hypotheses kept)" << endl << endl;
 		
@@ -197,7 +199,7 @@ namespace MultiBoost {
 	}				
 	// -----------------------------------------------------------------------
 	// -----------------------------------------------------------------------
-	int DataReader::classifyKthWeakLearner( const int wHypInd, const int instance, ExampleResults* exampleResult )
+	vector<int> DataReader::classifyKthWeakLearner( const int wHypInd, const int instance, ExampleResults* exampleResult )
 	{		
 		if (_verbose>3) {
 			//cout << "Classifiying: " << wHypInd << endl;
@@ -205,7 +207,6 @@ namespace MultiBoost {
 		
 		if ( wHypInd >= _numIterations ) {
             assert(false);
-            return 0; // indicating error
         }
 		
 		const int numClasses = _pCurrentData->getNumClasses();				
@@ -239,12 +240,13 @@ namespace MultiBoost {
 //            vote = currWeakHyp->classify(_pCurrentData, instance, 0);
 
 			for (int l = 0; l < numClasses; ++l) {
-				currVotesVector[l] += alpha * currWeakHyp->classify(_pCurrentData, instance, l);
-                ternaryPhis[l] = (currVotesVector[l] > 0) ? 1 : ((currVotesVector[l] < 0) ? -1 : 0) ;
+                int vote = currWeakHyp->classify(_pCurrentData, instance, l);
+				currVotesVector[l] += alpha * vote;
+                ternaryPhis[l] = (vote > 0) ? 1 : ((vote < 0) ? -1 : 0) ;
             }
 		}
 		
-		return ternaryPhis[0];
+		return ternaryPhis;
 	}
 	// -----------------------------------------------------------------------
 	// -----------------------------------------------------------------------

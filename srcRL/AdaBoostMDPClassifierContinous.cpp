@@ -103,7 +103,7 @@ namespace MultiBoost {
         _featuresEvaluated.clear();
 
         properties->setDiscreteStateSize(0, datareader->getIterationNumber()+1);
-        if (discState > 1) properties->setDiscreteStateSize(1, pow(2, datareader->getIterationNumber()));
+        if (discState > 1) properties->setDiscreteStateSize(1, pow(3, (datareader->getIterationNumber() + 1)) + 1);
         
         if (args.hasArgument("featurecosts")) {
                         
@@ -236,7 +236,9 @@ namespace MultiBoost {
             state->setDiscreteState(0, _currentClassifier);
         
         state->setDiscreteState(1, _keysIndices[_classifiersOutput]);
-        
+//        cout << "+++[DEBUG] _keysIndices[_classifiersOutput] " << _keysIndices[_classifiersOutput] << endl;
+//        cout << "+++[DEBUG] _classifiersOutput ";
+//        for (auto & i : _classifiersOutput) cout << i << " "; cout << endl;
 	}
 
 	// -----------------------------------------------------------------------
@@ -252,10 +254,17 @@ namespace MultiBoost {
 			_currentClassifier++;
             _classifiersOutput.push_back(0);
             
+            KeyIndicesType::const_iterator kIt = _keysIndices.find(_classifiersOutput);
+            if (kIt == _keysIndices.end()) {
+                _keysIndices[_classifiersOutput] = _currentKeyIndex++;
+            }
+
 		}
 		else if (mode == 1 ) // classify
 		{	
-            int classifierOutput = _data->classifyKthWeakLearner(_currentClassifier,_currentRandomInstance,_exampleResult);
+            vector<int> votes = _data->classifyKthWeakLearner(_currentClassifier,_currentRandomInstance,_exampleResult);
+            
+            int classifierOutput = votes[_positiveLabelIndex];
             
             if (_featuresEvaluated.size() != 0) {
                 set<int> usedCols = _data->getUsedColumns(_currentClassifier);
@@ -263,23 +272,30 @@ namespace MultiBoost {
                     _featuresEvaluated[*it] = true;
                 }
             }
-                        
-            KeyIndicesType::const_iterator kIt = _keysIndices.find(_classifiersOutput);
-            if (kIt == _keysIndices.end()) {
-                _keysIndices[_classifiersOutput] = _currentKeyIndex++;
-            }
             
 			_classifierUsed[_currentClassifier] = true;
             _classifiersOutput.push_back(classifierOutput);
 			_classifierNumber++;
 			_currentClassifier++;
+            
+            KeyIndicesType::const_iterator kIt = _keysIndices.find(_classifiersOutput);
+            if (kIt == _keysIndices.end()) {
+                _keysIndices[_classifiersOutput] = _currentKeyIndex++;
+            }
 			
-		} else if (mode == 2 ) // jump to end			
+		} else if (mode == 2 ) // jump to end
 		{
 //            _currentClassifier++;
 			_currentClassifier = _data->getIterationNumber();
+            
+            _classifiersOutput.push_back(2);
+            
+            KeyIndicesType::const_iterator kIt = _keysIndices.find(_classifiersOutput);
+            if (kIt == _keysIndices.end()) {
+                _keysIndices[_classifiersOutput] = _currentKeyIndex++;
+            }
+
 		}
-		
 		
 		if ( _currentClassifier == _data->getIterationNumber() ) // check whether there is any weak classifier
 		{

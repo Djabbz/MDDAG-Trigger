@@ -66,7 +66,7 @@ namespace MultiBoost {
 		void loadInputData(const string& dataFileName, const string& testDataFileName, const string& testDataFileName2, const string& shypFileName);
 
 		// update example result, and return the alpha of the weak classifier used
-		int classifyKthWeakLearner( const int wHypInd, const int instance, ExampleResults* exampleResult );
+		vector<int> classifyKthWeakLearner( const int wHypInd, const int instance, ExampleResults* exampleResult );
 		
 		bool currentClassifyingResult( const int currentIstance, ExampleResults* exampleResult );
         double getWhypClassification( const int wHypInd, const int instance );

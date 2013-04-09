@@ -197,7 +197,7 @@ void setBasicOptions(nor_utils::Args& args)
 	// Basic Arguments
 	
 	args.setGroup("Parameters");
-	
+    args.declareArgument("configfile", "Read some or all the argument from a config file.", 1, "<config file>");
 	args.declareArgument("train", "Performs training.", 2, "<dataFile> <nInterations>");
 	args.declareArgument("traintestmdp", "Performs training and test at the same time.", 5, "<trainingDataFile> <testDataFile> <nInterations> <shypfile> <outfile>");
     args.declareArgument("traintestmdp", "Performs training and test at the same time.", 6, "<trainingDataFile> <validDataFile> <nInterations> <shypfile> <outfile> <testDataFile>");
@@ -910,6 +910,14 @@ int main(int argc, const char *argv[])
                 
                 cout << "---------------------------------" << endl;
                 
+                if (sptype == 0) {
+                    std::stringstream ss;
+                    ss << "qtables/QTable_" << i << ".dta";
+                    FILE *qTableFile2 = fopen(ss.str().c_str(), "w");
+                    dynamic_cast<CFeatureQFunction*>(qData)->saveFeatureActionValueTable(qTableFile2);
+                    fclose(qTableFile2);
+                }
+                
                 if (sptype == 5) {
                     std::stringstream ss;
                     ss << "qtables/QTable_" << i << ".dta";
@@ -917,14 +925,6 @@ int main(int argc, const char *argv[])
                     dynamic_cast<GSBNFBasedQFunction*>(qData)->saveActionValueTable(qTableFile2);
                     fclose(qTableFile2);
                 }                
-
-                else if (sptype == 6) {
-                    std::stringstream ss;
-                    ss << "qtables/QTable_" << i << ".dta";
-                    FILE *qTableFile2 = fopen(ss.str().c_str(), "w");
-                    dynamic_cast<HashTable*>(qData)->saveActionValueTable(qTableFile2);
-                    fclose(qTableFile2);
-                }
 
                 agentContinous->setController(policy);
                 agentContinous->addSemiMDPListener(qFunctionLearner);
@@ -1013,6 +1013,15 @@ int main(int argc, const char *argv[])
                 agentContinous->addSemiMDPListener(qFunctionLearner);
                 agentContinous->setController(policy);
             }
+
+            if (sptype == 6) {
+                std::stringstream ss;
+                ss << "qtables/QTable_" << i << ".dta";
+                FILE *qTableFile2 = fopen(ss.str().c_str(), "w");
+                dynamic_cast<HashTable*>(qData)->saveActionValueTable(qTableFile2);
+                fclose(qTableFile2);
+            }
+
         }
     }
 

@@ -17,11 +17,29 @@
 #include "cstatecollection.h"
 
 #include "AdaBoostMDPClassifierAdv.h"
-#include "HashTable.h"
-#include <vector>
-#include <list>
+//#include "HashTable.h"
+//#include <vector>
+//#include <list>
 
 using namespace std;
+
+struct MDDAGState {
+    
+//    MDDAGState() {};
+    MDDAGState(CState* state)
+    {
+        for (int i = 0; i < state->getNumContinuousStates(); ++i)
+            continuousStates.push_back(state->getContinuousState(i));
+
+        for (int i = 0; i < state->getNumDiscreteStates(); ++i)
+        {
+            discreteStates.push_back(state->getDiscreteState(i));
+        }
+    }
+    
+    vector<int> discreteStates;
+    vector<AlphaReal> continuousStates;
+};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //TODO: this structure supposes that we never come back to a state. It's fine for now.
@@ -38,7 +56,8 @@ protected:
 //	CStateCollection*           _currentState;
     
 //    CStateCollectionList*       _eTraceStates;
-    list<CStateCollection*>         _eTraceStates;
+//    list<CStateCollection*>         _eTraceStates;
+    list<MDDAGState>                _eTraceStates;
     list<double>                    _eTraces;
     
     
@@ -58,64 +77,18 @@ public:
     
     // -----------------------------------------------------------------------------------
     
-    virtual void updateETraces(CAction *action, CActionData *data = NULL) 
-	{
-        double mult = getParameter("Lambda") * getParameter("DiscountFactor");
-        list<double>::iterator eIt = _eTraces.begin();
-        
-//        DebugPrint('e',"\nUpdate e-traces. Factor: %f\n[", mult);
-        while (eIt != _eTraces.end())
-        {
-//            DebugPrint('e',"%f ", *eIt);
-            (*eIt) *= mult;
-            ++eIt;
-        }
-//        DebugPrint('e',"]\n");
-	}
+    virtual void updateETraces(CAction *action, CActionData *data = NULL) ;
+    // -----------------------------------------------------------------------------------
+    
+    virtual void addETrace(CStateCollection *state, CAction *action, double factor = 1.0, CActionData *data = NULL) ;
     
     // -----------------------------------------------------------------------------------
     
-    virtual void addETrace(CStateCollection *state, CAction *action, double factor = 1.0, CActionData *data = NULL) 
-	{
-//		_currentState = state;
-        _eTraces.push_back(factor);
-        _eTraceStates.push_back(state);
-//        _eTraceStates->addStateCollection(state);
-        
-//        int actionIndex = dynamic_cast<MultiBoost::CAdaBoostAction*>(action)->getMode();
-		_actions.push_back( action );
-	}
+    virtual void updateQFunction(double td) ;
     
     // -----------------------------------------------------------------------------------
     
-    virtual void updateQFunction(double td) 
-	{
-        double tderror = td; // / _learningRate;
-  
-//        dynamic_cast<HashTable * >(qFunction)->addTableEntry(tderror, _eTraceStates.back(), _actions.back());
-        
-		list<CAction*>::iterator itAction = _actions.begin();
-        list<double>::iterator itTrace = _eTraces.begin();
-        list<CStateCollection*>::iterator itState = _eTraceStates.begin();
-        
-		for (; itTrace != _eTraces.end(); ++itTrace, ++itAction, ++itState)
-		{
-//            _eTraceStates->getStateCollection(_eTraceStates->getNumStateCollections() - state, buffState);
-            
-            //dynamic_cast<HashTable * >
-            (qFunction)->updateValue(*itState, *itAction, (*itTrace)*td);
-		}
-	}
-    
-    // -----------------------------------------------------------------------------------
-    
-    virtual void resetETraces() 
-	{
-	    _eTraces.clear();
-        _actions.clear();
-        _eTraceStates.clear();
-//        _eTraceStates->clearStateLists();
-	}
+    virtual void resetETraces() ;
     
     // -----------------------------------------------------------------------------------
     
