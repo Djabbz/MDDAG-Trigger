@@ -66,22 +66,31 @@ void HashTable::getKey(MDDAGState& state, ValueKey& key)
     //        _classifier->getClassifiersOutput(history);
     
     //        const size_t numDimensions = 0;// currState->getNumActiveContinuousStates();
-    const size_t numDimensions = state.continuousStates.size();
+    size_t numDimensions = state.continuousStates.size();
+
+    _numDimensions = 0;
+    numDimensions = _numDimensions;
+    
     size_t numEvaluations ;
     
     int keyIdx = state.discreteStates[1];
     vector<int> history = _classifier->getHistoryFromState(keyIdx);
     
+    for (auto it = history.rbegin(); it != history.rend(); ++it) {
+        if (*it == 0.) history.pop_back();
+        else break;
+    }
+    
     //        cout << "+++[DEBUG] history.size " << history.size() << endl;
     //        numEvaluations = history.size() == 0 ? 0 : history.size() - 1; // minus one to delete the last weakhyp evaluated //history.size() < 2 ? history.size() : 2 ;
     numEvaluations = history.size();
-    numEvaluations = 0;
+//    numEvaluations = 0;
     
     key.clear();
-    key.resize(numDimensions + numEvaluations + 1);//+ 1
+    key.resize(numDimensions + numEvaluations);//+ 1
     
     int i = 0;
-    key[i++] = state.discreteStates[0];
+//    key[i++] = state.discreteStates[0];
     
     for (int j = 0; j < numDimensions; ++i, ++j) {
         
@@ -188,7 +197,7 @@ void HashTable::saveActionValueTable(FILE* stream, int dim)
         
         fprintf(stream, "( ");
         ValueKey::iterator keyIt = key.begin();
-        fprintf(stream, "%d ", (int)*(keyIt++));
+        if (keyIt != key.end()) fprintf(stream, "%d ", (int)*(keyIt++));
         
         for (int d = 0; d < _numDimensions; ++d, ++keyIt) {
             fprintf(stream, "%f ", ((*keyIt)*2) - 1);
