@@ -149,8 +149,10 @@ namespace MultiBoost {
         }
         else
         {
-            cout << "Error: the positive label must be given with --positivelabel" << endl;
-            exit(1);
+            if (classNum < 3) {
+                cout << "Error: the positive label must be given with --positivelabel" << endl;
+                exit(1);
+            }
         }
 
         _currentKeyIndex = 0;
