@@ -275,6 +275,7 @@ void setBasicOptions(nor_utils::Args& args)
 	args.declareArgument("episodes", "The number of episodes", 2, "<episod> <testiter>");
 	args.declareArgument("rewards", "success, class, skip", 3, "<succ> <class> <skip>");
 	args.declareArgument("logdir", "Dir of log", 1, "<dir>");
+    args.declareArgument("qdir", "Dir of Q information", 1, "<dir>");
 	args.declareArgument("succrewartdtype", "The mode of the reward calculation", 1, "<mode>" );
 	args.declareArgument("statespace", "The statespace representation", 1, "<mode>" );
 	args.declareArgument("numoffeat", "The number of feature in statespace representation", 1, "<featnum>" );
@@ -445,12 +446,19 @@ int main(int argc, const char *argv[])
 		exit(-1);
 	}
 	
-	string logDirContinous="";
+	string logDirContinous="log";
 	if (args.hasArgument("logdir"))
 	{
 		logDirContinous = args.getValue<string>("logdir", 0);
 	}
-	
+
+    
+    string qTablesDir="qtables";
+	if (args.hasArgument("qdir"))
+	{
+		qTablesDir = args.getValue<string>("qdir", 0);
+	}
+
 	DataReader* datahandler = new DataReader( args, verbose );
 	datahandler->setCurrentDataToTrain();
 	
@@ -653,6 +661,8 @@ int main(int argc, const char *argv[])
     cout << "\t\t--> Increment of the divisor: " << epsDivisor << endl;
     
     cout << "\t--> Update frequency: " << paramUpdate << endl;
+
+    cout << "\t--> Reward type: " << args.getValue<string>("succrewartdtype", 0) << endl;
 
     
     CTDLearner *qFunctionLearner = new CQLearner(classifierContinous, qData);
@@ -912,7 +922,7 @@ int main(int argc, const char *argv[])
                 
                 if (sptype == 0) {
                     std::stringstream ss;
-                    ss << "qtables/QTable_" << i << ".dta";
+                    ss << qTablesDir << "/QTable_" << i << ".dta";
                     FILE *qTableFile2 = fopen(ss.str().c_str(), "w");
                     dynamic_cast<CFeatureQFunction*>(qData)->saveFeatureActionValueTable(qTableFile2);
                     fclose(qTableFile2);
@@ -920,7 +930,7 @@ int main(int argc, const char *argv[])
                 
                 if (sptype == 5) {
                     std::stringstream ss;
-                    ss << "qtables/QTable_" << i << ".dta";
+                    ss << qTablesDir << "/QTable_" << i << ".dta";
                     FILE *qTableFile2 = fopen(ss.str().c_str(), "w");
                     dynamic_cast<GSBNFBasedQFunction*>(qData)->saveActionValueTable(qTableFile2);
                     fclose(qTableFile2);
@@ -1016,7 +1026,7 @@ int main(int argc, const char *argv[])
 
             if (sptype == 6) {
                 std::stringstream ss;
-                ss << "qtables/QTable_" << i << ".dta";
+                ss << qTablesDir << "/QTable_" << i << ".dta";
                 FILE *qTableFile2 = fopen(ss.str().c_str(), "w");
                 dynamic_cast<HashTable*>(qData)->saveActionValueTable(qTableFile2);
                 fclose(qTableFile2);

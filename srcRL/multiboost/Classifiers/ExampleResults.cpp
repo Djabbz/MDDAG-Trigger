@@ -42,7 +42,7 @@ namespace MultiBoost {
 // -------------------------------------------------------------------------
 // -------------------------------------------------------------------------
 
-pair<int, AlphaReal> ExampleResults::getWinner(int rank)
+pair<int, AlphaReal> ExampleResults::getWinner(int rank) const
 {
    assert(rank >= 0);
 

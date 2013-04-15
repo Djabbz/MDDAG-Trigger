@@ -164,6 +164,8 @@ namespace MultiBoost {
         void outPutStatistic( BinaryResultStruct& bres );
         double getClassificationCost() ;
         
+        const ExampleResults* getCurrentExampleResults() { return _exampleResult; }
+        
 		// constructor
 		AdaBoostMDPClassifierContinous(const nor_utils::Args& args, int verbose, DataReader* datareader, int classNum, int discState = 1);
 		// destructor

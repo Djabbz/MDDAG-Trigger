@@ -74,7 +74,7 @@ public:
    * \return A pair <\f$\ell\f$, \f$g_\ell(x)\f$>, where \f$\ell\f$ is the class index.
    * \date 16/11/2005
    */
-   pair<int, AlphaReal> getWinner(int rank = 0);
+   pair<int, AlphaReal> getWinner(int rank = 0) const;
 
    /**
    * Checks if the given class is the winner class.
