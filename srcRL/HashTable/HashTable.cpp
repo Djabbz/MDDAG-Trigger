@@ -1,6 +1,7 @@
 //#include "RBFQETraces.h"
 #include "HashTable.h"
 #include "HashTableStateModifier.h"
+#include "ExampleResults.h"
 
 //#include "RBFStateModifier.h"
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -69,48 +70,46 @@ void HashTable::getKey(MDDAGState& state, ValueKey& key)
     size_t numDimensions = state.continuousStates.size();
 
     _numDimensions = 0;
-    numDimensions = _numDimensions;
+//    numDimensions = _numDimensions;
     
-    size_t numEvaluations ;
+
+//    vector<int> history = _classifier->getHistoryFromState( state.discreteStates[1] );
     
-    int keyIdx = state.discreteStates[1];
-    vector<int> history = _classifier->getHistoryFromState(keyIdx);
+//    for (auto it = history.rbegin(); it != history.rend(); ++it) {
+//        if (*it == 0.) history.pop_back();
+//        else break;
+//    }
     
-    for (auto it = history.rbegin(); it != history.rend(); ++it) {
-        if (*it == 0.) history.pop_back();
-        else break;
-    }
-    
-    //        cout << "+++[DEBUG] history.size " << history.size() << endl;
-    //        numEvaluations = history.size() == 0 ? 0 : history.size() - 1; // minus one to delete the last weakhyp evaluated //history.size() < 2 ? history.size() : 2 ;
-    numEvaluations = history.size();
-//    numEvaluations = 0;
+//    size_t numEvaluations = history.size();
     
     key.clear();
-    key.resize(numDimensions + numEvaluations);//+ 1
+//    key.resize(numDimensions + numEvaluations + 1);//+ 1
+    
+    const int numWinners = 2;
+    key.resize(1 + numWinners);//+ 1
     
     int i = 0;
-//    key[i++] = state.discreteStates[0];
+    key[i++] = state.discreteStates[0];
     
-    for (int j = 0; j < numDimensions; ++i, ++j) {
-        
-        // rounding operation
-        //            int score = (int)(currState->getContinuousState(j) * 1000);
-        //            key[i] = score;
-        key[i] = state.continuousStates[j];
+    const MultiBoost::ExampleResults* examplesResult = _classifier->getCurrentExampleResults();
+    for (int j = 0; j < numWinners; ++j) {
+        int winner = examplesResult->getWinner(j    ).first;
+        key[i++] = winner;
     }
     
-    //        vector<int>::reverse_iterator rIt = history.rbegin();
+//    for (int j = 0; j < numDimensions; ++i, ++j) {
+//        
+//        // rounding operation
+//        //            int score = (int)(currState->getContinuousState(j) * 1000);
+//        //            key[i] = score;
+//        key[i] = state.continuousStates[j];
+//    }
     
-    for (int k = 0; k < numEvaluations; ++i, ++k) { //,++rIt
-        key[i] = history[k]; //*rIt
-    }
     
+//    for (int k = 0; k < numEvaluations; ++i, ++k) {
+//        key[i] = history[k]; 
+//    }
     
-    
-    //        cout << "+++[DEBUG] curr " << currState->getDiscreteState(0) << endl;
-    //        if (history.size()) cout << "+++[DEBUG] first " << history[0] << endl;
-    //        char c; cin >> c;
 }
 
 // -----------------------------------------------------------------------------------
@@ -136,11 +135,8 @@ double HashTable::getMaxValue(MDDAGState& state)
 
 // -----------------------------------------------------------------------------------
 
-void HashTable::addTableEntry(double tderror, MDDAGState& state, int actionIndex)
-{
-    ValueKey key;
-    getKey(state, key);
-    
+void HashTable::addTableEntry(double tderror, ValueKey& key, int actionIndex)
+{    
     //        cout << "+++[DEBUG] new entry: " ;
     //        for (int i = 0; i < key.size(); ++i) {
     //            cout << key[i] << flush;
@@ -153,9 +149,9 @@ void HashTable::addTableEntry(double tderror, MDDAGState& state, int actionIndex
     //        }
     //        cout << endl;
     
-    ValueTableType::const_iterator it = _valueTable.find(key);
-    assert(it == _valueTable.end());
-    
+//    ValueTableType::const_iterator it = _valueTable.find(key);    
+//    assert(it == _valueTable.end());
+//    
     _valueTable[key].resize(_numberOfActions);
     _valueTable[key][actionIndex] = tderror;
 }
@@ -179,7 +175,7 @@ void HashTable::updateValue(MDDAGState& state, CAction *action, double td, CActi
     if (entryExists)
         _valueTable[key][actionIndex] += td; //* _learningRate;
     else
-        addTableEntry(td, state, actionIndex);
+        addTableEntry(td, key, actionIndex);
 };
 
 // -----------------------------------------------------------------------------------

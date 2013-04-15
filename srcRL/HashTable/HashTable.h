@@ -95,7 +95,7 @@ public:
     double getMaxValue(StateType& state) ;
     // -----------------------------------------------------------------------------------
     
-    void addTableEntry(double tderror, StateType& state, int actionIndex) ;
+    void addTableEntry(double tderror, ValueKey& key, int actionIndex) ;
     // -----------------------------------------------------------------------------------
     
 //    void updateValue(CStateCollection *state, CAction *action, double td, CActionData * = NULL);    
