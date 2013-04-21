@@ -65,7 +65,7 @@ void ConstantAlgorithmLSHTC::findConstantWeightsEdges( InputData* pData,
       vector<Label>::iterator lIt;
 
       int l = 0;
-      for (lIt = labels.begin(); lIt != labels.end(); ++lIt, l )
+      for (lIt = labels.begin(); lIt != labels.end(); ++lIt )
       {
          halfWeightsPerClass[ lIt->idx ] += lIt->weight;
          halfEdges[ lIt->idx ] += lIt->weight * lIt->y;

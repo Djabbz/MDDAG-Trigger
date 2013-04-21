@@ -6,8 +6,8 @@
  *  Copyright 2011 __MyCompanyName__. All rights reserved.
  *
  */
-#ifndef __HASHTABLE_H
-#define __HASHTABLE_H
+#ifndef __HASHTABLERBF_H
+#define __HASHTABLERBF_H
 
 #include <map>
 #include <vector>
@@ -26,7 +26,7 @@
 #include <newmat/newmat.h>
 #include <newmat/newmatio.h>
 
-#include "HashTableETraces.h"
+#include "HashTableRBFETraces.h"
 #include "AdaBoostMDPClassifierContinous.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -39,7 +39,7 @@ typedef MDDAGState StateType; //CStateCollection*
 
 class RBFStateModifier;
 
-class HashTable : public CAbstractQFunction//: public RBFBasedQFunctionBinary
+class HashTableRBF : public CAbstractQFunction//: public RBFBasedQFunctionBinary
 {
 protected:
     
@@ -55,7 +55,7 @@ public:
     
     // -----------------------------------------------------------------------------------
     
-    HashTable(CActionSet *actions, CStateModifier* sm,  MultiBoost::AdaBoostMDPClassifierContinous* classifier, int numDim);
+    HashTableRBF(CActionSet *actions, CStateModifier* sm,  MultiBoost::AdaBoostMDPClassifierContinous* classifier, int numDim);
     
     // -----------------------------------------------------------------------------------
 	
@@ -107,7 +107,7 @@ public:
     void saveActionValueTable(FILE* stream, int dim=0) ;
     // -----------------------------------------------------------------------------------
     
-    CAbstractQETraces* getStandardETraces() { return new HashTableETraces(this, _stateProperties); } ;
+    CAbstractQETraces* getStandardETraces() { return new HashTableRBFETraces(this, _stateProperties); } ;
     
     // -----------------------------------------------------------------------------------
     
@@ -116,5 +116,6 @@ public:
     //    void loadQFunction(const string& fileName);
 
 };
+
 
 #endif

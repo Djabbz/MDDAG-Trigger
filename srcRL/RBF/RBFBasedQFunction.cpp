@@ -18,6 +18,10 @@ GSBNFBasedQFunction::GSBNFBasedQFunction(CActionSet *actions, CStateModifier* st
     _numberOfIterations = iterationNumber;
     _numDimensions = numOfClasses;
     
+    if (_numDimensions == 2) {
+        _numDimensions--;
+    }
+    
     _actions = actions;
     _numberOfActions = actions->size();
     

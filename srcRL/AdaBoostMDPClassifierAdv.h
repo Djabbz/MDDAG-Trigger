@@ -69,11 +69,11 @@ namespace MultiBoost {
 		vector<int> classifyKthWeakLearner( const int wHypInd, const int instance, ExampleResults* exampleResult );
 		
 		bool currentClassifyingResult( const int currentIstance, ExampleResults* exampleResult );
-        double getWhypClassification( const int wHypInd, const int instance );
+        AlphaReal getWhypClassification( const int wHypInd, const int instance );
         
-		double getExponentialLoss( const int currentIstance, ExampleResults* exampleResult );
-        double getLogisticLoss( const int currentIstance, ExampleResults* exampleResult );
-		double getMargin( const int currentIstance, ExampleResults* exampleResult );
+		AlphaReal getExponentialLoss( const int currentIstance, ExampleResults* exampleResult );
+        AlphaReal getLogisticLoss( const int currentIstance, ExampleResults* exampleResult );
+		AlphaReal getMargin( const int currentIstance, ExampleResults* exampleResult );
 
 		bool hasithLabel( int currentIstance, int classIdx );
 		
@@ -109,18 +109,24 @@ namespace MultiBoost {
 //			if (_isDataStorageMatrix) _pCurrentMatrix = &_weakHypothesesMatrices[_pCurrentData];
 		}		
         
-		double getAccuracyOnCurrentDataSet();
+		double getAdaboostPerfOnCurrentDataset();
 		
-		double getSumOfAlphas() const { return _sumAlphas; }
+		AlphaReal getSumOfAlphas() const { return _sumAlphas; }
+        
+        AlphaReal getAlpha(int i) { return _weakHypotheses[i]->getAlpha(); }
         
         inline const NameMap& getClassMap()
 		{ return _pCurrentData->getClassMap(); }
+        
+        double getIterationError(int it) { return _iterationWiseError[_pCurrentData][it]; }
 
+        vector<Label>& getLabels(int i) { return _pCurrentData->getLabels(i); }
+        
 	protected:
 		void calculateHypothesesMatrix();
 		
 		int						_verbose;		
-		double					_sumAlphas;
+		AlphaReal					_sumAlphas;
 		
 		const nor_utils::Args&  _args;  //!< The arguments defined by the user.		
 		int						_currentInstance;
@@ -143,6 +149,8 @@ namespace MultiBoost {
 		bool					_isDataStorageMatrix;
 		vector< vector< AlphaReal > > _vs;
 		vector< AlphaReal >			_alphas;
+        
+        map<InputData*, vector<double> > _iterationWiseError;
 	};
 
 	////////////////////////////////////////////////////////////////////////////////////////////////	

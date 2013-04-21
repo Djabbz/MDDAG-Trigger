@@ -157,19 +157,27 @@ namespace MultiBoost {
 
         _currentKeyIndex = 0;
         
+        // "winners" state var init
+        _currentWinnerIndex = 0;
+        
+//        vector<int> winners(2, 0); winners[1] = 1 ; // = { _exampleResult->getWinner(0).first, _exampleResult->getWinner(1).first }; //{-1, -1}
+//        _winnersIndices[winners] = _currentWinnerIndex++;
+        
+        int k = 0;
+        const int numClasses = datareader->getClassNumber();
+        for (int i = 0; i < numClasses; ++i) {
+            for (int j = 0; j < numClasses; ++j) {
+                if (i != j)
+                {
+                    vector<int> w(2); w[0] = i; w[1] = j;
+                    _winnersIndices[w] = k++;
+                }
+            }
+        }
+        
+        _proportionalAlphaNorm = false;
+        _currentSumAlpha = 0.;
 	}
-    
-    // -----------------------------------------------------------------------------------
-    
-    void AdaBoostMDPClassifierContinous::outHeader()
-    {
-        if (_classNum <= 2) {
-            _outputStream << "Ep" << "\t" <<  "AdaB" << "\t" << "Acc" << "\t" << "AvgEv" << "\t" << "AvgRwd" << "\t" << "TPR" << "\t" << "TNR" << "\t" << "Cost" <<  endl << setprecision(4) ;
-        }
-        else {
-            _outputStream << "Ep" << "\t" <<  "AdaB" << "\t" << "Acc" << "\t" << "AvgEv" << "\t" << "AvgRwd" << endl << setprecision(4) ;
-        }
-    }
     
     // -----------------------------------------------------------------------------------
     
@@ -206,11 +214,11 @@ namespace MultiBoost {
 		vector<AlphaReal>& currVotesVector = _exampleResult->getVotesVector();
 		
         // set the continuous state var
-		if (_classNum<=2)
+		if (_classNum<=0) //2
         {
 			state->setNumActiveContinuousStates(1);
             double st = ((currVotesVector[_positiveLabelIndex] /_sumAlpha)+1)/2.0; // rescale between [0,1]
-            state->setContinuousState(_positiveLabelIndex, st);
+            state->setContinuousState(0, st);
         }
 		else
         {
@@ -219,9 +227,14 @@ namespace MultiBoost {
             for ( int i=0; i<_classNum; ++i) {
                 
                 double st = 0.0;
-                //if ( !nor_utils::is_zero( _currentSumAlpha ) )
-                //	st = currVotesVector[i] / _currentSumAlpha;
-                st = ((currVotesVector[i] /_sumAlpha)+1)/2.0; // rescale between [0,1]
+                
+                AlphaReal alphaSum = _sumAlpha;
+                
+                if (_proportionalAlphaNorm && !nor_utils::is_zero( _currentSumAlpha)) {
+                    alphaSum = _currentSumAlpha;
+                }
+
+                st = ((currVotesVector[i] /alphaSum)+1)/2.0; // rescale between [0,1]
                 state->setContinuousState(i, st);
             }
         }
@@ -238,6 +251,20 @@ namespace MultiBoost {
             state->setDiscreteState(0, _currentClassifier);
         
         state->setDiscreteState(1, _keysIndices[_classifiersOutput]);
+
+//        cout << "+++[DEBUG] _keysIndices[_classifiersOutput] " << _keysIndices[_classifiersOutput] << endl;
+//        for (const auto & myTmpKey : _keysIndices)
+//        {
+//            for (const auto & myTmpKey2 : myTmpKey.first) cout << myTmpKey2 << " ";
+//            cout << " -> " << myTmpKey.second << endl;
+//        }
+        
+        vector<int> winners(2);
+        winners[0] = _exampleResult->getWinner(0).first;
+        winners[1] = _exampleResult->getWinner(1).first;
+        
+        state->setDiscreteState(2, _winnersIndices[winners]);
+        
 //        cout << "+++[DEBUG] _keysIndices[_classifiersOutput] " << _keysIndices[_classifiersOutput] << endl;
 //        cout << "+++[DEBUG] _classifiersOutput ";
 //        for (auto & i : _classifiersOutput) cout << i << " "; cout << endl;
@@ -252,10 +279,13 @@ namespace MultiBoost {
 		int mode = action->getMode();
 		//cout << mode << endl;
 		if ( mode == 0 ) // skip
-		{			
+		{
+            _currentSumAlpha += _data->getAlpha(_currentClassifier);
+
 			_currentClassifier++;
             _classifiersOutput.push_back(0);
             
+
             KeyIndicesType::const_iterator kIt = _keysIndices.find(_classifiersOutput);
             if (kIt == _keysIndices.end()) {
                 _keysIndices[_classifiersOutput] = _currentKeyIndex++;
@@ -263,7 +293,10 @@ namespace MultiBoost {
 
 		}
 		else if (mode == 1 ) // classify
-		{	
+		{
+            
+            _currentSumAlpha += _data->getAlpha(_currentClassifier);
+
             vector<int> votes = _data->classifyKthWeakLearner(_currentClassifier,_currentRandomInstance,_exampleResult);
             
             int classifierOutput = votes[_positiveLabelIndex];
@@ -284,6 +317,13 @@ namespace MultiBoost {
             if (kIt == _keysIndices.end()) {
                 _keysIndices[_classifiersOutput] = _currentKeyIndex++;
             }
+
+//            vector<int> winners = { _exampleResult->getWinner(0).first, _exampleResult->getWinner(1).first };
+//            map<vector<int>, int>::const_iterator wIt = _winnersIndices.find(winners);
+//            if (wIt == _winnersIndices.end()) {
+//                _winnersIndices[winners] = _currentWinnerIndex++;
+//            }
+
 			
 		} else if (mode == 2 ) // jump to end
 		{
@@ -298,7 +338,7 @@ namespace MultiBoost {
             }
 
 		}
-		
+        		
 		if ( _currentClassifier == _data->getIterationNumber() ) // check whether there is any weak classifier
 		{
 			reset = true;
@@ -465,7 +505,7 @@ namespace MultiBoost {
 				if (_classifierNumber>0)
 				{
 					exploss = _data->getExponentialLoss( _currentRandomInstance,  _exampleResult );
-					rew += 1/exploss;
+					rew += -exploss;
 				}
 				else
 				{
@@ -679,7 +719,7 @@ namespace MultiBoost {
     
     CStateModifier* AdaBoostMDPClassifierContinous::getStateSpaceForGSBNFQFunction( int numOfFeatures){
         int numClasses = _classNum;
-        if (numClasses == 2) numClasses = 1;
+//        if (numClasses == 2) numClasses = 1;
         
         int multipleDescrete = 1;
         if (_budgetedClassification) {
@@ -734,19 +774,37 @@ namespace MultiBoost {
 		
 	}
 
+    // -----------------------------------------------------------------------------------
+    
+    void AdaBoostMDPClassifierContinous::outHeader()
+    {
+//        _outputStream << setiosflags(ios::fixed);
+        
+        _outputStream << "ep" << "\t" <<  "full" << "\t" << "prop" << "\t" << "acc" << "\t" << "eval" << "\t" << "rwd" << "\t" << "cost" << setprecision(4) <<  endl ;
+
+//        if (_classNum <= 2) {
+//            _outputStream << "ep" << "\t" <<  "full" << "\t" << "prop" << "\t" << "err" << "\t" << "eval" << "\t" << "rwd" << "\t" << "tpr" << "\t" << "tnr" << "\t" << "cost" << setprecision(4) <<  endl ;
+//        }
+//        else {
+//            _outputStream << "Ep" << "\t" <<  "AdaB" << "\t" << "Acc" << "\t" << "AvgEv" << "\t" << "AvgRwd" << endl << setprecision(4) ;
+//        }
+    }
+    
 	// -----------------------------------------------------------------------
         
-    void AdaBoostMDPClassifierContinous::outPutStatistic(int ep, double acc, double curracc, double uc, double sumrew )
-	{
-		_outputStream << ep << "\t" << acc << "\t" << curracc << "\t" << uc << "\t" << sumrew << endl << flush;
-	}
+//    void AdaBoostMDPClassifierContinous::outPutStatistic(int ep, double acc, double curracc, double uc, double sumrew )
+//	{
+//		_outputStream << ep << "\t" << acc << "\t" << curracc << "\t" << uc << "\t" << sumrew << endl << flush;
+//	}
 
 	// -----------------------------------------------------------------------
         
     void AdaBoostMDPClassifierContinous::outPutStatistic( BinaryResultStruct& bres )
     {
-        //		_outputStream << bres.iterNumber << " " <<  bres.origAcc << " " << bres.acc << " " << bres.usedClassifierAvg << " " << bres.avgReward << " " << bres.TP << " " << bres.TN << " " << bres.negNumEval <<  endl;
-        _outputStream << bres.iterNumber << "\t" <<  bres.origAcc << "\t" << bres.acc << "\t" << bres.usedClassifierAvg << "\t" << bres.avgReward << "\t" << bres.TP << "\t" << bres.TN << "\t" << bres.classificationCost <<  endl;
+        //		_outputStream << bres.iterNumber << " " <<  bres.adaboostPerf << " " << bres.err << " " << bres.usedClassifierAvg << " " << bres.avgReward << " " << bres.TP << " " << bres.TN << " " << bres.negNumEval <<  endl;
+//        _outputStream << bres.iterNumber << "\t" << 100*(1 - bres.adaboostPerf) << "\t"  <<  100*(1 - bres.itError) << "\t" << 100*(1 - bres.err) << "\t" << bres.usedClassifierAvg << "\t" << bres.avgReward << "\t" << bres.TP << "\t" << bres.TN << "\t" << bres.classificationCost <<  endl;
+        _outputStream << bres.iterNumber << "\t" << 100*(1 - bres.adaboostPerf) << "\t"  <<  100*(1 - bres.itError) << "\t" << 100*(1 - bres.err) << "\t" << bres.usedClassifierAvg << "\t" << bres.avgReward << "\t" << bres.classificationCost <<  endl;
+
     }
 
 

@@ -1,6 +1,5 @@
 //#include "RBFQETraces.h"
-#include "HashTable.h"
-#include "HashTableStateModifier.h"
+#include "HashTableRBF.h"
 #include "ExampleResults.h"
 
 //#include "RBFStateModifier.h"
@@ -17,7 +16,7 @@
 
 // -----------------------------------------------------------------------------------
 
-HashTable::HashTable(CActionSet *actions, CStateModifier* sm,  MultiBoost::AdaBoostMDPClassifierContinous* classifier, int numDim) : CAbstractQFunction(actions)
+HashTableRBF::HashTableRBF(CActionSet *actions, CStateModifier* sm,  MultiBoost::AdaBoostMDPClassifierContinous* classifier, int numDim) : CAbstractQFunction(actions)
 {
     _stateProperties = sm;
     _classifier = classifier;
@@ -29,12 +28,11 @@ HashTable::HashTable(CActionSet *actions, CStateModifier* sm,  MultiBoost::AdaBo
     _numDimensions = numDim;
     if (_numDimensions == 2) --_numDimensions;
     
-    _numDimensions = 1;
 }
 
 // -----------------------------------------------------------------------------------
 
-double HashTable::getValue(CStateCollection* state, CAction *action, CActionData *data) {
+double HashTableRBF::getValue(CStateCollection* state, CAction *action, CActionData *data) {
     int actionIndex = dynamic_cast<MultiBoost::CAdaBoostAction*>(action)->getMode();
     ValueKey key;
     MDDAGState mddagState(state->getState());
@@ -46,7 +44,7 @@ double HashTable::getValue(CStateCollection* state, CAction *action, CActionData
 
 // -----------------------------------------------------------------------------------
 
-bool HashTable::getTableValue(int actionIndex, ValueKey& key, AlphaReal& outValue, AlphaReal defaultValue)
+bool HashTableRBF::getTableValue(int actionIndex, ValueKey& key, AlphaReal& outValue, AlphaReal defaultValue)
 {
     ValueTableType::const_iterator it = _valueTable.find(key);
     if (it == _valueTable.end()) {
@@ -61,7 +59,7 @@ bool HashTable::getTableValue(int actionIndex, ValueKey& key, AlphaReal& outValu
 
 // -----------------------------------------------------------------------------------
 
-void HashTable::getKey(MDDAGState& state, ValueKey& key)
+void HashTableRBF::getKey(MDDAGState& state, ValueKey& key)
 {    
     //        vector<int> history;
     //        _classifier->getHistory( history );
@@ -70,7 +68,7 @@ void HashTable::getKey(MDDAGState& state, ValueKey& key)
     //        const size_t numDimensions = 0;// currState->getNumActiveContinuousStates();
 //    size_t numDimensions = state.continuousStates.size();
 
-
+    _numDimensions = 1;
 //    numDimensions = _numDimensions;
     
 
@@ -101,14 +99,8 @@ void HashTable::getKey(MDDAGState& state, ValueKey& key)
 
 //    for (const auto & myTmpKey : state.continuousStates) cout << myTmpKey << " "; cout << endl;
 //    for (const auto & myTmpKey : winners) cout << myTmpKey << " "; cout << endl;
-    AlphaReal scoreDifference = (state.continuousStates[winners[0]] - state.continuousStates[winners[1]]) / 2;
-
-    const int numPartitions = 9;
-    const AlphaReal step = 1. / (numPartitions);
-
-    int p = int(scoreDifference / step);
-    
-    key[i++] = p;
+    AlphaReal scoreDifference = state.continuousStates[winners[0]] - state.continuousStates[winners[1]];
+    key[i++] = scoreDifference;
 
 //    cout << "+++[DEBUG] examplesResult->getWinner(0).second " << examplesResult->getWinner(0).second << endl;
 //    cout << "+++[DEBUG] examplesResult->getWinner(1).second " << examplesResult->getWinner(1).second << endl;
@@ -138,7 +130,11 @@ void HashTable::getKey(MDDAGState& state, ValueKey& key)
 
 // -----------------------------------------------------------------------------------
 
-double HashTable::getMaxValue(MDDAGState& state)
+
+
+// -----------------------------------------------------------------------------------
+
+double HashTableRBF::getMaxValue(MDDAGState& state)
 {
     ValueKey key;
     getKey(state, key);
@@ -159,7 +155,7 @@ double HashTable::getMaxValue(MDDAGState& state)
 
 // -----------------------------------------------------------------------------------
 
-void HashTable::addTableEntry(double tderror, ValueKey& key, int actionIndex)
+void HashTableRBF::addTableEntry(double tderror, ValueKey& key, int actionIndex)
 {    
     //        cout << "+++[DEBUG] new entry: " ;
     //        for (int i = 0; i < key.size(); ++i) {
@@ -182,7 +178,7 @@ void HashTable::addTableEntry(double tderror, ValueKey& key, int actionIndex)
 
 // -----------------------------------------------------------------------------------
 
-void HashTable::updateValue(MDDAGState& state, CAction *action, double td, CActionData * actionData)
+void HashTableRBF::updateValue(MDDAGState& state, CAction *action, double td, CActionData * actionData)
 {
     if (td != td) {
         assert(false);
@@ -204,7 +200,7 @@ void HashTable::updateValue(MDDAGState& state, CAction *action, double td, CActi
 
 // -----------------------------------------------------------------------------------
 
-void HashTable::saveActionValueTable(FILE* stream, int dim)
+void HashTableRBF::saveActionValueTable(FILE* stream, int dim)
 {
     //        fprintf(stream, "Q-Hash Table\n");
     
@@ -219,13 +215,10 @@ void HashTable::saveActionValueTable(FILE* stream, int dim)
         ValueKey::iterator keyIt = key.begin();
         if (keyIt != key.end()) fprintf(stream, "%d ", (int)*(keyIt++));
         
-//        for (int d = 0; d < _numDimensions; ++d, ++keyIt) {
-//            fprintf(stream, "%f ", ((*keyIt)*2) - 1);
-//        }
+        for (int d = 0; d < _numDimensions; ++d, ++keyIt) {
+            fprintf(stream, "%f ", ((*keyIt)*2) - 1);
+        }
         
-        if (keyIt != key.end()) fprintf(stream, "%d ", (int)*(keyIt++));
-        fprintf(stream, "  ");
-
         for (; keyIt != key.end(); ++keyIt) {
             fprintf(stream, "%d ", (int)(*keyIt));
         }

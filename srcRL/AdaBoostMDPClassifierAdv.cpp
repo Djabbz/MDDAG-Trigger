@@ -216,7 +216,7 @@ namespace MultiBoost {
         
         vector<int> ternaryPhis(numClasses);
         
-		float alpha;
+		AlphaReal alpha;
 		
 		// for every class
 		if (_isDataStorageMatrix)
@@ -251,7 +251,7 @@ namespace MultiBoost {
 	// -----------------------------------------------------------------------
 	// -----------------------------------------------------------------------
     
-    double DataReader::getWhypClassification( const int wHypInd, const int instance )
+    AlphaReal DataReader::getWhypClassification( const int wHypInd, const int instance )
 	{
 		const int numClasses = _pCurrentData->getNumClasses();
 		
@@ -275,9 +275,9 @@ namespace MultiBoost {
 		const vector<Label>& labels = _pCurrentData->getLabels(currentIstance);
 		
 		// the vote of the winning negative class
-		float maxNegClass = -numeric_limits<float>::max();
+		AlphaReal maxNegClass = -numeric_limits<AlphaReal>::max();
 		// the vote of the winning positive class
-		float minPosClass = numeric_limits<float>::max();
+		AlphaReal minPosClass = numeric_limits<AlphaReal>::max();
 		
 		vector<AlphaReal>& currVotesVector = exampleResult->getVotesVector();
 		
@@ -305,15 +305,15 @@ namespace MultiBoost {
 	// -----------------------------------------------------------------------
 	// -----------------------------------------------------------------------
     
-	double DataReader::getExponentialLoss( const int currentIstance, ExampleResults* exampleResult )
+	AlphaReal DataReader::getExponentialLoss( const int currentIstance, ExampleResults* exampleResult )
 	{
-		double exploss = 0.0;
+		AlphaReal exploss = 0.0;
 		
 		vector<Label>::const_iterator lIt;
 		
 		const int numClasses = _pCurrentData->getNumClasses();
 		const vector<Label>& labels = _pCurrentData->getLabels(currentIstance);
-		vector<double> yfx(numClasses);
+		vector<AlphaReal> yfx(numClasses);
 				
 		vector<AlphaReal>& currVotesVector = exampleResult->getVotesVector();
 		
@@ -342,13 +342,13 @@ namespace MultiBoost {
 	// -----------------------------------------------------------------------
 	// -----------------------------------------------------------------------
     
-	double DataReader::getMargin( const int currentIstance, ExampleResults* exampleResult )
+	AlphaReal DataReader::getMargin( const int currentIstance, ExampleResults* exampleResult )
 	{		
 		vector<Label>::const_iterator lIt;
 		
 		const int numClasses = _pCurrentData->getNumClasses();
 		const vector<Label>& labels = _pCurrentData->getLabels(currentIstance);
-		vector<double> yfx(numClasses);
+		vector<AlphaReal> yfx(numClasses);
         
 		vector<AlphaReal>& currVotesVector = exampleResult->getVotesVector();
 		
@@ -378,15 +378,15 @@ namespace MultiBoost {
     // -----------------------------------------------------------------------
     
     
-    double DataReader::getLogisticLoss( const int currentIstance, ExampleResults* exampleResult )
+    AlphaReal DataReader::getLogisticLoss( const int currentIstance, ExampleResults* exampleResult )
 	{
-		double logitloss = 0.0;
+		AlphaReal logitloss = 0.0;
 		
 		vector<Label>::const_iterator lIt;
 		
 		const int numClasses = _pCurrentData->getNumClasses();
 		const vector<Label>& labels = _pCurrentData->getLabels(currentIstance);
-		vector<double> yfx(numClasses);
+		vector<AlphaReal> yfx(numClasses);
         
 		vector<AlphaReal>& currVotesVector = exampleResult->getVotesVector();
 				
@@ -418,67 +418,74 @@ namespace MultiBoost {
 	
 	// -----------------------------------------------------------------------
 	// -----------------------------------------------------------------------
-	double DataReader::getAccuracyOnCurrentDataSet()
+	double DataReader::getAdaboostPerfOnCurrentDataset()
 	{
-		double acc=0.0;
 		const int numClasses = _pCurrentData->getNumClasses();
 		const int numExamples = _pCurrentData->getNumExamples();
 		
-		int correct=0;
-		int incorrect=0;
+		int correct = 0;
+		int incorrect = 0;
 		
-		for( int i = 1; i < numExamples; i++ )
-		{			
-			ExampleResults* tmpResult = new ExampleResults( i, numClasses );			
-			vector<AlphaReal>& currVotesVector = tmpResult->getVotesVector();
-			
-			for( int j=0; j<_weakHypotheses.size(); j++ )
-			{
-				
-				BaseLearner* currWeakHyp = _weakHypotheses[j];
-				float alpha = currWeakHyp->getAlpha();
-				
-				// for every class
-				for (int l = 0; l < numClasses; ++l)
-					currVotesVector[l] += alpha * currWeakHyp->classify(_pCurrentData, i, l);
-			}
-			
-			
-			vector<Label>::const_iterator lIt;
-			
-			const vector<Label>& labels = _pCurrentData->getLabels(i);
-			
-			
-			// the vote of the winning negative class
-			float maxNegClass = -numeric_limits<float>::max();
-			// the vote of the winning positive class
-			float minPosClass = numeric_limits<float>::max();
-			
-			
-			for ( lIt = labels.begin(); lIt != labels.end(); ++lIt )
-			{
-				// get the negative winner class
-				if ( lIt->y < 0 && currVotesVector[lIt->idx] > maxNegClass )
-					maxNegClass = currVotesVector[lIt->idx];
-				
-				// get the positive winner class
-				if ( lIt->y > 0 && currVotesVector[lIt->idx] < minPosClass )
-					minPosClass = currVotesVector[lIt->idx];
-			}
-			
-			// if the vote for the worst positive label is lower than the
-			// vote for the highest negative label -> error
-			if (minPosClass <= maxNegClass)
-				incorrect++;
-			else {
-				correct++;
-			}
-			
+        double err;
+        
+        vector<double>& iterationWiseError = _iterationWiseError[_pCurrentData];
+        iterationWiseError.resize(_weakHypotheses.size());
+        
+        vector<ExampleResults*> examplesResults(numExamples);
+        for (int i = 0; i < numExamples; ++i)
+			examplesResults[i] = new ExampleResults(i, numClasses) ;
+
+        for( int j = 0; j < _weakHypotheses.size(); ++j )
+        {
+            correct = 0;
+            incorrect = 0;
+
+            BaseLearner* currWeakHyp = _weakHypotheses[j];
+            AlphaReal alpha = currWeakHyp->getAlpha();
+
+            for( int i = 0; i < numExamples; ++i )
+            {
+                ExampleResults*& tmpResult = examplesResults[i];
+                vector<AlphaReal>& currVotesVector = tmpResult->getVotesVector();
+            
+                // for every class
+                for (int l = 0; l < numClasses; ++l)
+                    currVotesVector[l] += alpha * currWeakHyp->classify(_pCurrentData, i, l);
+                
+                vector<Label>::const_iterator lIt;
+                const vector<Label>& labels = _pCurrentData->getLabels(i);
+                
+                // the vote of the winning negative class
+                AlphaReal maxNegClass = -numeric_limits<AlphaReal>::max();
+                // the vote of the winning positive class
+                AlphaReal minPosClass = numeric_limits<AlphaReal>::max();
+                
+                for ( lIt = labels.begin(); lIt != labels.end(); ++lIt )
+                {
+                    // get the negative winner class
+                    if ( lIt->y < 0 && currVotesVector[lIt->idx] > maxNegClass )
+                        maxNegClass = currVotesVector[lIt->idx];
+                    
+                    // get the positive winner class
+                    if ( lIt->y > 0 && currVotesVector[lIt->idx] < minPosClass )
+                        minPosClass = currVotesVector[lIt->idx];
+                }
+                
+                // if the vote for the worst positive label is lower than the
+                // vote for the highest negative label -> error
+                if (minPosClass <= maxNegClass)
+                    incorrect++;
+                else {
+                    correct++;
+                }
+            }
+            
+            err = ((double) incorrect / ((double) numExamples)); // * 100.0;
+            iterationWiseError[j] = err;
 		}
 		
-	    acc = ((double) correct / ((double) numExamples)) * 100.0;
-		
-		return acc;
+//		double acc = ((double) correct / ((double) numExamples)) * 100.0;
+		return err;
 	}
 	
 	// -----------------------------------------------------------------------
