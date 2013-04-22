@@ -481,8 +481,7 @@ namespace MultiBoost {
 		} else {		
 			
 			if (_succRewardMode==RT_HAMMING)
-			{
-//                AlphaReal margin = _data->getMargin(_currentRandomInstance, _exampleResult);
+			{//                AlphaReal margin = _data->getMargin(_currentRandomInstance, _exampleResult);
 //                rew += margin;
 				if ( _data->currentClassifyingResult( _currentRandomInstance,  _exampleResult )  ) // classified correctly
 				{
@@ -493,7 +492,7 @@ namespace MultiBoost {
                 else
 				{
 					failed = true;
-					//rew += -_successReward;
+					rew += -_successReward;
 //					assert(margin <= 0);
                     
 				}
@@ -505,7 +504,7 @@ namespace MultiBoost {
 				if (_classifierNumber>0)
 				{
 					exploss = _data->getExponentialLoss( _currentRandomInstance,  _exampleResult );
-					rew += -exploss;
+					rew += -exploss + 1000;
 				}
 				else
 				{
