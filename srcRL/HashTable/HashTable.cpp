@@ -1,7 +1,7 @@
 //#include "RBFQETraces.h"
 #include "HashTable.h"
 #include "HashTableStateModifier.h"
-#include "ExampleResults.h"
+#include "Classifiers/ExampleResults.h"
 
 //#include "RBFStateModifier.h"
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -204,7 +204,7 @@ void HashTable::updateValue(MDDAGState& state, CAction *action, double td, CActi
 
 // -----------------------------------------------------------------------------------
 
-void HashTable::saveActionValueTable(FILE* stream, int dim)
+void HashTable::saveActionValueTable(FILE* stream)
 {
     //        fprintf(stream, "Q-Hash Table\n");
     
@@ -239,6 +239,66 @@ void HashTable::saveActionValueTable(FILE* stream, int dim)
         fprintf(stream, "\n");
     }
     
+}
+
+// -----------------------------------------------------------------------------------
+
+void HashTable::loadActionValueTable(const string& fileName)
+{
+    //        fprintf(stream, "Q-Hash Table\n");
+        
+    
+    ifstream inFile(fileName.c_str());
+    if (!inFile.is_open())
+    {
+        cerr << "ERROR: Cannot open Q Table file <" << fileName << ">!" << endl;
+        exit(1);
+    }
+    
+    _valueTable.clear();
+    
+    nor_utils::StreamTokenizer lineToken(inFile, "\n\r");
+    while (lineToken.has_token())
+    {
+        string line = lineToken.next_token();
+        
+        if (line.size() == 0)
+            continue;
+        
+        stringstream ssLine(line);
+        nor_utils::StreamTokenizer itemToken(ssLine, " \n\r\t");
+
+        ValueKey key;
+        string item = itemToken.next_token();
+//        assert(tmp.compare("(") == 0);
+        
+        while (itemToken.has_token()) {
+            item = itemToken.next_token();
+
+            if (item.size() == 0)
+                continue;
+            if (item.compare(")") == 0) 
+                break;
+            
+            stringstream ssItem(item);
+            double k;
+            ssItem >> k;
+            key.push_back(k);
+        }
+        
+        while (itemToken.has_token())
+        {
+            item = itemToken.next_token();
+
+            if (item.size() == 0)
+                continue;
+
+            stringstream ssItem(item);
+            AlphaReal q;
+            ssItem >> q;
+            _valueTable[key].push_back(q);
+        }
+    }    
 }
 
 // -----------------------------------------------------------------------------------

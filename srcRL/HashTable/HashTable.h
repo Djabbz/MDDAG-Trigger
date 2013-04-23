@@ -104,9 +104,14 @@ public:
     
     // -----------------------------------------------------------------------------------
     
-    void saveActionValueTable(FILE* stream, int dim=0) ;
+    void saveActionValueTable(FILE* stream) ;
+
     // -----------------------------------------------------------------------------------
+
+    void loadActionValueTable(const string& fileName) ;
     
+    // -----------------------------------------------------------------------------------
+
     CAbstractQETraces* getStandardETraces() { return new HashTableETraces(this, _stateProperties); } ;
     
     // -----------------------------------------------------------------------------------

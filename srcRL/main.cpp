@@ -296,8 +296,10 @@ void setBasicOptions(nor_utils::Args& args)
     args.declareArgument("maxrbfnumber", "The maximum number of RBF per whyp per action.", 1, "<num>" );
     args.declareArgument("incrementalrewardQ", "Give a reward after each evalation.", 0, "" );
     args.declareArgument("qtable", "Load the GSBNF from a file.", 1, "<file>" );
+//    args.declareArgument("hashtable", "Load the Q Hash Table from a file.", 1, "<file>" );
     args.declareArgument("budgeted", "Indicate to take features' cost into account.", 0, "" );
     args.declareArgument("featurecosts", "Read the different costs of the features.", 1, "<file>" );
+    args.declareArgument("adaptiveexploration", "Sets the epsilon proportional to the number of evaluations.", 1, "<value>" );
 }
 
 
@@ -485,6 +487,13 @@ int main(int argc, const char *argv[])
 		epsIncrement = args.getValue<double>("explorationrate", 2);
 	}
     
+    double adaptiveEpsilon = 0;
+    if (args.hasArgument("adaptiveexploration"))
+	{
+		adaptiveEpsilon = args.getValue<double>("adaptiveexploration", 0);
+    }
+
+    
     
     double currentEpsilon = epsNumerator / epsDivisor;
     double currentAlpha = qRateNumerator / qRateDivisor;
@@ -583,7 +592,7 @@ int main(int argc, const char *argv[])
                 cout << "Loading Q-Table..." << endl;
                 dynamic_cast<GSBNFBasedQFunction*>( qData )->loadQFunction(args.getValue<string>("qtable", 0));
             }
-            
+
             dynamic_cast<GSBNFBasedQFunction*>( qData )->setBias(bias);
             
             int addCenter = 1;
@@ -640,6 +649,12 @@ int main(int argc, const char *argv[])
             discState = classifierContinous->getStateSpaceForGSBNFQFunction(featnum);
             agentContinous->addStateModifier(discState);
             qData = new HashTable(agentContinous->getActions(), discState, classifierContinous, datahandler->getClassNumber());
+
+            if (args.hasArgument("qtable")) {
+                cout << "Loading Q Hash Table from : " << args.getValue<string>("qtable", 0) << endl;
+                dynamic_cast<HashTable*>( qData )->loadActionValueTable(args.getValue<string>("qtable", 0));
+            }
+
         }
         else {
             cout << "unkown statespcae" << endl;
@@ -858,7 +873,8 @@ int main(int argc, const char *argv[])
 //                policy->setParameter("EpsilonGreedy", 0.5/bres.usedClassifierAvg);
 //                
 //            }
-            policy->setParameter("EpsilonGreedy", 0.1/bres.usedClassifierAvg);
+            
+            if (adaptiveEpsilon > 0 ) policy->setParameter("EpsilonGreedy", adaptiveEpsilon/bres.usedClassifierAvg);
 
 
             cout << "[+] Training set results: " << endl;

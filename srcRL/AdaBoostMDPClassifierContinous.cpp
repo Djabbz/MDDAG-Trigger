@@ -481,7 +481,8 @@ namespace MultiBoost {
 		} else {		
 			
 			if (_succRewardMode==RT_HAMMING)
-			{//                AlphaReal margin = _data->getMargin(_currentRandomInstance, _exampleResult);
+			{
+//                AlphaReal margin = _data->getMargin(_currentRandomInstance, _exampleResult);
 //                rew += margin;
 				if ( _data->currentClassifyingResult( _currentRandomInstance,  _exampleResult )  ) // classified correctly
 				{
