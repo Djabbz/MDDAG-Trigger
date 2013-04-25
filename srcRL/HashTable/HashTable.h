@@ -50,6 +50,7 @@ protected:
     CStateModifier*                     _stateProperties;
     int                                 _numDimensions;
     MultiBoost::AdaBoostMDPClassifierContinous*     _classifier;
+    int                                 _scoreResolution;
         
 public:
     
@@ -113,6 +114,10 @@ public:
     // -----------------------------------------------------------------------------------
 
     CAbstractQETraces* getStandardETraces() { return new HashTableETraces(this, _stateProperties); } ;
+    
+    // -----------------------------------------------------------------------------------
+    
+    void setScoreResolution(int r) { _scoreResolution = r;}
     
     // -----------------------------------------------------------------------------------
     

@@ -59,7 +59,7 @@ using namespace Torch;
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-static const char CURRENT_VERSION[] = "1.0.00";
+static const char CURRENT_VERSION[] = "1.5.00";
 
 
 //---------------------------------------------------------------------------
@@ -88,9 +88,9 @@ void checkBaseLearner(const string& baseLearnerName)
  */
 void showBase()
 {
-	cout << "MultiBoost (v" << CURRENT_VERSION << "). An obvious name for a multi-class AdaBoost learner." << endl;
+	cout << "MDDAG (v" << CURRENT_VERSION << "). Markov Decision Directed Acyclic Graph." << endl;
 	cout << "---------------------------------------------------------------------------" << endl;
-	cout << "Build: " << __DATE__ << " (" << __TIME__ << ") (C) Robert Busa-Fekete, Balazs Kegl, Norman Casagrande 2005-2010" << endl << endl;
+	cout << "Build: " << __DATE__ << " (" << __TIME__ << ")" << endl << endl;
 	cout << "===> Type --help for help or --static to show the static options" << endl;
 	
 	exit(0);
@@ -104,7 +104,7 @@ void showBase()
  */
 void showHelp(nor_utils::Args& args, const vector<string>& learnersList)
 {
-	cout << "MultiBoost (v" << CURRENT_VERSION << "). An obvious name for a multi-class AdaBoost learner." << endl;
+	cout << "MDDAG (v" << CURRENT_VERSION << "). Markov Decision Directed Acyclic Graph." << endl;
 	cout << "------------------------ HELP SECTION --------------------------" << endl;
 	
 	args.printGroup("Parameters");
@@ -112,17 +112,7 @@ void showHelp(nor_utils::Args& args, const vector<string>& learnersList)
 	cout << endl;
 	cout << "For specific help options type:" << endl;
 	cout << "   --h general: General options" << endl;
-	cout << "   --h io: I/O options" << endl;
-	cout << "   --h algo: Basic algorithm options" << endl;
-	cout << "   --h bandits: Bandit algorithm options" << endl;
-	
 	cout << endl;
-	cout << "For weak learners specific options type:" << endl;
-	
-	vector<string>::const_iterator it;
-	for (it = learnersList.begin(); it != learnersList.end(); ++it)
-		cout << "   --h " << *it << endl;
-	
 	exit(0);
 }
 
@@ -198,7 +188,6 @@ void setBasicOptions(nor_utils::Args& args)
 	
 	args.setGroup("Parameters");
     args.declareArgument("configfile", "Read some or all the argument from a config file.", 1, "<config file>");
-	args.declareArgument("train", "Performs training.", 2, "<dataFile> <nInterations>");
 	args.declareArgument("traintestmdp", "Performs training and test at the same time.", 5, "<trainingDataFile> <testDataFile> <nInterations> <shypfile> <outfile>");
     args.declareArgument("traintestmdp", "Performs training and test at the same time.", 6, "<trainingDataFile> <validDataFile> <nInterations> <shypfile> <outfile> <testDataFile>");
     args.declareArgument("testmdp", "Performs test of a previously leant model.", 3, "<qtable> <train log file> <test log file>");
@@ -541,7 +530,7 @@ int main(int argc, const char *argv[])
     CStateModifier* discState = NULL;
     // simple discretized state space
     //CStateModifier* discState = classifierContinous->getStateSpace();
-    int featnum = 11;
+    int featnum = 9;
     if ( args.hasArgument("numoffeat") )
         featnum = args.getValue<int>("numoffeat", 0);
     
@@ -650,6 +639,8 @@ int main(int argc, const char *argv[])
             agentContinous->addStateModifier(discState);
             qData = new HashTable(agentContinous->getActions(), discState, classifierContinous, datahandler->getClassNumber());
 
+            dynamic_cast<HashTable*>(qData)->setScoreResolution(featnum);
+            
             if (args.hasArgument("qtable")) {
                 cout << "Loading Q Hash Table from : " << args.getValue<string>("qtable", 0) << endl;
                 dynamic_cast<HashTable*>( qData )->loadActionValueTable(args.getValue<string>("qtable", 0));
@@ -685,18 +676,7 @@ int main(int argc, const char *argv[])
     CTDLearner *qFunctionLearner = new CQLearner(classifierContinous, qData);
 //    CSarsaLearner *qFunctionLearner = new CSarsaLearner(rewardFunctionContinous, qData, agentContinous);
     
-    //gradient stuff !!!
-    //        CDiscreteResidual* residualFunction = new CDiscreteResidual(0.95);
-    //        CConstantBetaCalculator* betaCalculator = new CConstantBetaCalculator(1);
-    //        //        CVariableBetaCalculator * betaCalculator = new CVariableBetaCalculator(0.1, 0.99) ; //mu and maxBeta
-    //        CResidualBetaFunction* residualGradient = new CResidualBetaFunction(betaCalculator, residualFunction);
-    
-    
-    //        CTDGradientLearner *qFunctionLearner = new CTDGradientLearner(rewardFunctionContinous, qData, agentContinous, residualFunction, residualGradient);
-    //        CTDResidualLearner *qFunctionLearner = new CTDResidualLearner(rewardFunctionContinous, dynamic_cast<CGradientQFunction*>(qData), agentContinous, residualFunction, residualGradient, betaCalculator);
-    
     // Create the Controller for the agent from the QFunction. We will use a EpsilonGreedy-Policy for exploration.
-    
     CAgentController *policy = new CQStochasticPolicy(agentContinous->getActions(), new CEpsilonGreedyDistribution(currentEpsilon), qData);
     
     
@@ -844,10 +824,7 @@ int main(int argc, const char *argv[])
 #pragma mark evalation
         
         if (((i%evalTestIteration)==0) && (i>2))
-        {
-//#pragma mark binary evaluation
-//            if ( datahandler->getClassNumber() <= 2 ) {
-            
+        {            
             agentContinous->removeSemiMDPListener(qFunctionLearner);
             
             // set the policy to be greedy
@@ -859,7 +836,6 @@ int main(int argc, const char *argv[])
             
             // TRAIN stats
             classifierContinous->setCurrentDataToTrain();
-            //AdaBoostMDPClassifierContinousBinaryEvaluator evalTrain( agentContinous, rewardFunctionContinous );
             AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalTrain( agentContinous, rewardFunctionContinous );
             
             BinaryResultStruct bres;
@@ -888,7 +864,6 @@ int main(int argc, const char *argv[])
             // VALID stats
             
             classifierContinous->setCurrentDataToTest();
-            //AdaBoostMDPClassifierContinousBinaryEvaluator evalTrain( agentContinous, rewardFunctionContinous );
             AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalValid( agentContinous, rewardFunctionContinous );
             
             bres.adaboostPerf = adaboostValidPerf;
@@ -922,7 +897,6 @@ int main(int argc, const char *argv[])
             
             if (classifierContinous->setCurrentDataToTest2() )
             {
-                //AdaBoostMDPClassifierContinousBinaryEvaluator evalTest( agentContinous, rewardFunctionContinous );
                 AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalTest( agentContinous, rewardFunctionContinous );
                 
                 bres.adaboostPerf = adaboostTestPerf;
@@ -935,12 +909,6 @@ int main(int argc, const char *argv[])
                 
                 evalTest.classficationPerformance(bres,logFileName);
                 
-                
-                //                ss.clear();
-                //                ss << "qtables/ActionTable_" << i << ".dta";
-                //                FILE *actionTableFile2 = fopen(ss.str().c_str(), "w");
-                //                dynamic_cast<RBFBasedQFunctionBinary*>(qData)->saveActionTable(actionTableFile2);
-                //                fclose(actionTableFile2);
                 
                 cout << "--> Overall Test error by MDP: " << bres.err << " (" << classifierContinous->getIterationError((int)bres.usedClassifierAvg) << ")" << " (" << adaboostTestPerf << ")" << endl;
                 cout << "--> Average Test classifier used: " << bres.usedClassifierAvg << endl;
@@ -973,97 +941,14 @@ int main(int argc, const char *argv[])
                 FILE *qTableFile2 = fopen(ss.str().c_str(), "w");
                 dynamic_cast<HashTable*>(qData)->saveActionValueTable(qTableFile2);
                 fclose(qTableFile2);
+                
+                FILE* lastQTable = fopen("last_qtable.dta", "w");
+                dynamic_cast<HashTable*>(qData)->saveActionValueTable(lastQTable);
             }
 
             agentContinous->setController(policy);
             agentContinous->addSemiMDPListener(qFunctionLearner);
             classifierContinous->setCurrentDataToTrain();
-//            }
-//            else
-//            {
-//#pragma mark multiclass evaluation
-//                char logfname[4096];
-//                /*
-//                 sprintf( logfname, "./%s/qfunction_%d.txt", logDirContinous.c_str(), i );
-//                 FILE *vFuncFileAB = fopen(logfname,"w");
-//                 qData->saveData(vFuncFileAB);
-//                 fclose(vFuncFileAB);
-//                 */
-//                agentContinous->removeSemiMDPListener(qFunctionLearner);
-//                
-//                // Create the learners controller from the Q-Function, we use a SoftMaxPolicy
-//                CAgentController* greedypolicy = new CQGreedyPolicy(agentContinous->getActions(), qData);
-//                
-//                // set the policy as controller of the agent
-//                agentContinous->setController(greedypolicy);
-//                
-//                
-//                // TRAIN
-//                classifierContinous->setCurrentDataToTrain();
-//                AdaBoostMDPClassifierContinousEvaluator evalTrain( agentContinous, rewardFunctionContinous );
-//                
-//                double acc, usedclassifierNumber;
-//                sprintf( logfname, "./%s/classValid_%d.txt", logDirContinous.c_str(), i );
-//                double sumRew = evalTrain.classficationAccruacy(acc,usedclassifierNumber,logfname);
-//                
-//                
-//                if (sptype == 5) {
-//                    //save the number of centers per wc per action
-//                    std::stringstream ss;
-//                    ss << logDirContinous << "/rbfCenters_" << i << ".dta";
-//                    FILE* rbfCentersFile = fopen(ss.str().c_str(), "w");
-//                    vector<int> maxNumCenters = dynamic_cast<GSBNFBasedQFunction*>(qData)->saveCentersNumber(rbfCentersFile);
-//                    cout << "[+] Max number of RBFs: ";
-//                    for (int k=0; k < maxNumCenters.size(); ++k) {
-//                        cout << maxNumCenters[k] << "\t";
-//                    }
-//                    cout << endl << endl;
-//                    fclose(rbfCentersFile);
-//                }
-//                
-//                cout << "******** Overall Train error by MDP: " << acc << " (" << adaboostTrainPerf << ")" << endl;
-//                cout << "******** Average Train classifier used: " << usedclassifierNumber << endl;
-//                cout << "******** Sum of rewards on Train: " << sumRew << endl << endl;
-//                //				cout << "----> Best accuracy so far ( " << bestEpNumber << " ) : " << bestAcc << endl << "----> Num of whyp used : " << bestWhypNumber << endl;
-//                
-//                classifierContinous->outPutStatistic(i, adaboostTrainPerf, acc, usedclassifierNumber, sumRew );
-//                
-//                
-//                // TEST
-//                classifierContinous->setCurrentDataToTest();
-//                AdaBoostMDPClassifierContinousEvaluator evalTest( agentContinous, rewardFunctionContinous);
-//                
-//                
-//                sprintf( logfname, "./%s/classTest_%d.txt", logDirContinous.c_str(), i );
-//                sumRew = evalTest.classficationAccruacy(acc,usedclassifierNumber,logfname);
-//                
-//                if (acc < bestAcc) {
-//                    bestAcc = acc;
-//                    bestWhypNumber = usedclassifierNumber;
-//                    bestEpNumber = i;
-//                }
-//                
-//                cout << "******** Overall Test error by MDP: " << acc << " (" << adaboostValidPerf << ")" << endl;
-//                cout << "******** Average Test classifier used: " << usedclassifierNumber << endl;
-//                cout << "******** Sum of rewards on Test: " << sumRew << endl << endl;
-//                cout << "----> Best error so far ( " << bestEpNumber << " ) : " << bestAcc << endl
-//                << "----> Num of whyp used : " << bestWhypNumber << endl << endl;
-//                classifierContinous->outPutStatistic(i, adaboostValidPerf, acc, usedclassifierNumber, sumRew );
-//                
-//                classifierContinous->setCurrentDataToTrain();
-//                
-//                /*
-//                 sprintf( logfname, "./%s/qfunction_%d_2.txt", logDirContinous.c_str(), i );
-//                 FILE *vFuncFileAB2 = fopen(logfname,"w");
-//                 qData->saveData(vFuncFileAB2);
-//                 fclose(vFuncFileAB2);
-//                 */
-//                
-//                agentContinous->addSemiMDPListener(qFunctionLearner);
-//                agentContinous->setController(policy);
-//            }
-
-
         }
     }
 

@@ -30,6 +30,8 @@ HashTable::HashTable(CActionSet *actions, CStateModifier* sm,  MultiBoost::AdaBo
     if (_numDimensions == 2) --_numDimensions;
     
     _numDimensions = 1;
+    
+    _scoreResolution = 9;
 }
 
 // -----------------------------------------------------------------------------------
@@ -103,8 +105,8 @@ void HashTable::getKey(MDDAGState& state, ValueKey& key)
 //    for (const auto & myTmpKey : winners) cout << myTmpKey << " "; cout << endl;
     AlphaReal scoreDifference = (state.continuousStates[winners[0]] - state.continuousStates[winners[1]]) / 2;
 
-    const int numPartitions = 9;
-    const AlphaReal step = 1. / (numPartitions);
+
+    const AlphaReal step = 1. / (_scoreResolution);
 
     int p = int(scoreDifference / step);
     
