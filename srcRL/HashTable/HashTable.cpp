@@ -311,8 +311,10 @@ void HashTable::loadActionValueTable(const string& fileName)
         }
     }
     
+    ++maxDiscreteBin; //starts at 0
+    
     if ((int)maxDiscreteBin != _scoreResolution) {
-        cout << "[!] Warning: the score resolution in --numoffeat seems to be different in the Q table file." << endl;
+        cout << "[!] Warning: the score resolution used (" << _scoreResolution << ") seems to be different in the Q table file (" << (int)maxDiscreteBin << ")." << endl;
     }
 }
 
