@@ -250,6 +250,7 @@ void HashTable::loadActionValueTable(const string& fileName)
     //        fprintf(stream, "Q-Hash Table\n");
         
     
+    double maxDiscreteBin = 0.;
     ifstream inFile(fileName.c_str());
     if (!inFile.is_open())
     {
@@ -274,6 +275,7 @@ void HashTable::loadActionValueTable(const string& fileName)
         string item = itemToken.next_token();
 //        assert(tmp.compare("(") == 0);
         
+        int pointer = 0;
         while (itemToken.has_token()) {
             item = itemToken.next_token();
 
@@ -286,6 +288,13 @@ void HashTable::loadActionValueTable(const string& fileName)
             double k;
             ssItem >> k;
             key.push_back(k);
+            
+            // if it points to the bin index and if it's not the max yet
+            if (pointer == 1 && k > maxDiscreteBin) {
+                maxDiscreteBin = k;
+            }
+
+            ++pointer;
         }
         
         while (itemToken.has_token())
@@ -300,7 +309,11 @@ void HashTable::loadActionValueTable(const string& fileName)
             ssItem >> q;
             _valueTable[key].push_back(q);
         }
-    }    
+    }
+    
+    if ((int)maxDiscreteBin != _scoreResolution) {
+        cout << "[!] Warning: the score resolution in --numoffeat seems to be different in the Q table file." << endl;
+    }
 }
 
 // -----------------------------------------------------------------------------------
