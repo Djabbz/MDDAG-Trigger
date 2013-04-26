@@ -16,7 +16,7 @@
 
 #include <math.h>
 
-#include <iostream.h>
+#include <iostream>
 #include "newmat/newmatio.h"
 
 CExtraTreesSplittingConditionFactory::CExtraTreesSplittingConditionFactory(CDataSet *l_inputData, CDataSet1D *l_outputData, unsigned int l_K, unsigned int l_n_min, double l_outTresh, CDataSet1D *l_weightingData)

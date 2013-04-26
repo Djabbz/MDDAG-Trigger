@@ -14,6 +14,7 @@
 
 #include <math.h>
 #include <iostream>
+#include <algorithm>
 #include "newmat/newmatio.h"
 
 CRBFBasisFunction::CRBFBasisFunction(ColumnVector *l_center, ColumnVector *l_sigma)
@@ -322,16 +323,16 @@ double CRBFRegressionTreeOutputMapping::doGetOutputValue(ColumnVector *input)
 	}
 	else
 	{
-		printf("Warning: RBF Tree network: Summed Factor == %f (%d)!!!\n", factor, neighbors.size());
+          //		printf("Warning: RBF Tree network: Summed Factor == %f (%d)!!!\n", factor, neighbors.size());
 
 		it = neighbors.begin();	
-		cout << "Input : " << input->t() << endl;
+                //		cout << "Input : " << input->t() << endl;
 		for (; it != neighbors.end(); it ++)	
 		{
 			CRBFBasisFunctionLinearWeight *basis = tree->getLeaf(*it)->getTreeData();
 		
 			ColumnVector dist(*basis->getCenter());
-			cout << "Center (Samples " << tree->getLeaf(*it)->getNumSamples() << "): " << dist.t() << " ";
+                        //			cout << "Center (Samples " << tree->getLeaf(*it)->getNumSamples() << "): " << dist.t() << " ";
 			dist = dist - *input;
 		
 			double l_factor = basis->getActivationFactor(input);
