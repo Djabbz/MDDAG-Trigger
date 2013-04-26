@@ -289,6 +289,8 @@ void setBasicOptions(nor_utils::Args& args)
     args.declareArgument("budgeted", "Indicate to take features' cost into account.", 0, "" );
     args.declareArgument("featurecosts", "Read the different costs of the features.", 1, "<file>" );
     args.declareArgument("adaptiveexploration", "Sets the epsilon proportional to the number of evaluations.", 1, "<value>" );
+    args.declareArgument("debug", "", 1, "<file>");
+    args.declareArgument("bootstrap", "The probability of reinjecting a random misclassified example", 1, "<real>");
 }
 
 
@@ -938,12 +940,14 @@ int main(int argc, const char *argv[])
             if (sptype == 6) {
                 std::stringstream ss;
                 ss << qTablesDir << "/QTable_" << i << ".dta";
-                FILE *qTableFile2 = fopen(ss.str().c_str(), "w");
+                FILE* qTableFile2 = fopen(ss.str().c_str(), "w");
                 dynamic_cast<HashTable*>(qData)->saveActionValueTable(qTableFile2);
                 fclose(qTableFile2);
                 
-                FILE* lastQTable = fopen("last_qtable.dta", "w");
+                string lastQTableFileName = "last_qtable.dta";
+                FILE* lastQTable = fopen(lastQTableFileName.c_str(), "w");
                 dynamic_cast<HashTable*>(qData)->saveActionValueTable(lastQTable);
+                fclose(lastQTable);
             }
 
             agentContinous->setController(policy);

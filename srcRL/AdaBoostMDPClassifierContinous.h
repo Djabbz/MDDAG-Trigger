@@ -131,11 +131,37 @@ namespace MultiBoost {
         int                     _currentWinnerIndex;
         
         bool                    _proportionalAlphaNorm;
-
+        
+        vector<bool>            _lastCorrectClassifications;
+        
+        ofstream                _debugFileStream;
+        
+        double                  _bootstrapRate;
+        
 	public:
 		// set randomzed element
 		void setCurrentRandomIsntace( int r ) { _currentRandomInstance = r; }		
-		void setRandomizedInstance() {_currentRandomInstance = (int) (rand() % _data->getNumExamples() ); }
+		void setRandomizedInstance() {
+            
+            double r = rand()/static_cast<float>(RAND_MAX);
+            if (r < _bootstrapRate)
+            {
+                vector<int> candidates;
+                candidates.reserve(_lastCorrectClassifications.size());
+    //            memory leaks
+                for (int i = 0; i < _lastCorrectClassifications.size(); ++i) {
+                    if (_lastCorrectClassifications[i ] == false)
+                        candidates.push_back(i);
+                }
+                _currentRandomInstance = (int) (rand() % candidates.size() );
+            }
+            else
+                _currentRandomInstance = (int) (rand() % _data->getNumExamples() );
+            
+//            if (_debugFileStream.good()) {
+//                _debugFileStream << _currentRandomInstance << " ";
+//            }
+        }
 		
 		// getter setter
 		int getUsedClassifierNumber() { return _classifierNumber; }

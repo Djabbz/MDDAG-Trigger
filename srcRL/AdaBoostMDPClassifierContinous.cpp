@@ -177,6 +177,26 @@ namespace MultiBoost {
         
         _proportionalAlphaNorm = false;
         _currentSumAlpha = 0.;
+        
+        _lastCorrectClassifications.resize(_data->getNumExamples(), false);
+        
+        if ( args.hasArgument("debug") )
+		{
+            string debugfilename;
+			args.getValue("debug", 0, debugfilename);
+            _debugFileStream.open(debugfilename.c_str());
+            
+            if (!_debugFileStream.good()) {
+                cout << "[!] Warning: Could not open the debug file: " << debugfilename << endl;
+            }
+        }
+        
+        _bootstrapRate = 0;
+        if ( args.hasArgument("bootstrap") ) {
+            args.getValue("bootstrap", 0, _bootstrapRate);
+        }
+
+//        cout << "+++[DEBUG] _bootstrapRate " << _bootstrapRate << endl; exit(0);
 	}
     
     // -----------------------------------------------------------------------------------
@@ -213,6 +233,7 @@ namespace MultiBoost {
 		
 		vector<AlphaReal>& currVotesVector = _exampleResult->getVotesVector();
 		
+        //FIXME: this works for spstate=6 and not for spstate=5
         // set the continuous state var
 		if (_classNum<=0) //2
         {
@@ -242,7 +263,18 @@ namespace MultiBoost {
         //  set the discrete state var
         if (_budgetedClassification) {
             int idxBias = 0;
-            if (_featuresEvaluated[_currentClassifier])
+            
+            bool allFeaturesEvaluated = true;
+            set<int> usedCols = _data->getUsedColumns(_currentClassifier);
+            for (set<int>::iterator it = usedCols.begin(); it != usedCols.end() ; ++it) {
+                if (_featuresEvaluated[*it] == false)
+                {
+                    allFeaturesEvaluated = false;
+                    break;
+                }
+            }
+
+            if (allFeaturesEvaluated)
                 idxBias = 1;
             state->setDiscreteState(0, (_currentClassifier * 2) + idxBias);
 
@@ -337,17 +369,21 @@ namespace MultiBoost {
                 _keysIndices[_classifiersOutput] = _currentKeyIndex++;
             }
 
+
 		}
         		
 		if ( _currentClassifier == _data->getIterationNumber() ) // check whether there is any weak classifier
 		{
 			reset = true;
-			if ( _data->currentClassifyingResult( _currentRandomInstance,  _exampleResult ) )
+            bool correctClassification = _data->currentClassifyingResult( _currentRandomInstance,  _exampleResult );
+			if ( correctClassification )
 			{
 				failed = false;
 			} else {
 				failed = true;
 			}
+            
+            _lastCorrectClassifications[_currentRandomInstance] = correctClassification;
 		}
 	}
 	
