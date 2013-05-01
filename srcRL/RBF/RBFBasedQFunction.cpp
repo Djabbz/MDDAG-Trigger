@@ -232,7 +232,7 @@ void GSBNFBasedQFunction::addCenter(double tderror, RBFParams& newCenter, int it
     newRBF.setSigma(newSigma);
     
     stringstream tmpString("");
-    tmpString << "[ac_" << action << "|it_" << iter << "|fn_" << index << "]";
+//    tmpString << "[ac_" << action << "|it_" << iter << "|fn_" << index << "]";
     newRBF.setId( tmpString.str() );
     
 #ifdef RBFDEB
