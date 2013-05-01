@@ -473,7 +473,7 @@ namespace MultiBoost {
 				agent->startNewEpisode();
 				//cout << "Length of history: " << classifier->getLengthOfHistory() << endl;
 				classifier->setCurrentRandomIsntace(i);
-				agent->doControllerEpisode(1, classifier->getIterNum()*2 );
+				agent->doControllerEpisode(1,  classifier->getIterNum()*2 );
 				//cout << "Length of history: " << classifier->getLengthOfHistory() << endl;
 				
 				//cout << "Intance: " << i << '\t' << "Num of classifier: " << classifier->getUsedClassifierNumber() << endl;
@@ -503,6 +503,7 @@ namespace MultiBoost {
                 //                    negNumEval += numEval;
                 //                }
 				
+                classifier->getCurrentExmapleResult( currentVotes );
 				if ( !logFileName.empty() ) {
                     if (clRes)
                         output << "1" ;
@@ -520,7 +521,6 @@ namespace MultiBoost {
                     }
                     
                     
-					classifier->getCurrentExmapleResult( currentVotes );
 					classifier->getHistory( currentHistory );
                     
                     if (numClasses <= 2) {
@@ -552,18 +552,21 @@ namespace MultiBoost {
 //                        detailedOutput << endl << flush;
 //                    }
                     
-                    if (milSetup)
-                        scores[i] = currentVotes;
+
 				}
 				
 				//if ((i>10)&&((i%100)==0))
 				//	cout << i << " " << flush;
+                
+                if (milSetup) {
+                    scores[i] = currentVotes;
+//                    copy(currentVotes.begin(), currentVotes.end(), scores[i].begin());
+                }
 				
 			}
-			
-			cout << endl;
-			
+						
             if (milSetup) {
+                
                 binRes.milError = computeMILError(scores, classifier->getBagCardinals());
             }
             
@@ -608,6 +611,16 @@ namespace MultiBoost {
             
             int candidateCounter = 0;
             int numErrors = 0;
+
+//            assert(g.size() == numExamples);
+//            cout << "+++[DEBUG]  "  << endl;;
+//            for (int i = 0; i < 10; ++i) {
+//                for (int j = 0; j < g[i].size(); ++j) {
+//                    cout << g[i][j] << " ";
+//                }
+//                cout << endl;
+//            }
+//            cout << "+++[DEBUG]  "  << endl;
             
             vector<Label>::const_iterator lIt;
             int i = 0;
