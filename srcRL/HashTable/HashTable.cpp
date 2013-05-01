@@ -105,6 +105,7 @@ void HashTable::getKey(MDDAGState& state, ValueKey& key)
 //    for (const auto & myTmpKey : winners) cout << myTmpKey << " "; cout << endl;
     AlphaReal scoreDifference = (state.continuousStates[winners[0]] - state.continuousStates[winners[1]]) / 2;
 
+    assert(scoreDifference >= 0);
 
     const AlphaReal step = 1. / (_scoreResolution);
 

@@ -102,10 +102,50 @@ namespace MultiBoost {
 				{
 					_vs[wHypInd][l] *= currWeakHyp->getAlpha();
 				}
-			}			
+			}
 		}
+        
+        
+        // for budgetted classification
+        _mil = false;
+        if (args.hasArgument("mil"))
+        {
+            _mil = true;
+            
+            _bagCardinals[_pTrainData] = vector<int>();
+            readRawData(mdpTrainFileName + ".events", _bagCardinals[_pTrainData]);            
+            
+            _bagCardinals[_pTestData] = vector<int>();
+            readRawData(testFileName + ".events", _bagCardinals[_pTestData]);
+            
+            if (! testFileName2.empty())
+            {
+                _bagCardinals[_pTestData2] = vector<int>();
+                readRawData(testFileName2 + ".events", _bagCardinals[_pTestData2]);
+            }
+            
+        }
+
 	}
 	// -----------------------------------------------------------------------
+    
+    void DataReader::readRawData(string rawDataFileName, vector<int>& candidateNumber)
+    {
+        candidateNumber.clear();
+        
+        ifstream ifs(rawDataFileName.c_str());
+        if (! ifs.good() ) {
+            cout << "Error: Could not open event file: " << rawDataFileName << endl;
+            exit(1);
+        }
+        
+        while (ifs.good()) {
+            int i ;
+            ifs >> i;
+            candidateNumber.push_back(i);
+        }
+    }
+
 	// -----------------------------------------------------------------------
 	void DataReader::calculateHypothesesMatrix()
 	{		
@@ -188,6 +228,7 @@ namespace MultiBoost {
 		_pTestData->load(testDataFileName, IT_TEST, _verbose);				
         
         
+        _pTestData2 = NULL;
         if (!testDataFileName2.empty()) {
             _pTestData2 = baseLearner->createInputData();
             

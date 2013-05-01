@@ -196,7 +196,7 @@ namespace MultiBoost {
             args.getValue("bootstrap", 0, _bootstrapRate);
         }
 
-//        cout << "+++[DEBUG] _bootstrapRate " << _bootstrapRate << endl; exit(0);
+
 	}
     
     // -----------------------------------------------------------------------------------
@@ -423,6 +423,28 @@ namespace MultiBoost {
 			if (mode==0)
 			{			
 				rew = _skipReward;
+                
+                if (_incrementalReward) {
+                    
+                    rew -= _lastReward;
+                    if (_succRewardMode==RT_HAMMING)
+                    {
+                        
+                        if ( _data->currentClassifyingResult( _currentRandomInstance,  _exampleResult )  ) // classified correctly
+                        {
+                            _lastReward = _successReward;// /100.0;
+                        }
+                        
+                        else
+                        {
+                            _lastReward += -_successReward;
+                        }
+                        
+                    }
+                    
+                    rew += _lastReward;
+                }
+                
 			} else if ( mode == 1 )
 			{
                 AlphaReal whypCost = 1.;
@@ -446,6 +468,12 @@ namespace MultiBoost {
                         {
                             _lastReward = _successReward;// /100.0;
                         }
+                        
+                        else
+                        {
+                            _lastReward += -_successReward;
+                        }
+
                     }
                     else if (_succRewardMode==RT_EXP)
                     {
@@ -816,7 +844,13 @@ namespace MultiBoost {
     {
 //        _outputStream << setiosflags(ios::fixed);
         
-        _outputStream << "ep" << "\t" <<  "full" << "\t" << "prop" << "\t" << "acc" << "\t" << "eval" << "\t" << "rwd" << "\t" << "cost" << setprecision(4) <<  endl ;
+        _outputStream << "ep" << "\t" <<  "full" << "\t" << "prop" << "\t" << "acc" << "\t" << "eval" << "\t" << "rwd" << "\t" << "cost" ;
+        
+        if (_data->isMILsetup()) {
+            _outputStream << "\t" << "mil";
+        }
+        
+        _outputStream << setprecision(4) <<  endl ;
 
 //        if (_classNum <= 2) {
 //            _outputStream << "ep" << "\t" <<  "full" << "\t" << "prop" << "\t" << "err" << "\t" << "eval" << "\t" << "rwd" << "\t" << "tpr" << "\t" << "tnr" << "\t" << "cost" << setprecision(4) <<  endl ;
@@ -839,7 +873,13 @@ namespace MultiBoost {
     {
         //		_outputStream << bres.iterNumber << " " <<  bres.adaboostPerf << " " << bres.err << " " << bres.usedClassifierAvg << " " << bres.avgReward << " " << bres.TP << " " << bres.TN << " " << bres.negNumEval <<  endl;
 //        _outputStream << bres.iterNumber << "\t" << 100*(1 - bres.adaboostPerf) << "\t"  <<  100*(1 - bres.itError) << "\t" << 100*(1 - bres.err) << "\t" << bres.usedClassifierAvg << "\t" << bres.avgReward << "\t" << bres.TP << "\t" << bres.TN << "\t" << bres.classificationCost <<  endl;
-        _outputStream << bres.iterNumber << "\t" << 100*(1 - bres.adaboostPerf) << "\t"  <<  100*(1 - bres.itError) << "\t" << 100*(1 - bres.err) << "\t" << bres.usedClassifierAvg << "\t" << bres.avgReward << "\t" << bres.classificationCost <<  endl;
+        _outputStream << bres.iterNumber << "\t" << 100*(1 - bres.adaboostPerf) << "\t"  <<  100*(1 - bres.itError) << "\t" << 100*(1 - bres.err) << "\t" << bres.usedClassifierAvg << "\t" << bres.avgReward << "\t" << bres.classificationCost;
+        
+        if (_data->isMILsetup()) {
+            _outputStream << "\t" << bres.milError;
+        }
+        
+        _outputStream << endl;
 
     }
 

@@ -291,6 +291,7 @@ void setBasicOptions(nor_utils::Args& args)
     args.declareArgument("adaptiveexploration", "Sets the epsilon proportional to the number of evaluations.", 1, "<value>" );
     args.declareArgument("debug", "", 1, "<file>");
     args.declareArgument("bootstrap", "The probability of reinjecting a random misclassified example", 1, "<real>");
+    args.declareArgument("mil", "Multiple Instance Learning error output.", 0, "" );
 }
 
 

@@ -67,6 +67,8 @@ namespace MultiBoost {
         double negNumEval;
         
         double classificationCost;
+        
+        double milError;
 	};
     
     typedef vector<int> KeyType;
@@ -137,7 +139,7 @@ namespace MultiBoost {
         ofstream                _debugFileStream;
         
         double                  _bootstrapRate;
-        
+                
 	public:
 		// set randomzed element
 		void setCurrentRandomIsntace( int r ) { _currentRandomInstance = r; }		
@@ -254,6 +256,10 @@ namespace MultiBoost {
         double getIterationError(int it) { return _data->getIterationError(it); }
     
         vector<Label>& getLabels(int i) { return _data->getLabels(i); };
+        
+        vector<int>& getBagCardinals() { return _data->getBagCardinals(); }
+        
+        bool isMILsetup() {return _data->isMILsetup(); }
 	};
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////
@@ -432,7 +438,7 @@ namespace MultiBoost {
 //			int negNum=0;
 			ofstream output;
             ofstream detailedOutput;
-			vector<double> currentVotes(0);
+			vector<AlphaReal> currentVotes(0);
 			vector<bool> currentHistory(0);
 			
 			if ( !logFileName.empty() )
@@ -451,6 +457,13 @@ namespace MultiBoost {
                     detailedOutput.open(logFileNameDetailed.c_str());
                 }
 			}
+            
+            bool milSetup = classifier->isMILsetup();
+            
+            vector<vector<AlphaReal> > scores;
+            if (milSetup) {
+                scores.resize(numTestExamples);
+            }
 			
             
 			for (int i = 0; i < numTestExamples; i ++)
@@ -522,10 +535,10 @@ namespace MultiBoost {
                             output << currentVotes[l] << " ";
                     }
                     
-					for( int i = 0; i < currentHistory.size(); ++i)
+					for( int wl = 0; wl < currentHistory.size(); ++wl)
 					{
-						if ( currentHistory[i] )
-							output << i+1 << " ";
+						if ( currentHistory[wl] )
+							output << wl+1 << " ";
 					}
                     
 					output << endl << flush;
@@ -538,6 +551,9 @@ namespace MultiBoost {
 //                        }
 //                        detailedOutput << endl << flush;
 //                    }
+                    
+                    if (milSetup)
+                        scores[i] = currentVotes;
 				}
 				
 				//if ((i>10)&&((i%100)==0))
@@ -547,6 +563,10 @@ namespace MultiBoost {
 			
 			cout << endl;
 			
+            if (milSetup) {
+                binRes.milError = computeMILError(scores, classifier->getBagCardinals());
+            }
+            
 			binRes.avgReward = value/(double)numTestExamples ;
 			binRes.usedClassifierAvg = (double)usedClassifierAvg/(double)numTestExamples ;
             //			binRes.negNumEval = (double)negNumEval/(double)negNum;
@@ -571,6 +591,103 @@ namespace MultiBoost {
 			}
 			
 		}
+        
+        // -----------------------------------------------------------------------------------
+        
+        double computeMILError(vector<vector<AlphaReal> >& g, vector<int>& bagCardinals)
+        {
+            T* classifier = dynamic_cast<T*>(semiMDPRewardFunction);
+            
+			const int numExamples = classifier->getNumExamples();
+            
+            int eventNumber = 0;
+            const long numEvents = bagCardinals.size();
+            
+            vector<int> eventsLabels(numEvents);
+            vector<int> eventsOutputLabels(numEvents);
+            
+            int candidateCounter = 0;
+            int numErrors = 0;
+            
+            vector<Label>::const_iterator lIt;
+            int i = 0;
+            while (i < numExamples)
+            {
+                int numCandidates = bagCardinals[eventNumber];
+                candidateCounter += numCandidates;
+                
+                const vector<Label>& evtLabels = classifier->getLabels(i);
+                for (lIt = evtLabels.begin(); lIt !=  evtLabels.end(); ++lIt) {
+                    if (lIt->y > 0) {
+                        eventsLabels[eventNumber] = lIt->idx;
+                    }
+                }
+                
+                AlphaReal maxClass = -numeric_limits<AlphaReal>::max();
+                
+                for (int j = 0; j < numCandidates; ++j, ++i) {
+                    
+                    const vector<Label>& candidatelabels = classifier->getLabels(i);
+                    
+                    for (lIt = candidatelabels.begin(); lIt !=  candidatelabels.end(); ++lIt) {
+                        if (g[i][lIt->idx] > maxClass) {
+                            maxClass = g[i][lIt->idx];
+                            eventsOutputLabels[eventNumber] = lIt->idx;
+                        }
+                        
+                        if (lIt->y > 0) {
+                            assert(eventsLabels[eventNumber] == lIt->idx); // just for precaution
+                        }
+                    }
+                }
+                
+                if (eventsOutputLabels[eventNumber] != eventsLabels[eventNumber]) {
+                    ++numErrors;
+                }
+                
+                ++eventNumber;
+            }
+            
+            //TODO: check if the label is background. Do we take the min ?
+            
+            assert(candidateCounter == numExamples);
+            
+//            vector<double> truePositiveRate(numClasses);
+//            vector<double> falsePositiveRate(numClasses);
+//            
+//            vector<int> truePositives(numClasses);
+//            vector<int> falsePositives(numClasses);
+//            
+//            vector<int> numEventsPerClass(numClasses);
+//            
+//            for (int i = 0; i < numEvents; ++i) {
+//                numEventsPerClass[eventsLabels[i]]++;
+//                if (eventsLabels[i] == eventsOutputLabels[i])
+//                    truePositives[eventsLabels[i]]++;
+//                else
+//                    falsePositives[eventsOutputLabels[i]]++;
+//            }
+//            
+//            for (int l = 0; l < numClasses; ++l) {
+//                truePositiveRate[l] = (double)truePositives[l]/numEventsPerClass[l];
+//                falsePositiveRate[l] = (double)falsePositives[l]/(numEvents - numEventsPerClass[l]);
+//            }
+            
+            //        for (int l = 0; l < numClasses; ++l) {
+            //            if (l != 0) outStream << OUTPUT_SEPARATOR;
+            //            outStream <<  truePositiveRate[l];
+            //        }
+            //
+            //        outStream << OUTPUT_SEPARATOR;
+            //        
+            //        for (int l = 0; l < numClasses; ++l) {
+            //            outStream << OUTPUT_SEPARATOR;
+            //            outStream <<  falsePositiveRate[l];
+            //        }
+            
+            return (double)numErrors / numEvents;
+        }
+
 	};
     
 	

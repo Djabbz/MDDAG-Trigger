@@ -122,8 +122,15 @@ namespace MultiBoost {
 
         vector<Label>& getLabels(int i) { return _pCurrentData->getLabels(i); }
         
+        vector<int>& getBagCardinals() { return _bagCardinals[_pCurrentData]; }
+        
+        bool isMILsetup() {return _mil;};
+        
 	protected:
 		void calculateHypothesesMatrix();
+        void readRawData(string rawDataFileName, vector<int>& candidateNumber);
+        
+        
 		
 		int						_verbose;		
 		AlphaReal					_sumAlphas;
@@ -151,9 +158,14 @@ namespace MultiBoost {
 		vector< AlphaReal >			_alphas;
         
         map<InputData*, vector<double> > _iterationWiseError;
+        
+        bool                    _mil;
+        
+        map<InputData*, vector<int> > _bagCardinals;
+
 	};
 
-	////////////////////////////////////////////////////////////////////////////////////////////////	
+	////////////////////////////////////////////////////////////////////////////////////////////////
 	////////////////////////////////////////////////////////////////////////////////////////////////	
 	////////////////////////////////////////////////////////////////////////////////////////////////	
 	class CAdaBoostAction : public CPrimitiveAction
