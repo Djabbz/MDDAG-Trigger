@@ -89,6 +89,8 @@ namespace MultiBoost {
         
 		// rewards
 		double					_classificationReward;
+        double					_misclassificationReward;
+        
 		double					_skipReward;
 		double					_jumpReward;
 		double					_successReward;

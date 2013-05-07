@@ -51,14 +51,15 @@ namespace MultiBoost {
 		if (args.hasArgument("rewards"))
 		{
 			double rew = args.getValue<double>("rewards", 0);
-			setSuccessReward(rew); // classified correctly
+			_successReward = rew ; // setSuccessReward(rew); // classified correctly
 			
 			// the reward we incur if we use a classifier		
 			rew = args.getValue<double>("rewards", 1);
-			setClassificationReward( rew );
+			_classificationReward = rew ; // setClassificationReward( rew );
 			
 			rew = args.getValue<double>("rewards", 2);
-			setSkipReward( rew );		
+//			_skipReward = rew ; // setSkipReward( rew );
+            _misclassificationReward = rew;
 			
 			setJumpReward(0.0);
 		} else {
@@ -434,10 +435,10 @@ namespace MultiBoost {
                         {
                             _lastReward = _successReward;// /100.0;
                         }
-                        
+                            
                         else
                         {
-                            _lastReward += -_successReward;
+                            _lastReward += _misclassificationReward;
                         }
                         
                     }
@@ -471,7 +472,7 @@ namespace MultiBoost {
                         
                         else
                         {
-                            _lastReward += -_successReward;
+                            _lastReward += _misclassificationReward;
                         }
 
                     }
@@ -557,7 +558,7 @@ namespace MultiBoost {
                 else
 				{
 					failed = true;
-					rew += -_successReward;
+					rew += _misclassificationReward;
 //					assert(margin <= 0);
                     
 				}
