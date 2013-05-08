@@ -239,24 +239,32 @@ namespace MultiBoost {
 		if (_classNum<=0) //2
         {
 			state->setNumActiveContinuousStates(1);
-            double st = ((currVotesVector[_positiveLabelIndex] /_sumAlpha)+1)/2.0; // rescale between [0,1]
+            AlphaReal st = ((currVotesVector[_positiveLabelIndex] /_sumAlpha)+1)/2.0; // rescale between [0,1]
             state->setContinuousState(0, st);
         }
 		else
         {
-			state->setNumActiveContinuousStates(_classNum);
-            // Set the internal state variables
-            for ( int i=0; i<_classNum; ++i) {
-                
-                double st = 0.0;
-                
-                AlphaReal alphaSum = _sumAlpha;
-                
-                if (_proportionalAlphaNorm && !nor_utils::is_zero( _currentSumAlpha)) {
-                    alphaSum = _currentSumAlpha;
-                }
+//			state->setNumActiveContinuousStates(_classNum);
+//            AlphaReal minScore = 0, maxScore = 0.;
+//            for ( int i = 0; i < _classNum; ++i) {
+//                if (currVotesVector[i] > maxScore)
+//                    maxScore = currVotesVector[i];
+//                if (currVotesVector[i] < minScore) {
+//                    minScore = currVotesVector[i];
+//                }
+//            }
+            
+            AlphaReal alphaSum = _sumAlpha;
+            if (_proportionalAlphaNorm) {
+                alphaSum = _currentSumAlpha;
+//                alphaSum = maxScore - minScore;r
+            }
 
-                st = ((currVotesVector[i] /alphaSum)+1)/2.0; // rescale between [0,1]
+            // Set the internal state variables
+            for ( int i = 0; i < _classNum; ++i) {
+                
+                AlphaReal st = 0.0;
+                if ( !nor_utils::is_zero(alphaSum) ) st = ((currVotesVector[i] /alphaSum)+1)/2.0; // rescale between [0,1]
                 state->setContinuousState(i, st);
             }
         }

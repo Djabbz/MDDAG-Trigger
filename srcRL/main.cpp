@@ -853,7 +853,11 @@ int main(int argc, const char *argv[])
 //                
 //            }
             
-            if (adaptiveEpsilon > 0 ) policy->setParameter("EpsilonGreedy", adaptiveEpsilon/bres.usedClassifierAvg);
+            if (adaptiveEpsilon > 0 )
+                if (bres.usedClassifierAvg != 0)
+                    policy->setParameter("EpsilonGreedy", adaptiveEpsilon/bres.usedClassifierAvg);
+                else
+                    policy->setParameter("EpsilonGreedy", adaptiveEpsilon);
 
 
             cout << "[+] Training set results: " << endl;
