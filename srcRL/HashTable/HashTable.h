@@ -50,7 +50,7 @@ protected:
     CStateModifier*                     _stateProperties;
     int                                 _numDimensions;
     MultiBoost::AdaBoostMDPClassifierContinous*     _classifier;
-    int                                 _scoreResolution;
+    double                                 _stepResolution;
         
 public:
     
@@ -117,7 +117,7 @@ public:
     
     // -----------------------------------------------------------------------------------
     
-    void setScoreResolution(int r) { _scoreResolution = r;}
+    void setScoreResolution(int r) { _stepResolution = 1./r;}
     
     // -----------------------------------------------------------------------------------
     

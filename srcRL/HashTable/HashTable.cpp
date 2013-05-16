@@ -27,11 +27,11 @@ HashTable::HashTable(CActionSet *actions, CStateModifier* sm,  MultiBoost::AdaBo
     addParameter("QLearningRate", 0.2);
     
     _numDimensions = numDim;
-    if (_numDimensions == 2) --_numDimensions;
-    
-    _numDimensions = 1;
-    
-    _scoreResolution = 9;
+//    if (_numDimensions == 2) --_numDimensions;
+//    
+//    _numDimensions = 1;
+
+    _stepResolution = 1. / 9;
 }
 
 // -----------------------------------------------------------------------------------
@@ -98,29 +98,19 @@ void HashTable::getKey(MDDAGState& state, ValueKey& key)
     int i = 0;
     key[i++] = state.discreteStates[0];
     
-//    const MultiBoost::ExampleResults* examplesResult = _classifier->getCurrentExampleResults();
-//    AlphaReal scoreDifference = (examplesResult->getWinner(0).second - examplesResult->getWinner(1).second) / 2;
-
-//    for (const auto & myTmpKey : state.continuousStates) cout << myTmpKey << " "; cout << endl;
-//    for (const auto & myTmpKey : winners) cout << myTmpKey << " "; cout << endl;
-    AlphaReal scoreDifference = (state.continuousStates[winners[0]] - state.continuousStates[winners[1]]) / 2;
+    AlphaReal scoreDifference = (state.continuousStates[winners[0]] - state.continuousStates[winners[1]]) ;
 
     assert(scoreDifference >= 0);
-
-    const AlphaReal step = 1. / (_scoreResolution);
-
-    int p = int(scoreDifference / step);
+    int p = int(scoreDifference / _stepResolution);
     
-    key[i++] = p;
+//    cout << "+++[DEBUG] p, scorediff, step " << p << "   " << scoreDifference <<  "   " << _stepResolution << endl;
 
-//    cout << "+++[DEBUG] examplesResult->getWinner(0).second " << examplesResult->getWinner(0).second << endl;
-//    cout << "+++[DEBUG] examplesResult->getWinner(1).second " << examplesResult->getWinner(1).second << endl;
-//    cout << "+++ " << endl;
-//    
     for (int j = 0; j < numWinners; ++j) {
-//        int winner = examplesResult->getWinner(j).first;
         key[i++] = winners[j];
     }
+    
+    key[i++] = p;
+    
     
     
 //    for (int j = 0; j < numDimensions; ++i, ++j) {
@@ -220,18 +210,22 @@ void HashTable::saveActionValueTable(FILE* stream)
         
         fprintf(stream, "( ");
         ValueKey::iterator keyIt = key.begin();
-        if (keyIt != key.end()) fprintf(stream, "%d ", (int)*(keyIt++));
-        
+//        if (keyIt != key.end())
+        fprintf(stream, "%d ", (int)*(keyIt++));
+        fprintf(stream, " ");
+        fprintf(stream, "%d ", (int)*(keyIt++));
+        fprintf(stream, "%d ", (int)*(keyIt++));
+        fprintf(stream, " ");
+        fprintf(stream, "%d ", (int)*(keyIt++));
 //        for (int d = 0; d < _numDimensions; ++d, ++keyIt) {
 //            fprintf(stream, "%f ", ((*keyIt)*2) - 1);
 //        }
         
-        if (keyIt != key.end()) fprintf(stream, "%d ", (int)*(keyIt++));
-        fprintf(stream, "  ");
+//        if (keyIt != key.end()) fprintf(stream, "%d ", (int)*(keyIt++));
 
-        for (; keyIt != key.end(); ++keyIt) {
-            fprintf(stream, "%d ", (int)(*keyIt));
-        }
+//        for (; keyIt != key.end(); ++keyIt) {
+//            fprintf(stream, "%d ", (int)(*keyIt));
+//        }
         
         fprintf(stream, ")\t");
         
@@ -291,7 +285,7 @@ void HashTable::loadActionValueTable(const string& fileName)
             key.push_back(k);
             
             // if it points to the bin index and if it's not the max yet
-            if (pointer == 1 && k > maxDiscreteBin) {
+            if (pointer == 3 && k > maxDiscreteBin) {
                 maxDiscreteBin = k;
             }
 
@@ -314,8 +308,8 @@ void HashTable::loadActionValueTable(const string& fileName)
     
     ++maxDiscreteBin; //starts at 0
     
-    if ((int)maxDiscreteBin != _scoreResolution) {
-        cout << "[!] Warning: the score resolution used (" << _scoreResolution << ") seems to be different in the Q table file (" << (int)maxDiscreteBin << ")." << endl;
+    if ((1./maxDiscreteBin) != _stepResolution) {
+        cout << "[!] Warning: the score resolution used (" << 1/_stepResolution << ") seems to be different in the Q table file (" << (int)maxDiscreteBin << ")." << endl;
     }
 }
 
