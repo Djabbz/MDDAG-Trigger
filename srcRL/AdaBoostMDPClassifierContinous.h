@@ -39,6 +39,9 @@
 //////////////////////////////////////////////////////////////////////
 #include "AdaBoostMDPClassifierAdv.h"
 
+//#include "tbb/parallel_for.h"
+//#include "tbb/blocked_range.h"
+
 using namespace std;
 
 namespace MultiBoost {
@@ -416,7 +419,6 @@ namespace MultiBoost {
 			double value = 0.0;
 //            double negNumEval = 0.0;
             
-            
             double classificationCost = 0.;
             
 			agent->addSemiMDPListener(this);
@@ -545,14 +547,22 @@ namespace MultiBoost {
                     
 					output << endl << flush;
                     
-//                    if (detailed) {
-//                        vector<double> classifiersOutput;
-//                        classifier->getClassifiersOutput(classifiersOutput);
-//                        for (int i = 0; i < classifiersOutput.size(); ++i) {
-//                            detailedOutput << classifiersOutput[i] << " ";
-//                        }
-//                        detailedOutput << endl << flush;
-//                    }
+                    if (detailed) {
+                        vector<int> classifiersOutput;
+                        classifier->getClassifiersOutput(classifiersOutput);
+                        
+                        if (clRes)
+                            detailedOutput << "1" ;
+                        else
+                            detailedOutput << "0" ;
+                        
+                        detailedOutput << " " << classes[0] << " ";
+                        
+                        for (int i = 0; i < classifiersOutput.size(); ++i) {
+                            detailedOutput << classifiersOutput[i] << " ";
+                        }
+                        detailedOutput << endl << flush;
+                    }
                     
 
 				}

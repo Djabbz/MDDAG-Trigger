@@ -23,7 +23,7 @@
 
 #include "cadaptivesoftmaxnetwork.h"
 #include "crbftrees.h"
-#include "ctorchvfunction.h"
+//#include "ctorchvfunction.h"
 #include "ccontinuousactions.h"
 #include "MLP.h"
 #include "GradientMachine.h"
@@ -191,20 +191,6 @@ void setBasicOptions(nor_utils::Args& args)
 	args.declareArgument("traintestmdp", "Performs training and test at the same time.", 5, "<trainingDataFile> <testDataFile> <nInterations> <shypfile> <outfile>");
     args.declareArgument("traintestmdp", "Performs training and test at the same time.", 6, "<trainingDataFile> <validDataFile> <nInterations> <shypfile> <outfile> <testDataFile>");
     args.declareArgument("testmdp", "Performs test of a previously leant model.", 3, "<qtable> <train log file> <test log file>");
-	args.declareArgument("test", "Test the model.", 3, "<dataFile> <numIters> <shypFile>");
-	args.declareArgument("test", "Test the model and output the results", 4, "<datafile> <shypFile> <numIters> <outFile>");
-	args.declareArgument("cmatrix", "Print the confusion matrix for the given model.", 2, "<dataFile> <shypFile>");
-	args.declareArgument("cmatrixfile", "Print the confusion matrix with the class names to a file.", 3, "<dataFile> <shypFile> <outFile>");
-	args.declareArgument("posteriors", "Output the posteriors for each class, that is the vector-valued discriminant function for the given dataset and model.", 4, "<dataFile> <shypFile> <outFile> <numIters>");
-	args.declareArgument("posteriors", "Output the posteriors for each class, that is the vector-valued discriminant function for the given dataset and model periodically.", 5, "<dataFile> <shypFile> <outFile> <numIters> <period>");
-	args.declareArgument("cposteriors", "Output the calibrated posteriors for each class, that is the vector-valued discriminant function for the given dataset and model.", 4, "<dataFile> <shypFile> <outFile> <numIters>");
-	
-	args.declareArgument("likelihood", "Output the likelihoof of data for each iteration, that is the vector-valued discriminant function for the given dataset and model.", 4, "<dataFile> <shypFile> <outFile> <numIters>");
-	
-	args.declareArgument("encode", "Save the coefficient vector of boosting individually on each point using ParasiteLearner", 6, "<inputDataFile> <autoassociativeDataFile> <outputDataFile> <nIterations> <poolFile> <nBaseLearners>");
-	args.declareArgument("roc", "Print out the ROC curve (it calculate the ROC curve for the first class)", 4, "<dataFile> <shypFile> <outFile> <numIters>" );
-	
-	args.declareArgument("ssfeatures", "Print matrix data for SingleStump-Based weak learners (if numIters=0 it means all of them).", 4, "<dataFile> <shypFile> <outFile> <numIters>");
 	
 	args.declareArgument( "fileformat", "Defines the type of intput file. Available types are:\n"
 						 "* simple: each line has attributes separated by whitespace and class at the end (DEFAULT!)\n"
@@ -216,51 +202,16 @@ void setBasicOptions(nor_utils::Args& args)
 	
 	args.declareArgument("headerfile", "The filename of the header file (SVMLight).", 1, "header.txt");
 	
-	args.declareArgument("constant", "Check constant learner in each iteration.", 0, "");
-	args.declareArgument("timelimit", "Time limit in minutes", 1, "<minutes>" );
-	args.declareArgument("stronglearner", "Strong learner. Available strong learners:\n"
-						 "AdaBoost (default)\n"
-						 "BrownBoost\n", 1, "<stronglearner>" );
-	
-	args.declareArgument("slowresumeprocess", "Compute the results in each iteration (slow resume)\n"
-						 "Compute only the data of the last iteration (fast resume, default)\n", 0, "" );
-	args.declareArgument("weights", "Outputs the weights of instances at the end of the learning process", 1, "<filename>" );
-	args.declareArgument("Cn", "Resampling size for FilterBoost (default=300)", 1, "<val>" );
-	//// ignored for the moment!
-	//args.declareArgument("arffheader", "Specify the arff header.", 1, "<arffHeaderFile>");
-	
-	//////////////////////////////////////////////////////////////////////////
-	// Options
-	
-	args.setGroup("I/O Options");
-	
-	/////////////////////////////////////////////
-	// these are valid only for .txt input!
-	// they might be removed!
-	args.declareArgument("d", "The separation characters between the fields (default: whitespaces).\nExample: -d \"\\t,.-\"\nNote: new-line is always included!", 1, "<separators>");
-	args.declareArgument("classend", "The class is the last column instead of the first (or second if -examplelabel is active).");
-	args.declareArgument("examplename", "The data file has an additional column (the very first) which contains the 'name' of the example.");
-	
-	/////////////////////////////////////////////
-	
-	args.setGroup("Basic Algorithm Options");
-	args.declareArgument("weightpolicy", "Specify the type of weight initialization. The user specified weights (if available) are used inside the policy which can be:\n"
-						 "* sharepoints Share the weight equally among data points and between positiv and negative labels (DEFAULT)\n"
-						 "* sharelabels Share the weight equally among data points\n"
-						 "* proportional Share the weights freely", 1, "<weightType>");
-	
 	
 	args.setGroup("General Options");
 	
 	args.declareArgument("verbose", "Set the verbose level 0, 1 or 2 (0=no messages, 1=default, 2=all messages).", 1, "<val>");
-	args.declareArgument("outputinfo", "Output informations on the algorithm performances during training, on file <filename>.", 1, "<filename>");
 	args.declareArgument("seed", "Defines the seed for the random operations.", 1, "<seedval>");
 	
 	//////////////////////////////////////////////////////////////////////////
 	// Options for TL tool
 	args.setGroup("RL options");
 	
-	args.declareArgument("gridworldfilename", "The naem of gridwold description filename", 1, "<val>");
 	args.declareArgument("episodes", "The number of episodes", 2, "<episod> <testiter>");
 	args.declareArgument("rewards", "success, class, skip", 3, "<succ> <class> <skip>");
 	args.declareArgument("logdir", "Dir of log", 1, "<dir>");
@@ -544,7 +495,8 @@ int main(int argc, const char *argv[])
     
     #pragma mark State space selection
     
-    int sptype = -1;
+    // some modifs for Son :)
+    int sptype = 6;
     if ( args.hasArgument("statespace") )
     {
         sptype = args.getValue<int>("statespace", 0);
@@ -655,11 +607,13 @@ int main(int argc, const char *argv[])
             exit(1);
         }
         
-    } else {
-        cout << "No state space resresantion is given. Use --statespace" << endl;
-//        discState = classifierContinous->getStateSpace(featnum);
-        exit(1);
     }
+//    else {
+//        
+//        cout << "No state space resresantion is given. Use --statespace" << endl;
+////        discState = classifierContinous->getStateSpace(featnum);
+//        exit(1);
+//    }
     
     cout << "\t--> Learning rate:" << endl;
     cout << "\t\t--> Numerator: " << qRateNumerator << endl;
@@ -718,7 +672,7 @@ int main(int argc, const char *argv[])
     if (args.hasArgument("testmdp"))
     {
         
-        if (sptype != 5) {
+        if (sptype < 5) {
             cout << "Error: use sptype 5 with --testmdp" << endl;
             exit(1);
         }
@@ -728,7 +682,10 @@ int main(int argc, const char *argv[])
         CAgentController* greedypolicy = new CQGreedyPolicy(agentContinous->getActions(), qData);
         agentContinous->setController(greedypolicy);
         
-        dynamic_cast<GSBNFBasedQFunction*>( qData )->loadQFunction(args.getValue<string>("testmdp", 0));
+        if (sptype == 5)
+            dynamic_cast<GSBNFBasedQFunction*>( qData )->loadQFunction(args.getValue<string>("testmdp", 0));
+        else if (sptype == 6)
+            dynamic_cast<HashTable*>( qData )->loadActionValueTable(args.getValue<string>("testmdp", 0));
         
         classifierContinous->setCurrentDataToTrain();
         AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalTrain( agentContinous, rewardFunctionContinous );
@@ -752,6 +709,29 @@ int main(int argc, const char *argv[])
         cout << "******** Average Test classifier used: " << bres.usedClassifierAvg << endl;
         cout << "******** Sum of rewards on Test: " << bres.avgReward << endl;
         
+        cout << endl << "full" << setw(10) << "prop" << setw(10) << "acc" << setw(10) << "eval" << setw(10) << "rwd" << setw(10) << "cost" ;
+        
+        if (datahandler->isMILsetup()) {
+            cout  << setw(10) << "mil";
+        }
+        
+        cout  << setprecision(4) <<  endl ;
+
+        cout << 100*(1 - bres.adaboostPerf) << setw(10)  <<  100*(1 - bres.itError) << setw(10) << 100*(1 - bres.err) << setw(10) << bres.usedClassifierAvg << setw(10) << bres.avgReward << setw(10) << bres.classificationCost;
+        
+        if (datahandler->isMILsetup()) {
+            cout << setw(10) << bres.milError;
+        }
+        
+        cout << endl;
+        
+        delete datahandler;
+        delete classifierContinous;
+        delete agentContinous;
+        delete qData;
+        delete qFunctionLearner;
+        delete policy;
+
         exit(0);
     }
     
