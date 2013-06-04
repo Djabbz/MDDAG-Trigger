@@ -3,6 +3,7 @@
 // general includes
 
 #include <time.h>
+#include <stdlib.h>
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -396,6 +397,10 @@ int main(int argc, const char *argv[])
 	{
 		logDirContinous = args.getValue<string>("logdir", 0);
 	}
+    
+    // only UNIX
+    string command = "if [ ! -d \"" + logDirContinous + "\" ]; then mkdir \"" + logDirContinous + "\" ; fi";
+    system(command.c_str());
 
     
     string qTablesDir="qtables";
@@ -403,6 +408,10 @@ int main(int argc, const char *argv[])
 	{
 		qTablesDir = args.getValue<string>("qdir", 0);
 	}
+    
+    // only UNIX
+    command = "if [ ! -d \"" + qTablesDir + "\" ]; then mkdir \"" + qTablesDir + "\" ; fi";
+    system(command.c_str());
 
 	DataReader* datahandler = new DataReader( args, verbose );
 	datahandler->setCurrentDataToTrain();
