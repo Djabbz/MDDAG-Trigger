@@ -455,7 +455,7 @@ int main(int argc, const char *argv[])
     int paramUpdate = 10000;
     if (args.hasArgument("paramupdate"))
 	{
-		paramUpdate = args.getValue<double>("paramupdate", 0);
+		paramUpdate = args.getValue<int>("paramupdate", 0);
     }
     
     if ( datahandler->getClassNumber() <= 2 )

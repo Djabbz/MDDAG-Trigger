@@ -14,6 +14,7 @@
 #include "WeakLearners/AbstainableLearner.h"
 
 #include <math.h> // for exp
+#include <algorithm> // for random_shuffle
 
 using namespace std;
 
@@ -73,6 +74,16 @@ namespace MultiBoost {
 		
 		assert( _weakHypotheses.size() >= _numIterations );
 		
+//        cout << "[+++] SUPER SHUFFLE... ACTION! [+++]" << endl;
+//        // random shuffle on the shyp
+//        random_shuffle ( _weakHypotheses.begin(), _weakHypotheses.end() );
+//        random_shuffle ( _weakHypotheses.begin(), _weakHypotheses.end() );
+
+        cout << "[+++] SUPER REVERSE... ACTION! [+++]" << endl;
+        vector<BaseLearner*> inveresedWhyp(_weakHypotheses.size());
+        copy(_weakHypotheses.rbegin(), _weakHypotheses.rend(), inveresedWhyp.begin());
+        copy(inveresedWhyp.begin(), inveresedWhyp.end(), _weakHypotheses.begin());
+        
 		// calculate the sum of alphas
 		vector<BaseLearner*>::iterator it;
 		_sumAlphas=0.0;
@@ -147,6 +158,7 @@ namespace MultiBoost {
     }
 
 	// -----------------------------------------------------------------------
+
 	void DataReader::calculateHypothesesMatrix()
 	{		
 		cout << "Calculate weak hyp matrix ...";
@@ -178,6 +190,103 @@ namespace MultiBoost {
 		cout << "Done" << endl;
 	}
 	
+    // -----------------------------------------------------------------------
+    
+    AlphaReal DataReader::computeSeparationSpan(InputData* pData, const vector<vector<AlphaReal> > & iPosteriors)
+    {
+        const int numExamples = pData->getNumExamples();
+		const int numClasses = pData->getNumClasses();
+        
+        vector<int> numExamplesPerClass(numClasses);
+        for (int l = 0; l < numClasses; ++l) {
+            numExamplesPerClass[l] = pData->getNumExamplesPerClass(l);
+        }
+        
+        AlphaReal minSpan = numeric_limits<AlphaReal>::max();
+        
+        // pairwise
+//        for (int l1 = 0; l1 < numClasses - 1; ++l1) {
+//            for (int l2 = l1 + 1; l2 < numClasses; ++l2) {
+//                int numPositiveExamples = numExamplesPerClass[l1];
+//                int numNegativeExamples = numExamplesPerClass[l2];
+//                AlphaReal edgePos = 0., edgeNeg = 0.;
+//                for (int i = 0; i < numExamples; ++i) {
+//                    AlphaReal posterior = iPosteriors[i][l1]; [l1][l1][l1][l1]
+//                    vector<Label>& labels = pData->getLabels(i);
+//                    if (labels[l1].y > 0)
+//                        edgePos += posterior;
+//                    if (labels[l2].y > 0)
+//                        edgeNeg += posterior;
+//                }
+//                AlphaReal span = edgePos / numPositiveExamples - edgeNeg / numNegativeExamples;
+//                if (span < minSpan) {
+//                    minSpan = span;
+//                }
+//            }
+//        }
+        
+        // one against all
+        for (int l1 = 0; l1 < numClasses - 1; ++l1) {
+            int numPositiveExamples = numExamplesPerClass[l1];
+            int numNegativeExamples = numExamples - numPositiveExamples;
+            AlphaReal edgePos = 0., edgeNeg = 0.;
+            for (int i = 0; i < numExamples; ++i) {
+                AlphaReal posterior = iPosteriors[i][l1];
+                vector<Label>& labels = pData->getLabels(i);
+                if (labels[l1].y > 0)
+                    edgePos += posterior;
+                else
+                    edgeNeg += posterior;
+            }
+            AlphaReal span = edgePos / numPositiveExamples - edgeNeg / numNegativeExamples;
+            if (span < minSpan) {
+                minSpan = span;
+            }
+        }
+
+        return minSpan;
+    }
+
+    // -----------------------------------------------------------------------
+
+    void DataReader::reorderWeakHypotheses(InputData* pData){
+        
+        vector<BaseLearner*> reorderedWhyp;
+        vector<BaseLearner*>::iterator whyIt;
+        
+        const int numExamples = pData->getNumExamples();
+		const int numClasses = pData->getNumClasses();
+
+        vector<vector<AlphaReal> > posteriors(numExamples);
+        for (int i = 0; i < numExamples; ++i)
+            posteriors[i].resize(numClasses);
+        
+        for (int i = 0; i < numExamples; ++i)
+        {
+            for (whyIt = _weakHypotheses.begin(); whyIt != _weakHypotheses.end(); ++whyIt) {
+                BaseLearner* currWeakHyp = *whyIt;
+                AlphaReal alpha = currWeakHyp->getAlpha();
+            
+                for (int l = 0; l < numClasses; ++l)
+                    posteriors[i][l] += alpha * currWeakHyp->classify(pData, i, l);
+            }
+
+        }
+        
+        cout << "[+] Reordering the base classifiers... " << flush;
+        
+        for (whyIt = _weakHypotheses.begin(); whyIt != _weakHypotheses.end(); ++whyIt) {
+            AlphaReal span = computeSeparationSpan(pData, posteriors);
+        }
+        
+        
+        cout << "Done!" << endl;
+        
+    }
+    
+    
+    // -----------------------------------------------------------------------
+
 	void DataReader::loadInputData(const string& dataFileName, const string& testDataFileName, const string& testDataFileName2, const string& shypFileName)
 	{
 		// open file

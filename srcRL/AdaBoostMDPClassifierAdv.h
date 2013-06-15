@@ -126,6 +126,10 @@ namespace MultiBoost {
         
         bool isMILsetup() {return _mil;};
         
+        AlphaReal computeSeparationSpan(InputData* pData, const vector<vector<AlphaReal> > & iPosteriors);
+        
+        void reorderWeakHypotheses(InputData* pData);
+        
 	protected:
 		void calculateHypothesesMatrix();
         void readRawData(string rawDataFileName, vector<int>& candidateNumber);
