@@ -79,10 +79,10 @@ namespace MultiBoost {
 //        random_shuffle ( _weakHypotheses.begin(), _weakHypotheses.end() );
 //        random_shuffle ( _weakHypotheses.begin(), _weakHypotheses.end() );
 
-        cout << "[+++] SUPER REVERSE... ACTION! [+++]" << endl;
-        vector<BaseLearner*> inveresedWhyp(_weakHypotheses.size());
-        copy(_weakHypotheses.rbegin(), _weakHypotheses.rend(), inveresedWhyp.begin());
-        copy(inveresedWhyp.begin(), inveresedWhyp.end(), _weakHypotheses.begin());
+//        cout << "[+++] SUPER REVERSE... ACTION! [+++]" << endl;
+//        vector<BaseLearner*> inveresedWhyp(_weakHypotheses.size());
+//        copy(_weakHypotheses.rbegin(), _weakHypotheses.rend(), inveresedWhyp.begin());
+//        copy(inveresedWhyp.begin(), inveresedWhyp.end(), _weakHypotheses.begin());
         
 		// calculate the sum of alphas
 		vector<BaseLearner*>::iterator it;

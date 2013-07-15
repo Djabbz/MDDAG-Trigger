@@ -368,17 +368,20 @@ namespace MultiBoost {
 			
 		} else if (mode == 2 ) // jump to end
 		{
-//            _currentClassifier++;
-			_currentClassifier = _data->getIterationNumber();
+
+            for (int i = _currentClassifier; i < _data->getIterationNumber(); ++i) {
+                _classifiersOutput.push_back(0);
+            }
             
-            _classifiersOutput.push_back(2);
+			_currentClassifier = _data->getIterationNumber();
+          
+            
+//            _classifiersOutput.push_back(2);
             
             KeyIndicesType::const_iterator kIt = _keysIndices.find(_classifiersOutput);
             if (kIt == _keysIndices.end()) {
                 _keysIndices[_classifiersOutput] = _currentKeyIndex++;
             }
-
-
 		}
         		
 		if ( _currentClassifier == _data->getIterationNumber() ) // check whether there is any weak classifier
@@ -615,6 +618,18 @@ namespace MultiBoost {
 		}
 		return rew;
 	}
+    
+	// -----------------------------------------------------------------------
+
+    vector<AlphaReal> AdaBoostMDPClassifierContinous::classifyWithSubset(const vector<int>& path)
+    {
+        ExampleResults exampleResult(_currentRandomInstance,_data->getClassNumber());
+        for( auto p: path)
+        {
+            _data->classifyKthWeakLearner(p, _currentRandomInstance, &exampleResult);
+        }
+        return exampleResult.getVotesVector();
+    }
     
 	// -----------------------------------------------------------------------
     

@@ -39,6 +39,8 @@
 //////////////////////////////////////////////////////////////////////
 #include "AdaBoostMDPClassifierAdv.h"
 
+#include <set>
+
 //#include "tbb/parallel_for.h"
 //#include "tbb/blocked_range.h"
 
@@ -265,6 +267,8 @@ namespace MultiBoost {
         vector<int>& getBagCardinals() { return _data->getBagCardinals(); }
         
         bool isMILsetup() {return _data->isMILsetup(); }
+        
+        vector<AlphaReal> classifyWithSubset(const vector<int>& path);
 	};
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////
@@ -414,6 +418,260 @@ namespace MultiBoost {
 		{
 		}
 		
+        void outputDeepArff(const string &arffFileName, int mode)
+        {
+			agent->addSemiMDPListener(this);
+			CAgentController *tempController = NULL;
+			if (controller)
+			{
+				tempController = detController->getController();
+				detController->setController(controller);
+			}
+			
+			T* classifier = dynamic_cast<T*>(semiMDPRewardFunction);
+            
+            const int numClasses = classifier->getNumClasses();
+			const int numExamples = classifier->getNumExamples();
+
+			ofstream output;
+			vector<AlphaReal> currentVotes(0);
+			
+			if ( !arffFileName.empty() )
+			{
+				output.open( arffFileName.c_str() );
+                
+                if (! output.good()) {
+                    cout << "Error! Could not open the output arff file: " << arffFileName << endl;
+                    exit(1);
+                }   
+			}
+            
+            vector<vector<AlphaReal> > scores;			
+            
+                        
+            if (mode == 1) {
+                
+                set<vector<int> > pathsSet;
+                
+                for (int i = 0; i < numExamples; ++i)
+                {
+                    agent->startNewEpisode();
+                    classifier->setCurrentRandomIsntace(i);
+                    agent->doControllerEpisode(1,  classifier->getIterNum()*2 );
+                    
+                    vector<int> history;
+                    classifier->getHistory(history);
+                    
+                    pathsSet.insert(history);
+                }
+                
+                
+                // output the attributes
+                int attr_counter = 0;
+                for (auto path: pathsSet) {
+                    output << "% path_" << attr_counter++;
+                    for (int i: path)
+                    {
+                        output << " " << i;
+                    }
+                    output << endl;
+                }
+                
+                output << endl;
+            
+                output << "@RELATION DeepMDDAG \n\n";
+                attr_counter = 0;
+                for (auto path: pathsSet) {
+                    
+                    if (numClasses <= 2) 
+                        output << "@ATTRIBUTE path_" << attr_counter++ << " NUMERIC\n";
+                    else
+                        for (int l = 0; l < numClasses; ++l) 
+                            output << "@ATTRIBUTE path_" << attr_counter++ << "_class_" << l << " NUMERIC\n";
+                }
+                
+                output << "@ATTRIBUTE class {0" ;
+                for (int l = 1; l < numClasses; ++l) {
+                    output << "," << l;
+                }
+                output << "}\n";
+                
+                output << "\n@DATA\n";
+                
+                for (int i = 0; i < numExamples; ++i)
+                {
+                    for (auto path: pathsSet)
+                    {
+                        // TODO:
+                        // implement classifyWithSubset
+                        vector <AlphaReal> scores = classifier->classifyWithSubset(path);
+                        
+                        if (numClasses <= 2)
+                            output << scores[classifier->getPositiveLabelIndex()] << ",";
+                        else
+                            for (auto score: scores)
+                                output << score << ",";
+                    }
+                    
+                    //output label
+                    vector<Label>& labels = classifier->getLabels(i);
+                    for (vector<Label>::iterator lIt = labels.begin(); lIt != labels.end(); ++lIt) {
+                        if (lIt->y > 0) {
+                            output << lIt->idx;
+                            break;
+                        }
+                    }
+                    
+                    output << endl;
+                }
+            }
+            else if (mode == 2)
+            {
+                output << "@RELATION DeepMDDAG \n\n";
+                
+                // output the attributes
+                for (int i = 0; i < classifier->getIterNum(); ++i)
+                    output << "@ATTRIBUTE whyp_" << i << " NUMERIC\n";
+                
+                output << "@ATTRIBUTE class {0" ;
+                for (int l = 1; l < numClasses; ++l) {
+                    output << "," << l;
+                }
+                output << "}\n";
+                
+                output << "\n@DATA\n";
+                
+
+                for (int i = 0; i < numExamples; ++i)
+                {
+                    agent->startNewEpisode();
+                    classifier->setCurrentRandomIsntace(i);
+                    agent->doControllerEpisode(1,  classifier->getIterNum()*2 );
+                    
+                    bool clRes = classifier->classifyCorrectly();
+                    if (! clRes) {
+                        continue;
+                    }
+                    
+                    vector<int> classifierVotes;
+                    classifier->getClassifiersOutput(classifierVotes);
+                    
+                    vector<bool> history;
+                    classifier->getHistory(history);
+                    
+                    for( int wl = 0; wl < classifierVotes.size(); ++wl)
+                    {
+                        output << (int)history[wl] << ",";
+//                        output << classifierVotes[wl] << ",";
+                    }
+                    
+                    //output label
+                    vector<Label>& labels = classifier->getLabels(i);
+                    for (vector<Label>::iterator lIt = labels.begin(); lIt != labels.end(); ++lIt) {
+                        if (lIt->y > 0) {
+                            output << lIt->idx;
+                            break;
+                        }
+                    }
+                    
+                    output << endl;
+                }
+            }
+            else if (mode == 3) {
+                
+                map<vector<int>, int> edgeSet;
+                int attr_counter = 0;
+                for (int i = 0; i < numExamples; ++i)
+                {
+                    agent->startNewEpisode();
+                    classifier->setCurrentRandomIsntace(i);
+                    agent->doControllerEpisode(1,  classifier->getIterNum()*2 );
+                    
+                    vector<int> history;
+                    classifier->getHistory(history);
+                    
+                    for (int j = 1; j < history.size(); ++j) {
+                        vector<int> edge(2);
+                        edge[0] = history[j-1],
+                        edge[1] = history[j];
+                        
+                        if (edgeSet.find(edge) == edgeSet.end())
+                            edgeSet[edge] = attr_counter++;
+                    }
+                }
+                
+//                for (const auto & myTmpKey : edgeSet){
+//                    cout << myTmpKey.second << " -> ";
+//                    for (const auto & myTmpKey : myTmpKey.first) cout << myTmpKey << " "; cout << endl;
+//                }
+                
+                output << "@RELATION DeepMDDAG_mode3 \n\n";
+
+                // output the attributes
+                for (auto edge: edgeSet){
+                    output << "@ATTRIBUTE edge_" << edge.first[0] << "_" << edge.first[1] << " NUMERIC\n";
+                }
+                
+                output << "@ATTRIBUTE class {0" ;
+                for (int l = 1; l < numClasses; ++l) {
+                    output << "," << l;
+                }
+                output << "}\n";
+                
+                output << "\n@DATA\n";
+                
+                
+                for (int i = 0; i < numExamples; ++i)
+                {
+                    agent->startNewEpisode();
+                    classifier->setCurrentRandomIsntace(i);
+                    agent->doControllerEpisode(1,  classifier->getIterNum()*2 );
+                    
+                    //                    bool clRes = classifier->classifyCorrectly();
+                    //                    if (! clRes) {
+                    //                        continue;
+                    //                    }
+ 
+                    vector<int> history;
+                    classifier->getHistory(history);
+                    
+                    vector<int> featureVector(edgeSet.size(), 0);
+                    
+                    for (int j = 1; j < history.size(); ++j) {
+                        vector<int> edge(2);
+                        edge[0] = history[j-1],
+                        edge[1] = history[j];
+
+                        featureVector[edgeSet[edge]] = 1;
+                    }
+                    
+                    for (int j: featureVector)
+                        output << j << ",";
+
+                    //output label
+                    vector<Label>& labels = classifier->getLabels(i);
+                    for (vector<Label>::iterator lIt = labels.begin(); lIt != labels.end(); ++lIt) {
+                        if (lIt->y > 0) {
+                            output << lIt->idx;
+                            break;
+                        }
+                    }
+                    
+                    output << endl;
+                }
+            }
+            
+            output.close();
+			agent->removeSemiMDPListener(this);
+			if (tempController)
+			{
+				detController->setController(tempController);
+			}
+            
+            cout << "Output deep arff: " << arffFileName << endl;
+
+        }
+        
 		void classficationPerformance( BinaryResultStruct& binRes, const string &logFileName, bool detailed = false )
 		{
 			double value = 0.0;
@@ -545,7 +803,7 @@ namespace MultiBoost {
 							output << wl+1 << " ";
 					}
                     
-					output << endl << flush;
+					output << endl;
                     
                     if (detailed) {
                         vector<int> classifiersOutput;
@@ -561,7 +819,7 @@ namespace MultiBoost {
                         for (int i = 0; i < classifiersOutput.size(); ++i) {
                             detailedOutput << classifiersOutput[i] << " ";
                         }
-                        detailedOutput << endl << flush;
+                        detailedOutput << endl;
                     }
                     
 

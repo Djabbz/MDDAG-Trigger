@@ -192,7 +192,9 @@ void setBasicOptions(nor_utils::Args& args)
 	args.declareArgument("traintestmdp", "Performs training and test at the same time.", 5, "<trainingDataFile> <testDataFile> <nInterations> <shypfile> <outfile>");
     args.declareArgument("traintestmdp", "Performs training and test at the same time.", 6, "<trainingDataFile> <validDataFile> <nInterations> <shypfile> <outfile> <testDataFile>");
     args.declareArgument("testmdp", "Performs test of a previously leant model.", 3, "<qtable> <train log file> <test log file>");
-	
+    args.declareArgument("deeparff", "Outputs an arff file where the attributes are the paths of MDDAG.", 4, "<qtable> <train arff file> <test arff file> <mode>");
+    
+    
 	args.declareArgument( "fileformat", "Defines the type of intput file. Available types are:\n"
 						 "* simple: each line has attributes separated by whitespace and class at the end (DEFAULT!)\n"
 						 "* arff: arff filetype. The header file can be specified using --arffheader option\n"
@@ -509,114 +511,114 @@ int main(int argc, const char *argv[])
     if ( args.hasArgument("statespace") )
     {
         sptype = args.getValue<int>("statespace", 0);
-        
-        if (sptype==0) {
-            if ( datahandler->getClassNumber() <= 2 )
-                discState = classifierContinous->getStateSpace(featnum);
-            else
-                discState = classifierContinous->getStateSpaceExp(featnum,2.0);
-            agentContinous->addStateModifier(discState);
-            qData = new CFeatureQFunction(agentContinous->getActions(), discState);
-        }
-        else if (sptype == 5 ) {
-            discState = classifierContinous->getStateSpaceForGSBNFQFunction(featnum);
-            agentContinous->addStateModifier(discState);
-            qData = new GSBNFBasedQFunction(agentContinous->getActions(), discState);
-            
-            double initRBFs[] = {1.0,1.0,1.0};
-            if ( args.hasArgument("optimistic") )
-            {
-                assert(args.getNumValues("optimistic") == 3);
-                initRBFs[0] = args.getValue<double>("optimistic", 0);
-                initRBFs[1] = args.getValue<double>("optimistic", 1);
-                initRBFs[2] = args.getValue<double>("optimistic", 2);
-            }
-            
-            vector<double> bias(3);
-            if ( args.hasArgument("rbfbias") )
-            {
-                assert(args.getNumValues("rbfbias") == 3);
-                bias[0] = args.getValue<double>("rbfbias", 0);
-                bias[1] = args.getValue<double>("rbfbias", 1);
-                bias[2] = args.getValue<double>("rbfbias", 2);
-            }
-            
-            if (args.hasArgument("qtable")) {
-                cout << "Loading Q-Table..." << endl;
-                dynamic_cast<GSBNFBasedQFunction*>( qData )->loadQFunction(args.getValue<string>("qtable", 0));
-            }
-
-            dynamic_cast<GSBNFBasedQFunction*>( qData )->setBias(bias);
-            
-            int addCenter = 1;
-            if ( args.hasArgument("noaddcenter") )
-                addCenter = 0;
-            
-            int normalizeRbf = 0;
-            if ( args.hasArgument("normrbf") )
-                normalizeRbf = 1;
-            
-            double initSigma = 0.01;
-            if ( args.hasArgument("rbfsigma") )
-                initSigma = args.getValue<double>("rbfsigma", 0);
-            
-            int maxtderr = 10;
-            if ( args.hasArgument("maxtderr") )
-                maxtderr = args.getValue<int>("maxtderr", 0);
-            
-            double minact = 0.4;
-            if ( args.hasArgument("minrbfact") )
-                minact = args.getValue<double>("minrbfact", 0);
-            
-            int maxrbfnumber = 1000;
-            if ( args.hasArgument("maxrbfnumber") )
-                maxrbfnumber = args.getValue<int>("MaxRBFNumber", 0);
-            
-            cout << "[+] Meta parameters:" << endl;
-            cout << "\t--> Normalized RBF: " << normalizeRbf << endl;
-            cout << "\t--> RBF Sigma: " << initSigma << endl;
-            
-            if (addCenter != 0)
-            {
-                cout << "\t--> New center addition:" << endl;
-                cout << "\t\t--> Max TD error: 1/" << maxtderr << endl;
-                cout << "\t\t--> Min RBF activation: " << minact << endl;
-            }
-            cout << endl;
-            
-            qData->setParameter("AddCenterOnError", addCenter);
-            qData->setParameter("NormalizedRBFs", normalizeRbf);
-            qData->setParameter("InitRBFSigma", initSigma);
-            qData->setParameter("MaxTDErrorDivFactor", maxtderr);
-            qData->setParameter("MinActivation", minact);
-            qData->setParameter("QLearningRate", currentAlpha);
-            qData->setParameter("MaxRBFNumber", maxrbfnumber);
-            
-            dynamic_cast<GSBNFBasedQFunction*>( qData )->uniformInit(initRBFs);
-            
-            dynamic_cast<GSBNFBasedQFunction*>( qData )->setMuAlpha(1) ;
-            dynamic_cast<GSBNFBasedQFunction*>( qData )->setMuMean(0.00) ;
-            dynamic_cast<GSBNFBasedQFunction*>( qData )->setMuSigma(0.00) ;
-        }
-        else if (sptype == 6) {
-            discState = classifierContinous->getStateSpaceForGSBNFQFunction(featnum);
-            agentContinous->addStateModifier(discState);
-            qData = new HashTable(agentContinous->getActions(), discState, classifierContinous, datahandler->getClassNumber());
-
-            dynamic_cast<HashTable*>(qData)->setScoreResolution(featnum);
-            
-            if (args.hasArgument("qtable")) {
-                cout << "Loading Q Hash Table from : " << args.getValue<string>("qtable", 0) << endl;
-                dynamic_cast<HashTable*>( qData )->loadActionValueTable(args.getValue<string>("qtable", 0));
-            }
-
-        }
-        else {
-            cout << "unkown statespcae" << endl;
-            exit(1);
-        }
-        
     }
+    if (sptype==0) {
+        if ( datahandler->getClassNumber() <= 2 )
+            discState = classifierContinous->getStateSpace(featnum);
+        else
+            discState = classifierContinous->getStateSpaceExp(featnum,2.0);
+        agentContinous->addStateModifier(discState);
+        qData = new CFeatureQFunction(agentContinous->getActions(), discState);
+    }
+    else if (sptype == 5 ) {
+        discState = classifierContinous->getStateSpaceForGSBNFQFunction(featnum);
+        agentContinous->addStateModifier(discState);
+        qData = new GSBNFBasedQFunction(agentContinous->getActions(), discState);
+        
+        double initRBFs[] = {1.0,1.0,1.0};
+        if ( args.hasArgument("optimistic") )
+        {
+            assert(args.getNumValues("optimistic") == 3);
+            initRBFs[0] = args.getValue<double>("optimistic", 0);
+            initRBFs[1] = args.getValue<double>("optimistic", 1);
+            initRBFs[2] = args.getValue<double>("optimistic", 2);
+        }
+        
+        vector<double> bias(3);
+        if ( args.hasArgument("rbfbias") )
+        {
+            assert(args.getNumValues("rbfbias") == 3);
+            bias[0] = args.getValue<double>("rbfbias", 0);
+            bias[1] = args.getValue<double>("rbfbias", 1);
+            bias[2] = args.getValue<double>("rbfbias", 2);
+        }
+        
+        if (args.hasArgument("qtable")) {
+            cout << "Loading Q-Table..." << endl;
+            dynamic_cast<GSBNFBasedQFunction*>( qData )->loadQFunction(args.getValue<string>("qtable", 0));
+        }
+
+        dynamic_cast<GSBNFBasedQFunction*>( qData )->setBias(bias);
+        
+        int addCenter = 1;
+        if ( args.hasArgument("noaddcenter") )
+            addCenter = 0;
+        
+        int normalizeRbf = 0;
+        if ( args.hasArgument("normrbf") )
+            normalizeRbf = 1;
+        
+        double initSigma = 0.01;
+        if ( args.hasArgument("rbfsigma") )
+            initSigma = args.getValue<double>("rbfsigma", 0);
+        
+        int maxtderr = 10;
+        if ( args.hasArgument("maxtderr") )
+            maxtderr = args.getValue<int>("maxtderr", 0);
+        
+        double minact = 0.4;
+        if ( args.hasArgument("minrbfact") )
+            minact = args.getValue<double>("minrbfact", 0);
+        
+        int maxrbfnumber = 1000;
+        if ( args.hasArgument("maxrbfnumber") )
+            maxrbfnumber = args.getValue<int>("MaxRBFNumber", 0);
+        
+        cout << "[+] Meta parameters:" << endl;
+        cout << "\t--> Normalized RBF: " << normalizeRbf << endl;
+        cout << "\t--> RBF Sigma: " << initSigma << endl;
+        
+        if (addCenter != 0)
+        {
+            cout << "\t--> New center addition:" << endl;
+            cout << "\t\t--> Max TD error: 1/" << maxtderr << endl;
+            cout << "\t\t--> Min RBF activation: " << minact << endl;
+        }
+        cout << endl;
+        
+        qData->setParameter("AddCenterOnError", addCenter);
+        qData->setParameter("NormalizedRBFs", normalizeRbf);
+        qData->setParameter("InitRBFSigma", initSigma);
+        qData->setParameter("MaxTDErrorDivFactor", maxtderr);
+        qData->setParameter("MinActivation", minact);
+        qData->setParameter("QLearningRate", currentAlpha);
+        qData->setParameter("MaxRBFNumber", maxrbfnumber);
+        
+        dynamic_cast<GSBNFBasedQFunction*>( qData )->uniformInit(initRBFs);
+        
+        dynamic_cast<GSBNFBasedQFunction*>( qData )->setMuAlpha(1) ;
+        dynamic_cast<GSBNFBasedQFunction*>( qData )->setMuMean(0.00) ;
+        dynamic_cast<GSBNFBasedQFunction*>( qData )->setMuSigma(0.00) ;
+    }
+    else if (sptype == 6) {
+        discState = classifierContinous->getStateSpaceForGSBNFQFunction(featnum);
+        agentContinous->addStateModifier(discState);
+        qData = new HashTable(agentContinous->getActions(), discState, classifierContinous, datahandler->getClassNumber());
+
+        dynamic_cast<HashTable*>(qData)->setScoreResolution(featnum);
+        
+        if (args.hasArgument("qtable")) {
+            cout << "Loading Q Hash Table from : " << args.getValue<string>("qtable", 0) << endl;
+            dynamic_cast<HashTable*>( qData )->loadActionValueTable(args.getValue<string>("qtable", 0));
+        }
+
+    }
+    else {
+        cout << "unkown statespcae" << endl;
+        exit(1);
+    }
+    
+    
 //    else {
 //        
 //        cout << "No state space resresantion is given. Use --statespace" << endl;
@@ -743,7 +745,49 @@ int main(int argc, const char *argv[])
 
         exit(0);
     }
-    
+
+    if (args.hasArgument("deeparff"))
+    {
+        
+        if (sptype < 5) {
+            cout << "Error: use sptype 5 with --deeparff" << endl;
+            exit(1);
+        }
+        
+        agentContinous->removeSemiMDPListener(qFunctionLearner);
+        
+        CAgentController* greedypolicy = new CQGreedyPolicy(agentContinous->getActions(), qData);
+        agentContinous->setController(greedypolicy);
+        
+        if (sptype == 5)
+            dynamic_cast<GSBNFBasedQFunction*>( qData )->loadQFunction(args.getValue<string>("deeparff", 0));
+        else if (sptype == 6)
+            dynamic_cast<HashTable*>( qData )->loadActionValueTable(args.getValue<string>("deeparff", 0));
+
+        int mode = args.getValue<int>("deeparff", 3);
+        
+        classifierContinous->setCurrentDataToTrain();
+        AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalTrain( agentContinous, rewardFunctionContinous );
+        string logFileName = args.getValue<string>("deeparff", 1);
+        evalTrain.outputDeepArff(logFileName, mode);
+        
+        
+        classifierContinous->setCurrentDataToTest();
+        AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalTest( agentContinous, rewardFunctionContinous );
+        string logFileName2 = args.getValue<string>("deeparff", 2);
+        evalTest.outputDeepArff(logFileName2, mode);
+        
+        
+        delete datahandler;
+        delete classifierContinous;
+        delete agentContinous;
+        delete qData;
+        delete qFunctionLearner;
+        delete policy;
+        
+        exit(0);
+    }
+
     cout << "Train: " << adaboostTrainPerf << "\t Valid: " << adaboostValidPerf;
     
     if (adaboostTestPerf != 0) {
@@ -868,7 +912,7 @@ int main(int argc, const char *argv[])
             string logFileName;
             if (!logDirContinous.empty()) {
                 char logfname[4096];
-                sprintf( logfname, "./%s/classValid_%d.txt", logDirContinous.c_str(), i );
+                sprintf( logfname, "%s/classValid_%d.txt", logDirContinous.c_str(), i );
                 logFileName = string(logfname);
             }
             
@@ -899,7 +943,7 @@ int main(int argc, const char *argv[])
                 
                 if (!logDirContinous.empty()) {
                     char logfname[4096];
-                    sprintf( logfname, "./%s/classTest_%d.txt", logDirContinous.c_str(), i );
+                    sprintf( logfname, "%s/classTest_%d.txt", logDirContinous.c_str(), i );
                     logFileName = string(logfname);
                 }
                 
