@@ -32,6 +32,8 @@ HashTable::HashTable(CActionSet *actions, CStateModifier* sm,  MultiBoost::AdaBo
 //    _numDimensions = 1;
 
     _stepResolution = 1. / 9;
+    
+    _numWinnerClasses = 2;
 }
 
 // -----------------------------------------------------------------------------------
@@ -91,9 +93,11 @@ void HashTable::getKey(MDDAGState& state, ValueKey& key)
     key.clear();
 //    key.resize(numDimensions + numEvaluations + 1);//+ 1
     
-    const int numWinners = 2;
+//    const int numWinners = 0;
+    
+    _numWinnerClasses = 2;
     // index + numWinners + difference between the first two winners
-    key.resize(1 + numWinners + 1);//+ 1
+    key.resize(1 + _numWinnerClasses + 1);//+ 1
     
     int i = 0;
     key[i++] = state.discreteStates[0];
@@ -105,7 +109,7 @@ void HashTable::getKey(MDDAGState& state, ValueKey& key)
     
 //    cout << "+++[DEBUG] p, scorediff, step " << p << "   " << scoreDifference <<  "   " << _stepResolution << endl;
 
-    for (int j = 0; j < numWinners; ++j) {
+    for (int j = 0; j < _numWinnerClasses; ++j) {
         key[i++] = winners[j];
     }
     
@@ -213,8 +217,12 @@ void HashTable::saveActionValueTable(FILE* stream)
 //        if (keyIt != key.end())
         fprintf(stream, "%d ", (int)*(keyIt++));
         fprintf(stream, " ");
-        fprintf(stream, "%d ", (int)*(keyIt++));
-        fprintf(stream, "%d ", (int)*(keyIt++));
+        
+        for (int i = 0; i < _numWinnerClasses; ++i) {
+            fprintf(stream, "%d ", (int)*(keyIt++));
+        }
+
+//        fprintf(stream, "%d ", (int)*(keyIt++));
         fprintf(stream, " ");
         fprintf(stream, "%d ", (int)*(keyIt++));
 //        for (int d = 0; d < _numDimensions; ++d, ++keyIt) {
@@ -285,7 +293,7 @@ void HashTable::loadActionValueTable(const string& fileName)
             key.push_back(k);
             
             // if it points to the bin index and if it's not the max yet
-            if (pointer == 3 && k > maxDiscreteBin) {
+            if (pointer == (_numWinnerClasses + 1) && k > maxDiscreteBin) {
                 maxDiscreteBin = k;
             }
 

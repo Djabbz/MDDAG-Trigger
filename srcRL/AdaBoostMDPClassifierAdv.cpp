@@ -634,6 +634,9 @@ namespace MultiBoost {
             iterationWiseError[j] = err;
 		}
 		
+        for (int i = 0; i < numExamples; ++i)
+			delete examplesResults[i] ;
+
 //		double acc = ((double) correct / ((double) numExamples)) * 100.0;
 		return err;
 	}

@@ -51,6 +51,8 @@ protected:
     int                                 _numDimensions;
     MultiBoost::AdaBoostMDPClassifierContinous*     _classifier;
     double                                 _stepResolution;
+    
+    int                                 _numWinnerClasses;
         
 public:
     

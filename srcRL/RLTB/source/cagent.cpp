@@ -522,14 +522,14 @@ void CAgent::doAction(CAction *l_action)
 	if (DebugIsEnabled())
 	{
 		DebugPrint('+', "\nNew Step (%d): ", this->getCurrentStep());
-		DebugPrint('+', "oldState: ");
+		DebugPrint('+', "oldState ");
 		lastState->getState()->saveASCII(DebugGetFileHandle('+'));
-		DebugPrint('+', "action: %d ", actions->getIndex(action));
+		DebugPrint('+', ", action %d, ", actions->getIndex(action));
 		if (action->getActionData())
 		{
 			action->getActionData()->saveASCII(DebugGetFileHandle('+'));
 		}
-		DebugPrint('+', "currentState: ");
+		DebugPrint('+', "currentStateq lq ");
 		currentState->getState()->saveASCII(DebugGetFileHandle('+'));
 		DebugPrint('+', "\n");
 

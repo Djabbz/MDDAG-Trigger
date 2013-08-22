@@ -886,12 +886,12 @@ int main(int argc, const char *argv[])
 //                
 //            }
             
-            if (adaptiveEpsilon > 0 )
+            if (adaptiveEpsilon > 0 ) {
                 if (bres.usedClassifierAvg != 0)
                     policy->setParameter("EpsilonGreedy", adaptiveEpsilon/bres.usedClassifierAvg);
                 else
                     policy->setParameter("EpsilonGreedy", adaptiveEpsilon);
-
+            }
 
             cout << "[+] Training set results: " << endl;
             cout << "--> Overall error by MDP: " << bres.err << " (" << classifierContinous->getIterationError((int)bres.usedClassifierAvg) << ")" <<  " (" << adaboostTrainPerf << ")" << endl;

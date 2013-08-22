@@ -730,12 +730,12 @@ namespace MultiBoost {
             
 			for (int i = 0; i < numTestExamples; i ++)
 			{
-				
+                
 				//cout << i << endl;
 				agent->startNewEpisode();
 				//cout << "Length of history: " << classifier->getLengthOfHistory() << endl;
 				classifier->setCurrentRandomIsntace(i);
-				agent->doControllerEpisode(1,  classifier->getIterNum()*2 );
+				agent->doControllerEpisode(1,  classifier->getIterNum() + 1 );
 				//cout << "Length of history: " << classifier->getLengthOfHistory() << endl;
 				
 				//cout << "Intance: " << i << '\t' << "Num of classifier: " << classifier->getUsedClassifierNumber() << endl;
