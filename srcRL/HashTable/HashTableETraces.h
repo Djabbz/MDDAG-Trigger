@@ -28,6 +28,8 @@ struct MDDAGState {
 //    MDDAGState() {};
     MDDAGState(CState* state)
     {
+        discreteStates.clear();
+        continuousStates.clear();
         for (int i = 0; i < state->getNumContinuousStates(); ++i)
             continuousStates.push_back(state->getContinuousState(i));
 

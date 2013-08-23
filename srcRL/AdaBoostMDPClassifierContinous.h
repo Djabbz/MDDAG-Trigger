@@ -101,7 +101,6 @@ namespace MultiBoost {
 		double					_successReward;
 		SuccesRewardModes		_succRewardMode;
         
-        bool                    _incrementalReward;
         double                  _lastReward;
 
 		DataReader*				_data;

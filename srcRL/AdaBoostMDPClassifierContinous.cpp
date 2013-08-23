@@ -27,7 +27,7 @@ namespace MultiBoost {
 	// -----------------------------------------------------------------------
 
 	AdaBoostMDPClassifierContinous::AdaBoostMDPClassifierContinous(const nor_utils::Args& args, int verbose, DataReader* datareader, int classNum, int discState )
-	: CEnvironmentModel(classNum, discState), _args(args), _verbose(verbose), _classNum(classNum), _data(datareader), _incrementalReward(false), _lastReward(0.0) //CEnvironmentModel(classNum+1,classNum)
+	: CEnvironmentModel(classNum, discState), _args(args), _verbose(verbose), _classNum(classNum), _data(datareader), _lastReward(0.0) //CEnvironmentModel(classNum+1,classNum)
 	{
 		// set the dim of state space
 		for( int i=0; i<_classNum;++i)
@@ -87,10 +87,6 @@ namespace MultiBoost {
 			_succRewardMode = RT_HAMMING;
 		}
 		
-        if (args.hasArgument("incrementalrewardQ")) {
-            _incrementalReward = true;
-        }
-
         // for budgetted classification
         _budgetedClassification = false;
         if (args.hasArgument("budgeted"))
@@ -291,24 +287,13 @@ namespace MultiBoost {
         else
             state->setDiscreteState(0, _currentClassifier);
         
-        state->setDiscreteState(1, _keysIndices[_classifiersOutput]);
-
-//        cout << "+++[DEBUG] _keysIndices[_classifiersOutput] " << _keysIndices[_classifiersOutput] << endl;
-//        for (const auto & myTmpKey : _keysIndices)
-//        {
-//            for (const auto & myTmpKey2 : myTmpKey.first) cout << myTmpKey2 << " ";
-//            cout << " -> " << myTmpKey.second << endl;
-//        }
+//        state->setDiscreteState(1, _keysIndices[_classifiersOutput]);
         
         vector<int> winners(2);
         winners[0] = _exampleResult->getWinner(0).first;
         winners[1] = _exampleResult->getWinner(1).first;
         
         state->setDiscreteState(2, _winnersIndices[winners]);
-        
-//        cout << "+++[DEBUG] _keysIndices[_classifiersOutput] " << _keysIndices[_classifiersOutput] << endl;
-//        cout << "+++[DEBUG] _classifiersOutput ";
-//        for (auto & i : _classifiersOutput) cout << i << " "; cout << endl;
 	}
 
 	// -----------------------------------------------------------------------
@@ -318,20 +303,20 @@ namespace MultiBoost {
 		CAdaBoostAction* action = dynamic_cast<CAdaBoostAction*>(act);
 		
 		int mode = action->getMode();
-		//cout << mode << endl;
-		if ( mode == 0 ) // skip
+
+		if ( mode > 1 ) // skip
 		{
-            _currentSumAlpha += _data->getAlpha(_currentClassifier);
 
-			_currentClassifier++;
-            _classifiersOutput.push_back(0);
-            
-
-            KeyIndicesType::const_iterator kIt = _keysIndices.find(_classifiersOutput);
-            if (kIt == _keysIndices.end()) {
-                _keysIndices[_classifiersOutput] = _currentKeyIndex++;
+            for (int i = 1; i < mode && _currentClassifier < _data->getIterationNumber(); ++i) {
+                _classifiersOutput.push_back(0);
+                _currentSumAlpha += _data->getAlpha(_currentClassifier);
+                _currentClassifier += 1;
             }
 
+//            KeyIndicesType::const_iterator kIt = _keysIndices.find(_classifiersOutput);
+//            if (kIt == _keysIndices.end()) {
+//                _keysIndices[_classifiersOutput] = _currentKeyIndex++;
+//            }
 		}
 		else if (mode == 1 ) // classify
 		{
@@ -354,10 +339,10 @@ namespace MultiBoost {
 			_classifierNumber++;
 			_currentClassifier++;
             
-            KeyIndicesType::const_iterator kIt = _keysIndices.find(_classifiersOutput);
-            if (kIt == _keysIndices.end()) {
-                _keysIndices[_classifiersOutput] = _currentKeyIndex++;
-            }
+//            KeyIndicesType::const_iterator kIt = _keysIndices.find(_classifiersOutput);
+//            if (kIt == _keysIndices.end()) {
+//                _keysIndices[_classifiersOutput] = _currentKeyIndex++;
+//            }
 
 //            vector<int> winners = { _exampleResult->getWinner(0).first, _exampleResult->getWinner(1).first };
 //            map<vector<int>, int>::const_iterator wIt = _winnersIndices.find(winners);
@@ -366,7 +351,7 @@ namespace MultiBoost {
 //            }
 
 			
-		} else if (mode == 2 ) // jump to end
+		} else if (mode == 0 ) // jump to end
 		{
 
             for (int i = _currentClassifier; i < _data->getIterationNumber(); ++i) {
@@ -378,14 +363,15 @@ namespace MultiBoost {
             
 //            _classifiersOutput.push_back(2);
             
-            KeyIndicesType::const_iterator kIt = _keysIndices.find(_classifiersOutput);
-            if (kIt == _keysIndices.end()) {
-                _keysIndices[_classifiersOutput] = _currentKeyIndex++;
-            }
+//            KeyIndicesType::const_iterator kIt = _keysIndices.find(_classifiersOutput);
+//            if (kIt == _keysIndices.end()) {
+//                _keysIndices[_classifiersOutput] = _currentKeyIndex++;
+//            }
 		}
         		
-		if ( _currentClassifier == _data->getIterationNumber() ) // check whether there is any weak classifier
+		if ( _currentClassifier >= _data->getIterationNumber() ) // check whether there is any weak classifier
 		{
+            _currentClassifier = _data->getIterationNumber();
 			reset = true;
             bool correctClassification = _data->currentClassifyingResult( _currentRandomInstance,  _exampleResult );
 			if ( correctClassification )
@@ -432,31 +418,10 @@ namespace MultiBoost {
 		
 		if ( _currentClassifier < _data->getIterationNumber() )
 		{
-			if (mode==0)
+			if (mode > 1)
 			{			
 				rew = _skipReward;
-                
-                if (_incrementalReward) {
-                    
-                    rew -= _lastReward;
-                    if (_succRewardMode==RT_HAMMING)
-                    {
-                        
-                        if ( _data->currentClassifyingResult( _currentRandomInstance,  _exampleResult )  ) // classified correctly
-                        {
-                            _lastReward = _successReward;// /100.0;
-                        }
-                            
-                        else
-                        {
-                            _lastReward += _misclassificationReward;
-                        }
-                        
-                    }
-                    
-                    rew += _lastReward;
-                }
-                
+                                
 			} else if ( mode == 1 )
 			{
                 AlphaReal whypCost = 1.;
@@ -470,88 +435,9 @@ namespace MultiBoost {
                 
 				rew = _classificationReward * whypCost;
                 
-                if (_incrementalReward) {
-                    
-                    rew -= _lastReward;
-                    if (_succRewardMode==RT_HAMMING)
-                    {
-                        
-                        if ( _data->currentClassifyingResult( _currentRandomInstance,  _exampleResult )  ) // classified correctly
-                        {
-                            _lastReward = _successReward;// /100.0;
-                        }
-                        
-                        else
-                        {
-                            _lastReward += _misclassificationReward;
-                        }
-
-                    }
-                    else if (_succRewardMode==RT_EXP)
-                    {
-                        double exploss;
-                        if (_classifierNumber>0)
-                        {
-                            exploss = _data->getExponentialLoss( _currentRandomInstance,  _exampleResult );
-                            _lastReward = 1/exploss;
-                        }
-                    }
-                    else if (_succRewardMode==RT_LOGIT)
-                    {
-                        double logitloss;
-                        if (_classifierNumber>0)
-                        {
-                            logitloss = _data->getLogisticLoss( _currentRandomInstance,  _exampleResult );
-                            _lastReward = logitloss;
-                        }
-                    }
-                    
-                    rew += _lastReward;
-                }
-
-			} else if ( mode == 2 )
+			} else if ( mode == 0 )
 			{
 				rew = _jumpReward;
-//                {
-//                    
-//                    if (_succRewardMode==RT_HAMMING)
-//                    {
-//                        if ( _data->currentClassifyingResult( _currentRandomInstance,  _exampleResult )  ) // classified correctly
-//                        {
-//                            rew += _successReward;// /100.0;
-//                        } else
-//                        {
-//                            rew -= _successReward;
-//                        }
-//                    } else if (_succRewardMode==RT_EXP)
-//                    {
-//                        // since the AdaBoost minimize the margin e(-y_i f(x_i)
-//                        // we will maximize -1/e(y_i * f(x_i)
-//                        double exploss;
-//                        if (_classifierNumber>0)
-//                        {
-//                            exploss = _data->getExponentialLoss( _currentRandomInstance,  _exampleResult );
-//                            rew += 1/exploss;
-//                        }
-//                        else
-//                        {
-//                            //exploss = exp(_data->getSumOfAlphas());
-//                            //rew -= _successReward;
-//                        }
-//                        
-//                        /*
-//                         cout << "Instance index: " << _currentRandomInstance << " ";
-//                         bool clRes =  _data->currentClassifyingResult( _currentRandomInstance,  _exampleResult );
-//                         if (clRes)
-//                         cout << "[+] exploss: " << exploss << endl << flush;
-//                         else
-//                         cout << "[-] exploss: " << exploss << endl << flush;
-//                         */
-//                        
-//                        
-//                        
-//                    }
-//                }
 			}
 			
 		} else {		
@@ -588,18 +474,7 @@ namespace MultiBoost {
 					//exploss = exp(_data->getSumOfAlphas());
 					//rew -= _successReward;
 				}
-				
-				/*
-				 cout << "Instance index: " << _currentRandomInstance << " ";
-				 bool clRes =  _data->currentClassifyingResult( _currentRandomInstance,  _exampleResult );
-				 if (clRes)
-				 cout << "[+] exploss: " << exploss << endl << flush;
-				 else
-				 cout << "[-] exploss: " << exploss << endl << flush;
-				 */
-				
-				
-				
+    			
 			}
             else if (_succRewardMode==RT_LOGIT)
             {

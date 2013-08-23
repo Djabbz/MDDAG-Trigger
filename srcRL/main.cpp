@@ -246,6 +246,7 @@ void setBasicOptions(nor_utils::Args& args)
     args.declareArgument("debug", "", 1, "<file>");
     args.declareArgument("bootstrap", "The probability of reinjecting a random misclassified example", 1, "<real>");
     args.declareArgument("mil", "Multiple Instance Learning error output.", 0, "" );
+    args.declareArgument("multiskip", "Skip multiple times.", 1, "<number>" );
 }
 
 
@@ -481,16 +482,30 @@ int main(int argc, const char *argv[])
     CAgent *agentContinous = new CAgent(classifierContinous);
     
     // Add all possible Actions to the agent
-    // skip
-    agentContinous->addAction(new CAdaBoostAction(0));
-    // classify
-    agentContinous->addAction(new CAdaBoostAction(1));
-    
+    // jump to the end
     if (!args.hasArgument("withoutquitQ"))
     {
-        // jump to the end
-        agentContinous->addAction(new CAdaBoostAction(2));
+        agentContinous->addAction(new CAdaBoostAction(0));
     }
+    // classify
+    agentContinous->addAction(new CAdaBoostAction(1));
+    // skip
+//    agentContinous->addAction(new CAdaBoostAction(2));
+//    agentContinous->addAction(new CAdaBoostAction(3));
+//    agentContinous->addAction(new CAdaBoostAction(4));
+
+    unsigned int multiskip = 1;
+    // skip multiple times (experimental)
+    if (args.hasArgument("multiskip"))
+    {
+        multiskip = args.getValue<unsigned int>("multiskip");
+    }
+    
+    cout << "+++[DEBUG] multiskip " << multiskip << endl;
+    for (int m = 0; m < multiskip; ++m) {
+        agentContinous->addAction(new CAdaBoostAction(m + 2));
+    }
+    
     
     CStateModifier* discState = NULL;
     // simple discretized state space
