@@ -58,7 +58,7 @@ namespace MultiBoost {
 			_classificationReward = rew ; // setClassificationReward( rew );
 			
 			rew = args.getValue<double>("rewards", 2);
-//			_skipReward = rew ; // setSkipReward( rew );
+			_skipReward = 0. ; // setSkipReward( rew );
             _misclassificationReward = rew;
 			
 			setJumpReward(0.0);
