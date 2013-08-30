@@ -905,7 +905,7 @@ int main(int argc, const char *argv[])
                 if (bres.usedClassifierAvg != 0)
                     policy->setParameter("EpsilonGreedy", adaptiveEpsilon/bres.usedClassifierAvg);
                 else
-                    policy->setParameter("EpsilonGreedy", adaptiveEpsilon);
+                    policy->setParameter("EpsilonGreedy", 0.9);
             }
 
             cout << "[+] Training set results: " << endl;
