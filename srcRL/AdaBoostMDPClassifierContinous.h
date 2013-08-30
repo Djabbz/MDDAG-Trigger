@@ -467,11 +467,11 @@ namespace MultiBoost {
                 
                 // output the attributes
                 int attr_counter = 0;
-                for (auto path: pathsSet) {
+                for (set<vector<int> >::iterator path = pathsSet.begin(); path != pathsSet.end(); ++path) {
                     output << "% path_" << attr_counter++;
-                    for (int i: path)
+                    for (int i = 0; i < path->size(); ++i)
                     {
-                        output << " " << i;
+                        output << " " << (*path)[i];
                     }
                     output << endl;
                 }
@@ -480,7 +480,7 @@ namespace MultiBoost {
             
                 output << "@RELATION DeepMDDAG \n\n";
                 attr_counter = 0;
-                for (auto path: pathsSet) {
+                for (set<vector<int> >::iterator path = pathsSet.begin(); path != pathsSet.end(); ++path) {
                     
                     if (numClasses <= 2) 
                         output << "@ATTRIBUTE path_" << attr_counter++ << " NUMERIC\n";
@@ -499,17 +499,17 @@ namespace MultiBoost {
                 
                 for (int i = 0; i < numExamples; ++i)
                 {
-                    for (auto path: pathsSet)
+                    for (set<vector<int> >::iterator path = pathsSet.begin(); path != pathsSet.end(); ++path)
                     {
                         // TODO:
                         // implement classifyWithSubset
-                        vector <AlphaReal> scores = classifier->classifyWithSubset(path);
+                        vector <AlphaReal> scores = classifier->classifyWithSubset(*path);
                         
                         if (numClasses <= 2)
                             output << scores[classifier->getPositiveLabelIndex()] << ",";
                         else
-                            for (auto score: scores)
-                                output << score << ",";
+                            for (int i = 0; i < scores.size(); ++i)
+                                output << scores[i] << ",";
                     }
                     
                     //output label
@@ -607,8 +607,8 @@ namespace MultiBoost {
                 output << "@RELATION DeepMDDAG_mode3 \n\n";
 
                 // output the attributes
-                for (auto edge: edgeSet){
-                    output << "@ATTRIBUTE edge_" << edge.first[0] << "_" << edge.first[1] << " NUMERIC\n";
+                for (map<vector<int>, int>::iterator it = edgeSet.begin(); it != edgeSet.end(); ++it){
+                    output << "@ATTRIBUTE edge_" << it->first[0] << "_" << it->first[1] << " NUMERIC\n";
                 }
                 
                 output << "@ATTRIBUTE class {0" ;
@@ -644,8 +644,8 @@ namespace MultiBoost {
                         featureVector[edgeSet[edge]] = 1;
                     }
                     
-                    for (int j: featureVector)
-                        output << j << ",";
+                    for (int j = 0; i < featureVector.size(); ++j)
+                        output << featureVector[j] << ",";
 
                     //output label
                     vector<Label>& labels = classifier->getLabels(i);
