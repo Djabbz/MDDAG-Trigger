@@ -499,9 +499,9 @@ namespace MultiBoost {
     vector<AlphaReal> AdaBoostMDPClassifierContinous::classifyWithSubset(const vector<int>& path)
     {
         ExampleResults exampleResult(_currentRandomInstance,_data->getClassNumber());
-        for( auto p: path)
+        for(vector<int>::const_iterator p = path.begin(); p != path.end(); ++p)
         {
-            _data->classifyKthWeakLearner(p, _currentRandomInstance, &exampleResult);
+            _data->classifyKthWeakLearner(*p, _currentRandomInstance, &exampleResult);
         }
         return exampleResult.getVotesVector();
     }
