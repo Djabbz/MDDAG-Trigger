@@ -948,6 +948,9 @@ int main(int argc, const char *argv[])
             
             cout << "----> Best error so far ( " << bestEpNumber << " ) : " << bestError << endl << "----> Num of whyp used : " << bestWhypNumber << endl << endl;
             
+            string best_log = "cp " + logFileName + " last_log.dta";
+            system(best_log.c_str());
+            
             // TEST stats
             
             if (classifierContinous->setCurrentDataToTest2() )
@@ -963,7 +966,6 @@ int main(int argc, const char *argv[])
                 }
                 
                 evalTest.classficationPerformance(bres,logFileName);
-                
                 
                 cout << "--> Overall Test error by MDP: " << bres.err << " (" << classifierContinous->getIterationError((int)bres.usedClassifierAvg) << ")" << " (" << adaboostTestPerf << ")" << endl;
                 cout << "--> Average Test classifier used: " << bres.usedClassifierAvg << endl;
