@@ -186,6 +186,8 @@ namespace MultiBoost {
 		void getHistory( vector<bool>& history );
 		void getHistory( vector<int>& history );
         
+        int getCurrentClassifier() { return _currentClassifier; }
+        
         KeyType getHistoryFromState(int i) {
             KeyIndicesType::const_iterator kIt = _keysIndices.begin();
             for (; kIt != _keysIndices.end(); ++kIt) {

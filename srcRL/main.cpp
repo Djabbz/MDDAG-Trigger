@@ -34,6 +34,8 @@
 #include "RBFBasedQFunction.h"
 #include "HashTable.h"
 
+#include "MDDAGExploration.h"
+
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
@@ -660,7 +662,15 @@ int main(int argc, const char *argv[])
 //    CSarsaLearner *qFunctionLearner = new CSarsaLearner(rewardFunctionContinous, qData, agentContinous);
     
     // Create the Controller for the agent from the QFunction. We will use a EpsilonGreedy-Policy for exploration.
-    CAgentController *policy = new CQStochasticPolicy(agentContinous->getActions(), new CEpsilonGreedyDistribution(currentEpsilon), qData);
+    CAgentController *policy;
+    
+    if (adaptiveEpsilon == 1) {
+        policy = new CQStochasticPolicy(agentContinous->getActions(), new MDDAGExploration(currentEpsilon, classifierContinous), qData);
+    }
+    else
+    {
+        policy = new CQStochasticPolicy(agentContinous->getActions(), new CEpsilonGreedyDistribution(currentEpsilon), qData);
+    }
     
     
     // Set some options of the Etraces which are not default
