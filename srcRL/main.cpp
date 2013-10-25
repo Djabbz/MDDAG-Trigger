@@ -822,7 +822,8 @@ int main(int argc, const char *argv[])
     cout << endl;
     
     cout << "---------------------------------" << endl;
-    double bestError=numeric_limits<double>::max(), bestWhypNumber=0.;
+    double bestError =  numeric_limits<double>::max(), bestWhypNumber=0.;
+    double bestReward = -numeric_limits<double>::max();
     int bestEpNumber = 0;
     
     classifierContinous->outHeader();
@@ -943,11 +944,59 @@ int main(int argc, const char *argv[])
             
             evalValid.classficationPerformance(bres, logFileName);
             
+            
+            // QTables
+            
+            std::stringstream ss;
+            ss << qTablesDir << "/QTable_" << i << ".dta";
+
+            if (sptype == 0) {
+                FILE *qTableFile2 = fopen(ss.str().c_str(), "w");
+                dynamic_cast<CFeatureQFunction*>(qData)->saveFeatureActionValueTable(qTableFile2);
+                fclose(qTableFile2);
+            }
+            
+            if (sptype == 5) {
+                FILE *qTableFile2 = fopen(ss.str().c_str(), "w");
+                dynamic_cast<GSBNFBasedQFunction*>(qData)->saveActionValueTable(qTableFile2);
+                fclose(qTableFile2);
+            }
+            
+            if (sptype == 6) {
+                FILE* qTableFile2 = fopen(ss.str().c_str(), "w");
+                dynamic_cast<HashTable*>(qData)->saveActionValueTable(qTableFile2);
+                fclose(qTableFile2);
+                
+//                string lastQTableFileName = "last_qtable.dta";
+//                FILE* lastQTable = fopen(lastQTableFileName.c_str(), "w");
+//                dynamic_cast<HashTable*>(qData)->saveActionValueTable(lastQTable);
+//                fclose(lastQTable);
+            }
+            
             if (bres.err < bestError) {
                 bestEpNumber = i;
                 bestError = bres.err;
                 bestWhypNumber = bres.usedClassifierAvg;
+                
+                string best_acc_log = "cp " + logFileName + " best_acc_log.dta ; cp " + ss.str() + " best_acc_qtable.dta";
+                system(best_acc_log.c_str());
+                
+                
             }
+            
+            if (bres.avgReward > bestReward) {
+                bestReward = bres.avgReward;
+                
+                string best_rwd_log = "cp " + logFileName + " best_rwd_log.dta ; cp " + ss.str() + " best_rwd_qtable.dta";
+                system(best_rwd_log.c_str());
+            }
+            
+            string best_log = "cp " + logFileName + " last_log.dta ; cp " + ss.str() + " last_qtable.dta";
+            system(best_log.c_str());
+
+
+            
+            // Outputs
             
             cout << "[+] Validation set results: " << endl;
             cout << "--> Overall error by MDP: " << bres.err << " (" << classifierContinous->getIterationError((int)bres.usedClassifierAvg) << ")" << " (" << adaboostValidPerf << ")" << endl;
@@ -957,9 +1006,7 @@ int main(int argc, const char *argv[])
             classifierContinous->outPutStatistic( bres );
             
             cout << "----> Best error so far ( " << bestEpNumber << " ) : " << bestError << endl << "----> Num of whyp used : " << bestWhypNumber << endl << endl;
-            
-            string best_log = "cp " + logFileName + " last_log.dta";
-            system(best_log.c_str());
+
             
             // TEST stats
             
@@ -986,35 +1033,6 @@ int main(int argc, const char *argv[])
             
             cout << "---------------------------------" << endl;
             
-            if (sptype == 0) {
-                std::stringstream ss;
-                ss << qTablesDir << "/QTable_" << i << ".dta";
-                FILE *qTableFile2 = fopen(ss.str().c_str(), "w");
-                dynamic_cast<CFeatureQFunction*>(qData)->saveFeatureActionValueTable(qTableFile2);
-                fclose(qTableFile2);
-            }
-            
-            if (sptype == 5) {
-                std::stringstream ss;
-                ss << qTablesDir << "/QTable_" << i << ".dta";
-                FILE *qTableFile2 = fopen(ss.str().c_str(), "w");
-                dynamic_cast<GSBNFBasedQFunction*>(qData)->saveActionValueTable(qTableFile2);
-                fclose(qTableFile2);
-            }
-            
-            if (sptype == 6) {
-                std::stringstream ss;
-                ss << qTablesDir << "/QTable_" << i << ".dta";
-                FILE* qTableFile2 = fopen(ss.str().c_str(), "w");
-                dynamic_cast<HashTable*>(qData)->saveActionValueTable(qTableFile2);
-                fclose(qTableFile2);
-                
-                string lastQTableFileName = "last_qtable.dta";
-                FILE* lastQTable = fopen(lastQTableFileName.c_str(), "w");
-                dynamic_cast<HashTable*>(qData)->saveActionValueTable(lastQTable);
-                fclose(lastQTable);
-            }
-
             agentContinous->setController(policy);
             agentContinous->addSemiMDPListener(qFunctionLearner);
             classifierContinous->setCurrentDataToTrain();
