@@ -673,7 +673,7 @@ int main(int argc, const char *argv[])
     // Create the Controller for the agent from the QFunction. We will use a EpsilonGreedy-Policy for exploration.
     CAgentController *policy;
     
-    if (adaptiveMode > -1) {
+    if (adaptiveMode > 0) {
         policy = new CQStochasticPolicy(agentContinous->getActions(), new MDDAGExploration(currentEpsilon, classifierContinous, adaptiveMode, adaptiveEpsilon), qData);
     }
     else
