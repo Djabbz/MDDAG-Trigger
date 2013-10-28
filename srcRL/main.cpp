@@ -245,6 +245,7 @@ void setBasicOptions(nor_utils::Args& args)
     args.declareArgument("budgeted", "Indicate to take features' cost into account.", 0, "" );
     args.declareArgument("featurecosts", "Read the different costs of the features.", 1, "<file>" );
     args.declareArgument("adaptiveexploration", "Sets the epsilon proportional to the number of evaluations.", 1, "<value>" );
+    args.declareArgument("adaptiveexploration", "Sets the epsilon proportional to the number of evaluations.", 2, "<value> <mode>" );
     args.declareArgument("debug", "", 1, "<file>");
     args.declareArgument("bootstrap", "The probability of reinjecting a random misclassified example", 1, "<real>");
     args.declareArgument("mil", "Multiple Instance Learning error output.", 0, "" );
@@ -444,10 +445,18 @@ int main(int argc, const char *argv[])
 		epsIncrement = args.getValue<double>("explorationrate", 2);
 	}
     
-    double adaptiveEpsilon = 0;
+    double adaptiveEpsilon = 1;
+    int adaptiveMode = -1;
+    
     if (args.hasArgument("adaptiveexploration"))
 	{
+        adaptiveMode = 0;
 		adaptiveEpsilon = args.getValue<double>("adaptiveexploration", 0);
+        
+        if (args.getNumValues("adaptiveexploration") > 1)
+        {
+            adaptiveMode = args.getValue<int>("adaptiveexploration", 1);
+        }
     }
 
     
@@ -664,8 +673,8 @@ int main(int argc, const char *argv[])
     // Create the Controller for the agent from the QFunction. We will use a EpsilonGreedy-Policy for exploration.
     CAgentController *policy;
     
-    if (adaptiveEpsilon == 1) {
-        policy = new CQStochasticPolicy(agentContinous->getActions(), new MDDAGExploration(currentEpsilon, classifierContinous), qData);
+    if (adaptiveMode > -1) {
+        policy = new CQStochasticPolicy(agentContinous->getActions(), new MDDAGExploration(currentEpsilon, classifierContinous, adaptiveMode, adaptiveEpsilon), qData);
     }
     else
     {
@@ -867,7 +876,7 @@ int main(int argc, const char *argv[])
         }
         
         
-        if (((i%paramUpdate)==0) && (i>2))
+        if (adaptiveMode == -1 && ((i%paramUpdate)==0) && (i>2))
         {
             epsDivisor += epsIncrement;
             currentEpsilon =  epsNumerator / epsDivisor;
@@ -906,13 +915,8 @@ int main(int argc, const char *argv[])
             
             evalTrain.classficationPerformance(bres, "");
             
-//            if (((i%10000)==0) && (i>2))
-//            {
-//                policy->setParameter("EpsilonGreedy", 0.5/bres.usedClassifierAvg);
-//                
-//            }
             
-            if (adaptiveEpsilon > 0 ) {
+            if (adaptiveMode > -1 ) {
                 if (bres.usedClassifierAvg != 0)
                     policy->setParameter("EpsilonGreedy", adaptiveEpsilon/bres.usedClassifierAvg);
                 else

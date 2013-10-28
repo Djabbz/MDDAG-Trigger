@@ -26,10 +26,12 @@
 
 
 
-MDDAGExploration::MDDAGExploration(double epsilon, AdaBoostMDPClassifierContinous *classifier)
+MDDAGExploration::MDDAGExploration(double epsilon, AdaBoostMDPClassifierContinous *classifier,  int mode, double factor)
 {
 	addParameter("EpsilonGreedy", epsilon);
     _classifier = classifier;
+    _mode = mode;
+    _factor = factor;
 }
 
 void MDDAGExploration::getDistribution(CStateCollection *, CActionSet *availableActions, double *actionValues)
@@ -38,9 +40,28 @@ void MDDAGExploration::getDistribution(CStateCollection *, CActionSet *available
     int numIterations = _classifier->getIterNum();
 	size_t numValues = availableActions->size();
 	
-//    double epsilon = getParameter("EpsilonGreedy") * (currentClassifier + 1)/numIterations ;
-//    double epsilon = getParameter("EpsilonGreedy") * (currentClassifier + 1) ;
-    double epsilon = pow(2., getParameter("EpsilonGreedy")) * (currentClassifier + 1) ;
+
+    double epsilon;
+    
+    if (_mode == 1) {
+        epsilon = (getParameter("EpsilonGreedy") * (currentClassifier + 1));
+    }
+    else if (_mode == 2) {
+        epsilon = (pow(getParameter("EpsilonGreedy"), 2) * (currentClassifier + 1)) ; //seems to work the best
+    }
+    else if (_mode == 3)
+    {
+        epsilon = (getParameter("EpsilonGreedy") * (currentClassifier + 1)/numIterations) ;
+    }
+    else if (_mode == 4)
+    {
+        epsilon = pow(getParameter("EpsilonGreedy"), 2) * (currentClassifier + 1) / _factor ; //cause the factor is powered before the call
+    }
+    else {
+        cout << "Error: wrong adaptive epsilon mode." << endl;
+        assert(false);
+    }
+
     if (epsilon > 1) epsilon = 1;
     
 	double prop = epsilon / numValues;

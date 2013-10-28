@@ -42,12 +42,13 @@ protected:
 public:
     //	double epsilon;
     
-	MDDAGExploration(double epsilon, AdaBoostMDPClassifierContinous *classifier);
+	MDDAGExploration(double epsilon, AdaBoostMDPClassifierContinous *classifier, int mode, double factor);
 	virtual void getDistribution(CStateCollection *state, CActionSet *availableActions, double *values);
     
 protected:
     AdaBoostMDPClassifierContinous *_classifier;
-    
+    int _mode;
+    double _factor;
 };
 
 
