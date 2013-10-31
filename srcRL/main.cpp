@@ -250,6 +250,7 @@ void setBasicOptions(nor_utils::Args& args)
     args.declareArgument("bootstrap", "The probability of reinjecting a random misclassified example", 1, "<real>");
     args.declareArgument("mil", "Multiple Instance Learning error output.", 0, "" );
     args.declareArgument("multiskip", "Skip multiple times.", 1, "<number>" );
+    args.declareArgument("nologs", "Delete the logs, only keeps the last and the best.", 0, "" );
 }
 
 
@@ -404,16 +405,24 @@ int main(int argc, const char *argv[])
 		logDirContinous = args.getValue<string>("logdir", 0);
 	}
     
-    // only UNIX
-    string command = "if [ ! -d \"" + logDirContinous + "\" ]; then mkdir \"" + logDirContinous + "\" ; fi";
-    system(command.c_str());
-
-    
     string qTablesDir="qtables";
 	if (args.hasArgument("qdir"))
 	{
 		qTablesDir = args.getValue<string>("qdir", 0);
 	}
+
+    
+    bool noLogs = false;
+    if (args.hasArgument("nologs")) {
+        noLogs = true;
+        logDirContinous = "tmp_" + logDirContinous;
+        qTablesDir = "tmp_" + qTablesDir;
+    }
+
+    // only UNIX
+    string command = "if [ ! -d \"" + logDirContinous + "\" ]; then mkdir \"" + logDirContinous + "\" ; fi";
+    system(command.c_str());
+    
     
     // only UNIX
     command = "if [ ! -d \"" + qTablesDir + "\" ]; then mkdir \"" + qTablesDir + "\" ; fi";
@@ -459,7 +468,6 @@ int main(int argc, const char *argv[])
         }
     }
 
-    
     
     double currentEpsilon = epsNumerator / epsDivisor;
     double currentAlpha = qRateNumerator / qRateDivisor;
@@ -836,7 +844,7 @@ int main(int argc, const char *argv[])
     int bestEpNumber = 0;
     
     classifierContinous->outHeader();
-    
+
     //TMP
 //    currentEpsilon = 0.97;
 //    policy->setParameter("EpsilonGreedy", currentEpsilon);
@@ -997,6 +1005,11 @@ int main(int argc, const char *argv[])
             
             string best_log = "cp " + logFileName + " last_log.dta ; cp " + ss.str() + " last_qtable.dta";
             system(best_log.c_str());
+            
+            if (noLogs) {
+                string deleteCmd = "rm -f " + logFileName + " " + ss.str();
+                system(deleteCmd.c_str());
+            }
 
 
             
