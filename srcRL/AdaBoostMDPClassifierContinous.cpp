@@ -87,58 +87,68 @@ namespace MultiBoost {
 			_succRewardMode = RT_HAMMING;
 		}
 		
+        
+        properties->setDiscreteStateSize(0, datareader->getIterationNumber()+1);
+        if (discState > 1)
+        {
+            properties->setDiscreteStateSize(1, pow(3, (datareader->getIterationNumber() + 1)) + 1);
+        }
+        
         // for budgetted classification
         _budgetedClassification = false;
-        if (args.hasArgument("budgeted"))
-        {
-            _budgetedClassification = true;
-            cout << "[+] Budgeted Classification" << endl;
-            
-            if (args.getNumValues("budgeted") > 1) {
-                _budgetType = args.getValue<string>("budgeted", 1);
-            }
-            else
-                _budgetType = "generic";
-        }
-
+        
         string featureCostFile;
         _featureCosts.clear();
         _featuresEvaluated.clear();
 
-        properties->setDiscreteStateSize(0, datareader->getIterationNumber()+1);
-        if (discState > 1) properties->setDiscreteStateSize(1, pow(3, (datareader->getIterationNumber() + 1)) + 1);
-        
-        if (args.hasArgument("featurecosts")) {
-                        
-            featureCostFile = args.getValue<string>("featurecosts", 0);
-        
-            ifstream ifs(featureCostFile.c_str());
-            if (! ifs) {
-                cout << "Error: could not open the feature cost file <" << featureCostFile << ">" << endl;
-                exit(1);
+        if (args.hasArgument("budgeted"))
+        {
+            _budgetedClassification = true;
+
+            properties->setDiscreteStateSize(0, (datareader->getIterationNumber() * 2)+1);
+
+            cout << "[+] Budgeted Classification" << endl;
+            
+            if (args.getNumValues("budgeted") > 0) {
+                _budgetType = args.getValue<string>("budgeted", 0);
+            }
+            else
+            {
+                _budgetType = "generic";
             }
             
-            AlphaReal cost;
-            while (ifs >> cost) {
-                _featureCosts.push_back(cost);
-            }
+            cout << "--> Budget calculation type: " << _budgetType << endl;
+
             
-            assert(_featureCosts.size() == _data->getNumAttributes());
-            
-            if (verbose > 2) {
+            if (args.getNumValues("budgeted") > 1) {
+                featureCostFile = args.getValue<string>("budgeted", 1);
                 
-                const NameMap& namemap = _data->getAttributeNameMap();
-                cout << "[+] Feature Budget:" << endl;
-                
-                for (int i = 0 ; i < _featureCosts.size(); ++i) {
-                    cout << "--> " << namemap.getNameFromIdx(i) << "\t" << _featureCosts[i]  << endl;
+                ifstream ifs(featureCostFile.c_str());
+                if (! ifs) {
+                    cout << "Error: could not open the feature cost file <" << featureCostFile << ">" << endl;
+                    exit(1);
                 }
+                
+                AlphaReal cost;
+                while (ifs >> cost) {
+                    _featureCosts.push_back(cost);
+                }
+                
+                assert(_featureCosts.size() == _data->getNumAttributes());
+                
+                if (verbose > 2) {
+                    const NameMap& namemap = _data->getAttributeNameMap();
+                    cout << "[+] Feature Budget:" << endl;
+                    
+                    for (int i = 0 ; i < _featureCosts.size(); ++i) {
+                        cout << "--> " << namemap.getNameFromIdx(i) << "\t" << _featureCosts[i]  << endl;
+                    }
+                }                    
             }
             
             // init the vector of evaluated features
-            _featuresEvaluated.resize(_featureCosts.size(), false);
-            
-            properties->setDiscreteStateSize(0, (datareader->getIterationNumber() * 2)+1);
+            _featuresEvaluated.resize(_data->getNumAttributes(), false);
+
         }
 
         // for binary
@@ -274,7 +284,7 @@ namespace MultiBoost {
         }
 		
         //  set the discrete state var
-        if (_budgetedClassification) {
+        if (_budgetedClassification && _currentClassifier != _data->getIterationNumber()) {
             int idxBias = 0;
             
             bool allFeaturesEvaluated = true;
@@ -401,7 +411,7 @@ namespace MultiBoost {
 		_currentClassifier = 0;
 		_classifierNumber = 0;				
 		_currentSumAlpha = 0.0;
-        _classificationCost = 0.
+        _classificationCost = 0.;
 		
 		if (_exampleResult==NULL) 
 			_exampleResult = new ExampleResults(_currentRandomInstance,_data->getClassNumber());		

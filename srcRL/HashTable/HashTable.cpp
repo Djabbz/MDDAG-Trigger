@@ -201,9 +201,19 @@ void HashTable::updateValue(MDDAGState& state, CAction *action, double td, CActi
 
 // -----------------------------------------------------------------------------------
 
-void HashTable::saveActionValueTable(FILE* stream)
+void HashTable::saveActionValueTable(string filename)
 {
     //        fprintf(stream, "Q-Hash Table\n");
+    
+    ofstream output;
+    output.open(filename.c_str());
+    
+    if (! output.good()) {
+        cout << "Error! Could not the QTable file: " << filename << endl;
+        exit(1);
+    }
+    
+    cout << "Output the QTable: " << filename << endl;
     
     ValueTableType::iterator tableIt = _valueTable.begin();
     
@@ -212,19 +222,18 @@ void HashTable::saveActionValueTable(FILE* stream)
         ValueKey key = tableIt->first;
         vector<AlphaReal> values = tableIt->second;
         
-        fprintf(stream, "( ");
+        output <<  "( ";
         ValueKey::iterator keyIt = key.begin();
 //        if (keyIt != key.end())
-        fprintf(stream, "%d ", (int)*(keyIt++));
-        fprintf(stream, " ");
+        output << (int)*(keyIt++) << "  ";
         
         for (int i = 0; i < _numWinnerClasses; ++i) {
-            fprintf(stream, "%d ", (int)*(keyIt++));
+            output <<  (int)*(keyIt++) << " ";
         }
 
-//        fprintf(stream, "%d ", (int)*(keyIt++));
-        fprintf(stream, " ");
-        fprintf(stream, "%d ", (int)*(keyIt++));
+        output <<   " ";
+        
+        output <<  (int)*(keyIt++) << " )\t";
 //        for (int d = 0; d < _numDimensions; ++d, ++keyIt) {
 //            fprintf(stream, "%f ", ((*keyIt)*2) - 1);
 //        }
@@ -235,14 +244,14 @@ void HashTable::saveActionValueTable(FILE* stream)
 //            fprintf(stream, "%d ", (int)(*keyIt));
 //        }
         
-        fprintf(stream, ")\t");
-        
         for (int i = 0; i < values.size(); ++i) {
-            fprintf(stream, "%f ", values[i]);
+            output <<  values[i] << " ";
         }
         
-        fprintf(stream, "\n");
+        output << endl;
     }
+    
+    output.close();
     
 }
 

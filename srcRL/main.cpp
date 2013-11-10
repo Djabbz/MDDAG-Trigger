@@ -244,7 +244,8 @@ void setBasicOptions(nor_utils::Args& args)
 //    args.declareArgument("hashtable", "Load the Q Hash Table from a file.", 1, "<file>" );
     args.declareArgument("budgeted", "Indicate to take features' cost into account.", 0, "" );
     args.declareArgument("budgeted", "Indicate to take features' cost into account.", 1, "<type of cost calculation>" );
-    args.declareArgument("featurecosts", "Read the different costs of the features.", 1, "<file>" );
+    args.declareArgument("budgeted", "Indicate to take features' cost into account.", 2, "<type of cost calculation> <cost file>" );
+//    args.declareArgument("featurecosts", "Read the different costs of the features.", 1, "<file>" );
     args.declareArgument("adaptiveexploration", "Sets the epsilon proportional to the number of evaluations.", 1, "<value>" );
     args.declareArgument("adaptiveexploration", "Sets the epsilon proportional to the number of evaluations.", 2, "<value> <mode>" );
     args.declareArgument("debug", "", 1, "<file>");
@@ -521,7 +522,7 @@ int main(int argc, const char *argv[])
         multiskip = args.getValue<unsigned int>("multiskip");
     }
     
-    cout << "+++[DEBUG] multiskip " << multiskip << endl;
+    cout << endl << "[+] multiskip " << multiskip << endl;
     for (int m = 0; m < multiskip; ++m) {
         agentContinous->addAction(new CAdaBoostAction(m + 2));
     }
@@ -959,39 +960,39 @@ int main(int argc, const char *argv[])
             
             
             // QTables
-            
-            std::stringstream ss;
-            ss << qTablesDir << "/QTable_" << i << ".dta";
+            string qTableFileName;
+            if (!qTablesDir.empty()) {
+                char qtablefname[4096];
+                sprintf( qtablefname, "%s/QTable_%d.dta", qTablesDir.c_str(), i );
+                qTableFileName = string(qtablefname);
+            }
 
-            if (sptype == 0) {
-                FILE *qTableFile2 = fopen(ss.str().c_str(), "w");
-                dynamic_cast<CFeatureQFunction*>(qData)->saveFeatureActionValueTable(qTableFile2);
-                fclose(qTableFile2);
-            }
+//            std::stringstream ss;
+//            ss << qTablesDir << "/QTable_" << i << ".dta";
+
+//            FILE *qTableFile = fopen(ss.str().c_str(), "w");
             
-            if (sptype == 5) {
-                FILE *qTableFile2 = fopen(ss.str().c_str(), "w");
-                dynamic_cast<GSBNFBasedQFunction*>(qData)->saveActionValueTable(qTableFile2);
-                fclose(qTableFile2);
-            }
+//            if (sptype == 0) {
+//                dynamic_cast<CFeatureQFunction*>(qData)->saveFeatureActionValueTable(qTableFile);
+//            }
+//            
+//            if (sptype == 5) {
+//                dynamic_cast<GSBNFBasedQFunction*>(qData)->saveActionValueTable(qTableFile);
+//            }
             
             if (sptype == 6) {
-                FILE* qTableFile2 = fopen(ss.str().c_str(), "w");
-                dynamic_cast<HashTable*>(qData)->saveActionValueTable(qTableFile2);
-                fclose(qTableFile2);
-                
-//                string lastQTableFileName = "last_qtable.dta";
-//                FILE* lastQTable = fopen(lastQTableFileName.c_str(), "w");
-//                dynamic_cast<HashTable*>(qData)->saveActionValueTable(lastQTable);
-//                fclose(lastQTable);
+                dynamic_cast<HashTable*>(qData)->saveActionValueTable(qTableFileName);
             }
+            
+//            fflush(qTableFile);
+//            fclose(qTableFile);
             
             if (bres.err < bestError) {
                 bestEpNumber = i;
                 bestError = bres.err;
                 bestWhypNumber = bres.usedClassifierAvg;
                 
-                string best_acc_log = "cp " + logFileName + " best_acc_log.dta ; cp " + ss.str() + " best_acc_qtable.dta";
+                string best_acc_log = "cp " + logFileName + " best_acc_log.dta ; cp " + qTableFileName + " best_acc_qtable.dta";
                 system(best_acc_log.c_str());
                 
                 
@@ -1000,15 +1001,15 @@ int main(int argc, const char *argv[])
             if (bres.avgReward > bestReward) {
                 bestReward = bres.avgReward;
                 
-                string best_rwd_log = "cp " + logFileName + " best_rwd_log.dta ; cp " + ss.str() + " best_rwd_qtable.dta";
+                string best_rwd_log = "cp " + logFileName + " best_rwd_log.dta ; cp " + qTableFileName + " best_rwd_qtable.dta";
                 system(best_rwd_log.c_str());
             }
             
-            string best_log = "cp " + logFileName + " last_log.dta ; cp " + ss.str() + " last_qtable.dta";
+            string best_log = "cp " + logFileName + " last_log.dta ; cp " + qTableFileName + " last_qtable.dta";
             system(best_log.c_str());
             
             if (noLogs) {
-                string deleteCmd = "rm -f " + logFileName + " " + ss.str();
+                string deleteCmd = "rm -f " + logFileName + " " + qTableFileName;
                 system(deleteCmd.c_str());
             }
 
