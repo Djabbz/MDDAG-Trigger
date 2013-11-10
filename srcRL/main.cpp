@@ -243,6 +243,7 @@ void setBasicOptions(nor_utils::Args& args)
     args.declareArgument("qtable", "Load the GSBNF from a file.", 1, "<file>" );
 //    args.declareArgument("hashtable", "Load the Q Hash Table from a file.", 1, "<file>" );
     args.declareArgument("budgeted", "Indicate to take features' cost into account.", 0, "" );
+    args.declareArgument("budgeted", "Indicate to take features' cost into account.", 1, "<type of cost calculation>" );
     args.declareArgument("featurecosts", "Read the different costs of the features.", 1, "<file>" );
     args.declareArgument("adaptiveexploration", "Sets the epsilon proportional to the number of evaluations.", 1, "<value>" );
     args.declareArgument("adaptiveexploration", "Sets the epsilon proportional to the number of evaluations.", 2, "<value> <mode>" );

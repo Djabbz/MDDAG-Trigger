@@ -130,6 +130,10 @@ namespace MultiBoost {
         
         void reorderWeakHypotheses(InputData* pData);
         
+        FeatureReal getAttributeValue(int idx, int columnIdx) {
+            return _pCurrentData->getValue(idx, columnIdx);
+        }
+        
 	protected:
 		void calculateHypothesesMatrix();
         void readRawData(string rawDataFileName, vector<int>& candidateNumber);

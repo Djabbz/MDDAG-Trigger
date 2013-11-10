@@ -126,6 +126,7 @@ namespace MultiBoost {
 		double					_sumAlpha;
         
         bool                    _budgetedClassification;
+        string                  _budgetType;
         vector<AlphaReal>       _featureCosts;
         vector<bool>            _featuresEvaluated;
 
@@ -145,6 +146,8 @@ namespace MultiBoost {
         ofstream                _debugFileStream;
         
         double                  _bootstrapRate;
+        
+        double                  _classificationCost;
                 
 	public:
 		// set randomzed element
@@ -270,6 +273,8 @@ namespace MultiBoost {
         bool isMILsetup() {return _data->isMILsetup(); }
         
         vector<AlphaReal> classifyWithSubset(const vector<int>& path);
+        double computeCost();
+        inline double addMomemtumCost(int varIdx);
 	};
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////
