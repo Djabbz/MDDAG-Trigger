@@ -288,15 +288,20 @@ namespace MultiBoost {
             int idxBias = 0;
             
             bool allFeaturesEvaluated = true;
+//            bool atLeastOneFeatureEvaluated = false;
             set<int> usedCols = _data->getUsedColumns(_currentClassifier);
+            
             for (set<int>::iterator it = usedCols.begin(); it != usedCols.end() ; ++it) {
                 if (_featuresEvaluated[*it] == false)
+//                if (_featuresEvaluated[*it] == true)
                 {
+//                    atLeastOneFeatureEvaluated = true;
                     allFeaturesEvaluated = false;
                     break;
                 }
             }
-
+            
+//            if (atLeastOneFeatureEvaluated)
             if (allFeaturesEvaluated)
                 idxBias = 1;
             state->setDiscreteState(0, (_currentClassifier * 2) + idxBias);

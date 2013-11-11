@@ -226,7 +226,7 @@ namespace MultiBoost {
             set<int> usedCols;
             for (int i = 0; i < _baseLearners.size(); ++i) {
                 set<int> blUsedCols =  _baseLearners[i]->getUsedColumns();
-                for (sIt = usedCols.begin(); sIt != usedCols.end(); ++sIt)
+                for (sIt = blUsedCols.begin(); sIt != blUsedCols.end(); ++sIt)
                     usedCols.insert(*sIt);
             }
             return usedCols;
