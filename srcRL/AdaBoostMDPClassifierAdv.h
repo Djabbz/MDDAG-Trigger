@@ -118,7 +118,25 @@ namespace MultiBoost {
         inline const NameMap& getClassMap()
 		{ return _pCurrentData->getClassMap(); }
         
-        double getIterationError(int it) { return _iterationWiseError[_pCurrentData][it]; }
+        double getIterationError(int it) {
+            double err = _iterationWiseError[_pCurrentData][it];
+            if (err != err) {
+                
+                cout << endl;
+                int i = 0;
+                for (const auto & myTmpKey : _iterationWiseError[_pCurrentData]) {
+                    cout << myTmpKey << " ";
+                    ++i;
+                    if (i > 50) {
+                        break;
+                    }
+                }
+                cout << endl;
+
+                assert(false);
+            
+            }
+            return err; }
 
         vector<Label>& getLabels(int i) { return _pCurrentData->getLabels(i); }
         

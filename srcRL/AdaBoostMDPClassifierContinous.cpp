@@ -96,6 +96,7 @@ namespace MultiBoost {
         
         // for budgetted classification
         _budgetedClassification = false;
+        _simulatedBudgeted = false;
         
         string featureCostFile;
         _featureCosts.clear();
@@ -105,7 +106,11 @@ namespace MultiBoost {
         {
             _budgetedClassification = true;
 
-            properties->setDiscreteStateSize(0, (datareader->getIterationNumber() * 2)+1);
+            if (args.hasArgument("simulatebudgeted"))
+                _simulatedBudgeted = true;
+            
+            if (!_simulatedBudgeted)
+                properties->setDiscreteStateSize(0, (datareader->getIterationNumber() * 2)+1);
 
             cout << "[+] Budgeted Classification" << endl;
             
@@ -282,30 +287,34 @@ namespace MultiBoost {
                 state->setContinuousState(i, st);
             }
         }
-		
+        
         //  set the discrete state var
-        if (_budgetedClassification && _currentClassifier != _data->getIterationNumber()) {
-            int idxBias = 0;
-            
-            bool allFeaturesEvaluated = true;
-//            bool atLeastOneFeatureEvaluated = false;
-            set<int> usedCols = _data->getUsedColumns(_currentClassifier);
-            
-            for (set<int>::iterator it = usedCols.begin(); it != usedCols.end() ; ++it) {
-                if (_featuresEvaluated[*it] == false)
-//                if (_featuresEvaluated[*it] == true)
-                {
-//                    atLeastOneFeatureEvaluated = true;
-                    allFeaturesEvaluated = false;
-                    break;
-                }
-            }
-            
-//            if (atLeastOneFeatureEvaluated)
-            if (allFeaturesEvaluated)
-                idxBias = 1;
-            state->setDiscreteState(0, (_currentClassifier * 2) + idxBias);
+        if (_budgetedClassification && !_simulatedBudgeted) {
 
+            int idxBias = 0;
+
+            if ( _currentClassifier != _data->getIterationNumber()) {
+            
+                
+                bool allFeaturesEvaluated = true;
+    //            bool atLeastOneFeatureEvaluated = false;
+                set<int> usedCols = _data->getUsedColumns(_currentClassifier);
+                
+                for (set<int>::iterator it = usedCols.begin(); it != usedCols.end() ; ++it) {
+                    if (_featuresEvaluated[*it] == false)
+    //                if (_featuresEvaluated[*it] == true)
+                    {
+    //                    atLeastOneFeatureEvaluated = true;
+                        allFeaturesEvaluated = false;
+                        break;
+                    }
+                }
+                
+    //            if (atLeastOneFeatureEvaluated)
+                if (allFeaturesEvaluated)
+                    idxBias = 1;
+            }
+            state->setDiscreteState(0, (_currentClassifier * 2) + idxBias);
         }
         else
             state->setDiscreteState(0, _currentClassifier);
@@ -543,6 +552,9 @@ namespace MultiBoost {
                 if (_budgetedClassification) {
                     whypCost = computeCost();
                     _classificationCost += whypCost;
+                    
+                    if (_simulatedBudgeted)
+                        whypCost = 1.;
                 }
                 
 				rew = _classificationReward * whypCost;
@@ -797,7 +809,7 @@ namespace MultiBoost {
 //        if (numClasses == 2) numClasses = 1;
         
         int multipleDescrete = 1;
-        if (_budgetedClassification) {
+        if (_budgetedClassification && !_simulatedBudgeted) {
             multipleDescrete = 2;
         }
         

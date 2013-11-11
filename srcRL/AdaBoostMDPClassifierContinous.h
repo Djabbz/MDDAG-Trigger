@@ -126,6 +126,8 @@ namespace MultiBoost {
 		double					_sumAlpha;
         
         bool                    _budgetedClassification;
+        bool                    _simulatedBudgeted;
+        
         string                  _budgetType;
         vector<AlphaReal>       _featureCosts;
         vector<bool>            _featuresEvaluated;
