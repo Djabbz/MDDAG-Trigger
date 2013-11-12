@@ -634,16 +634,16 @@ namespace MultiBoost {
             iterationWiseError[j] = err;
 		}
 
-        cout << endl;
-        int i = 0;
-        for (const auto & myTmpKey : _iterationWiseError[_pCurrentData]) {
-            cout << myTmpKey << " ";
-            ++i;
-            if (i > 50) {
-                break;
-            }
-        }
-        cout << endl;
+//        cout << endl;
+//        int i = 0;
+//        for (const auto & myTmpKey : _iterationWiseError[_pCurrentData]) {
+//            cout << myTmpKey << " ";
+//            ++i;
+//            if (i > 50) {
+//                break;
+//            }
+//        }
+//        cout << endl;
         
         for (int i = 0; i < numExamples; ++i)
 			delete examplesResults[i] ;
