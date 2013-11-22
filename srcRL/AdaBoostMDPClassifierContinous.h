@@ -233,6 +233,7 @@ namespace MultiBoost {
 		void outPutStatistic(int ep, double acc, double curracc, double uc, double sumrew );
         void outPutStatistic( BinaryResultStruct& bres );
         double getClassificationCost() ;
+        double getInitialCost();
         
         const ExampleResults* getCurrentExampleResults() { return _exampleResult; }
         
@@ -277,6 +278,8 @@ namespace MultiBoost {
         vector<AlphaReal> classifyWithSubset(const vector<int>& path);
         double computeCost();
         inline double addMomemtumCost(int varIdx);
+        
+        bool isBudgeted() {return _budgetedClassification;}
 	};
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////
@@ -764,7 +767,8 @@ namespace MultiBoost {
 //                    }
 //                }
 				
-				classificationCost += classifier->getClassificationCost();
+                double instanceClassificationCost = classifier->getClassificationCost();
+				classificationCost += instanceClassificationCost;
                 double numEval = classifier->getUsedClassifierNumber();
 				usedClassifierAvg += numEval;
 				value += this->getEpisodeValue();
@@ -803,6 +807,10 @@ namespace MultiBoost {
                     {
                         for( int l = 0; l < numClasses; ++l )
                             output << currentVotes[l] << " ";
+                    }
+                    
+                    if (classifier->isBudgeted()) {
+                        output << instanceClassificationCost << " ";
                     }
                     
 					for( int wl = 0; wl < currentHistory.size(); ++wl)

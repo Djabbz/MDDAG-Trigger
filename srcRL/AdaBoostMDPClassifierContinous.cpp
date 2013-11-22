@@ -427,6 +427,8 @@ namespace MultiBoost {
 		_currentSumAlpha = 0.0;
         _classificationCost = 0.;
 		
+        _classificationCost += getInitialCost();
+        
 		if (_exampleResult==NULL) 
 			_exampleResult = new ExampleResults(_currentRandomInstance,_data->getClassNumber());		
 		
@@ -440,7 +442,39 @@ namespace MultiBoost {
 
 			
 	}
+
+    // -----------------------------------------------------------------------
     
+    double AdaBoostMDPClassifierContinous::getInitialCost()
+    {
+        const NameMap& attributeNamemap = _data->getAttributeNameMap();
+        
+        static vector<string> cheap_vars;
+        if (cheap_vars.size() == 0) {
+            cheap_vars.push_back("D0_VTX_FD");
+            cheap_vars.push_back("PiS_IP");
+            cheap_vars.push_back("PiS_IPC2");
+            cheap_vars.push_back("D0C_1_IP");
+            cheap_vars.push_back("D0C_1_IPC");
+            cheap_vars.push_back("D0C_2_IP");
+            cheap_vars.push_back("D0C_2_IPC");
+        }
+        
+        double cost = 0.;
+        if (_budgetType.compare("LHCb") == 0)
+        {
+//            cost += 4;
+            vector<string>::iterator varIt;
+            for (varIt = cheap_vars.begin(); varIt != cheap_vars.end() ; ++varIt) {
+                int var_index = attributeNamemap.getIdxFromName(*varIt);
+                _featuresEvaluated[var_index] = true;
+            }
+        }
+
+        return cost;
+    }
+
+
 	// -----------------------------------------------------------------------
     
     double AdaBoostMDPClassifierContinous::addMomemtumCost(int varIdx){
@@ -460,6 +494,8 @@ namespace MultiBoost {
         _featuresEvaluated[varIdx] = true;
         return resultingCost;
     }
+
+    // -----------------------------------------------------------------------
 
 	double AdaBoostMDPClassifierContinous::computeCost()
     {
