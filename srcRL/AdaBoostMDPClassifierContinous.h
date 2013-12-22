@@ -150,7 +150,8 @@ namespace MultiBoost {
         double                  _bootstrapRate;
         
         double                  _classificationCost;
-                
+        double                  _classificationVirtualCost;
+        
 	public:
 		// set randomzed element
 		void setCurrentRandomIsntace( int r ) { _currentRandomInstance = r; }		

@@ -83,7 +83,18 @@ namespace MultiBoost {
 //        vector<BaseLearner*> inveresedWhyp(_weakHypotheses.size());
 //        copy(_weakHypotheses.rbegin(), _weakHypotheses.rend(), inveresedWhyp.begin());
 //        copy(inveresedWhyp.begin(), inveresedWhyp.end(), _weakHypotheses.begin());
+
+//        cout << "[+++] SUPER REORDER ! BY FEATURE COST... ACTION! [+++]" << endl;
         
+        
+//        cheap_vars.push_back("D0_VTX_FD");  D0_VTX_FD PiS_IP PiS_IPC2 D0C_1_IP D0C_1_IPC D0C_2_IP D0C_2_IPC
+//        cheap_vars.push_back("PiS_IP");
+//        cheap_vars.push_back("PiS_IPC2");
+//        cheap_vars.push_back("D0C_1_IP");
+//        cheap_vars.push_back("D0C_1_IPC");
+//        cheap_vars.push_back("D0C_2_IP");
+//        cheap_vars.push_back("D0C_2_IPC");
+
 		// calculate the sum of alphas
 		vector<BaseLearner*>::iterator it;
 		_sumAlphas=0.0;

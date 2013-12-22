@@ -426,6 +426,7 @@ namespace MultiBoost {
 		_classifierNumber = 0;				
 		_currentSumAlpha = 0.0;
         _classificationCost = 0.;
+        _classificationVirtualCost = 0.;
 		
         _classificationCost += getInitialCost();
         
@@ -453,11 +454,11 @@ namespace MultiBoost {
         if (cheap_vars.size() == 0) {
             cheap_vars.push_back("D0_VTX_FD");
             cheap_vars.push_back("PiS_IP");
-            cheap_vars.push_back("PiS_IPC2");
+//            cheap_vars.push_back("PiS_IPC2");
             cheap_vars.push_back("D0C_1_IP");
-            cheap_vars.push_back("D0C_1_IPC");
+//            cheap_vars.push_back("D0C_1_IPC");
             cheap_vars.push_back("D0C_2_IP");
-            cheap_vars.push_back("D0C_2_IPC");
+//            cheap_vars.push_back("D0C_2_IPC");
         }
         
         double cost = 0.;
@@ -523,15 +524,30 @@ namespace MultiBoost {
                     if (attributeName.find("_PT") != string::npos) {
                         whypCost += addMomemtumCost(*it);
                     }
-                    else if (attributeName.find("_TFC") != string::npos)
+                    else if (attributeName.find("_TFC") != string::npos ||
+                             attributeName.find("_IPC") != string::npos)
                     {
                         // find attributeName prefix
-                        string varName = attributeName.substr(0, attributeName.find("_")) + "_PT";
+                        string varName = attributeName.substr(0, attributeName.find("_"));
                         
                         // add corresponding momentum cost
-                        addMomemtumCost(attributeNamemap.getIdxFromName(varName));
+                        addMomemtumCost(attributeNamemap.getIdxFromName(varName + "_PT"));
     
                         whypCost += 1.5;
+                        
+                        if (attributeName.find("_IPC") != string::npos) {
+                            int varIndex;
+                            if (varName.compare("PiS")) {
+                                varIndex = attributeNamemap.getIdxFromName(varName + "_TFC2");
+                            }
+                            else {
+                                varIndex = attributeNamemap.getIdxFromName(varName + "_TFC");
+                            }
+                            _featuresEvaluated[varIndex] = true;
+                            
+                            // virtual cost
+                            _classificationVirtualCost += 1.5;
+                        }
                     }
                     else if (attributeName.compare("D0M") == 0      ||
                              attributeName.compare("D0Tau") == 0    ||
@@ -543,15 +559,18 @@ namespace MultiBoost {
                             whypCost += addMomemtumCost(d0Child1IdX);
                             whypCost += addMomemtumCost(d0Child2IdX);
                         
+                            // virtual cost
+                            _classificationVirtualCost += 1.5;
+                        
                         if (attributeName.compare("DstM") == 0) {
                             int slowPionIdX = attributeNamemap.getIdxFromName("PiS_PT");
                             // if not already evaluated
                             whypCost += addMomemtumCost(slowPionIdX);
                         }
                     }
-                    else {
-                        whypCost += 4;
-                    }
+//                    else {
+//                        whypCost += 4;
+//                    }
                     
                     _featuresEvaluated[*it] = true;
                 }
@@ -588,6 +607,8 @@ namespace MultiBoost {
                 if (_budgetedClassification) {
                     whypCost = computeCost();
                     _classificationCost += whypCost;
+                    
+                    whypCost += _classificationVirtualCost;
                     
                     if (_simulatedBudgeted)
                         whypCost = 1.;
