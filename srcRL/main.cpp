@@ -852,211 +852,244 @@ int main(int argc, const char *argv[])
 //    currentEpsilon = 0.97;
 //    policy->setParameter("EpsilonGreedy", currentEpsilon);
     
+    
+    vector<int> bagsCard;
+    vector<int> bagOffsets;
+    size_t numBags = 0;
+    bool isMil = datahandler->isMILsetup();
+    if (isMil) {
+        bagsCard = datahandler->getBagCardinals();
+        bagOffsets = datahandler->getBagOffsets();
+        numBags = bagsCard.size();
+    }
+    
     #pragma mark Main loop
-    // Learn for 500 Episodes
-    for (int i = 0; i < episodeNumber; i++)
+    
+    int i = 0;
+    while (i < episodeNumber)
     {
 //        currentAlpha = 1./(i + 1);
 //        qFunctionLearner->setParameter("QLearningRate", currentAlpha );
 //        qData->setParameter("QLearningRate", currentAlpha);
 
         agentContinous->startNewEpisode();
-        classifierContinous->setRandomizedInstance();
-        steps2 = agentContinous->doControllerEpisode(1, max_Steps);
         
+// TMP
+//        if (! isMil) {
+//            classifierContinous->setRandomizedInstance();
+//        }
+//        else
+//        {
         
-        usedClassifierNumber += classifierContinous->getUsedClassifierNumber();
+        int currentRandomBag = (int) (rand() % numBags );
         
-        bool clRes = classifierContinous->classifyCorrectly();
-        if ( clRes ) {
-            ges_succeeded++;
-        }
-        else {
-            ges_failed++;
-        }
+        // TMPPPP, MIL is always activated
         
-        if (((i%1000)==0) && (i>2))
-        {
-            cout << "Episode number:  " << SEP  << i << endl;
-            cout << "Current error:   " << SEP << (((double)ges_failed / ((double)(ges_succeeded+ges_failed))) * 100.0) << endl;;
-            cout << "Used classifier: " << SEP << ((double)usedClassifierNumber / 1000.0) << endl;
-            cout << "Current alpha:   "  << SEP  << currentAlpha << endl;
-            cout << "Current epsilon: "  << SEP  << policy->getParameter("EpsilonGreedy") << endl;
-            cout << "---------------------------------" << endl;
-            usedClassifierNumber = 0;
-        }
-        
-        
-        if (adaptiveMode == -1 && ((i%paramUpdate)==0) && (i>2))
-        {
-            epsDivisor += epsIncrement;
-            currentEpsilon =  epsNumerator / epsDivisor;
-            policy->setParameter("EpsilonGreedy", currentEpsilon);
-            //policy->setParameter("SoftMaxBeta", currentEpsilon);
+        int offset = bagOffsets[currentRandomBag];
+        for (int j = 0; j < bagsCard[currentRandomBag]; ++j) {
             
-        }
-        if (((i%paramUpdate)==0) && (i>2))
-        {
-            qRateDivisor += qRateIncrement;
-            currentAlpha = qRateNumerator / qRateDivisor;
-            qFunctionLearner->setParameter("QLearningRate", currentAlpha);
-            qData->setParameter("QLearningRate", currentAlpha);
-        }
-        
-#pragma mark evalation
-        
-        if (((i%evalTestIteration)==0) && (i>2))
-        {            
-            agentContinous->removeSemiMDPListener(qFunctionLearner);
-            
-            // set the policy to be greedy
-            // Create the learners controller from the Q-Function, we use a SoftMaxPolicy
-            CAgentController* greedypolicy = new CQGreedyPolicy(agentContinous->getActions(), qData);
-            
-            // set the policy as controller of the agent
-            agentContinous->setController(greedypolicy);
-            
-            // TRAIN stats
-            classifierContinous->setCurrentDataToTrain();
-            AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalTrain( agentContinous, rewardFunctionContinous );
-            
-            BinaryResultStruct bres;
-            bres.adaboostPerf = adaboostTrainPerf;
-            bres.iterNumber=i;
-            
-            evalTrain.classficationPerformance(bres, "");
-            
-            
-            if (adaptiveMode > -1 ) {
-                if (bres.usedClassifierAvg != 0)
-                    policy->setParameter("EpsilonGreedy", adaptiveEpsilon/bres.usedClassifierAvg);
-                else
-                    policy->setParameter("EpsilonGreedy", 0.9);
-            }
+            classifierContinous->setCurrentRandomIsntace( offset + j );
 
-            cout << "[+] Training set results: " << endl;
-            cout << "--> Overall error by MDP: " << bres.err << " (" << classifierContinous->getIterationError((int)bres.usedClassifierAvg) << ")" <<  " (" << adaboostTrainPerf << ")" << endl;
-            cout << "--> Average classifier used: " << bres.usedClassifierAvg << endl;
-            cout << "--> Sum of rewards: " << bres.avgReward << endl << endl;
+            steps2 = agentContinous->doControllerEpisode(1, max_Steps);
             
-            classifierContinous->outPutStatistic( bres );
+            usedClassifierNumber += classifierContinous->getUsedClassifierNumber();
             
-            
-            // VALID stats
-            
-            classifierContinous->setCurrentDataToTest();
-            AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalValid( agentContinous, rewardFunctionContinous );
-            
-            bres.adaboostPerf = adaboostValidPerf;
-            bres.iterNumber=i;
-            
-            string logFileName;
-            if (!logDirContinous.empty()) {
-                char logfname[4096];
-                sprintf( logfname, "%s/classValid_%d.txt", logDirContinous.c_str(), i );
-                logFileName = string(logfname);
+            bool clRes = classifierContinous->classifyCorrectly();
+            if ( clRes ) {
+                ges_succeeded++;
+            }
+            else {
+                ges_failed++;
             }
             
-            evalValid.classficationPerformance(bres, logFileName);
-            
-            
-            // QTables
-            string qTableFileName;
-            if (!qTablesDir.empty()) {
-                char qtablefname[4096];
-                sprintf( qtablefname, "%s/QTable_%d.dta", qTablesDir.c_str(), i );
-                qTableFileName = string(qtablefname);
-            }
-
-//            std::stringstream ss;
-//            ss << qTablesDir << "/QTable_" << i << ".dta";
-
-//            FILE *qTableFile = fopen(ss.str().c_str(), "w");
-            
-//            if (sptype == 0) {
-//                dynamic_cast<CFeatureQFunction*>(qData)->saveFeatureActionValueTable(qTableFile);
-//            }
-//            
-//            if (sptype == 5) {
-//                dynamic_cast<GSBNFBasedQFunction*>(qData)->saveActionValueTable(qTableFile);
-//            }
-            
-            if (sptype == 6) {
-                dynamic_cast<HashTable*>(qData)->saveActionValueTable(qTableFileName);
-            }
-            
-//            fflush(qTableFile);
-//            fclose(qTableFile);
-            
-            if (bres.err < bestError) {
-                bestEpNumber = i;
-                bestError = bres.err;
-                bestWhypNumber = bres.usedClassifierAvg;
-                
-                string best_acc_log = "cp " + logFileName + " best_acc_log.dta ; cp " + qTableFileName + " best_acc_qtable.dta";
-                system(best_acc_log.c_str());
-                
-                
-            }
-            
-            if (bres.avgReward > bestReward) {
-                bestReward = bres.avgReward;
-                
-                string best_rwd_log = "cp " + logFileName + " best_rwd_log.dta ; cp " + qTableFileName + " best_rwd_qtable.dta";
-                system(best_rwd_log.c_str());
-            }
-            
-            string best_log = "cp " + logFileName + " last_log.dta ; cp " + qTableFileName + " last_qtable.dta";
-            system(best_log.c_str());
-            
-            if (noLogs) {
-                string deleteCmd = "rm -f " + logFileName + " " + qTableFileName;
-                system(deleteCmd.c_str());
-            }
-
-
-            
-            // Outputs
-            
-            cout << "[+] Validation set results: " << endl;
-            cout << "--> Overall error by MDP: " << bres.err << " (" << classifierContinous->getIterationError((int)bres.usedClassifierAvg) << ")" << " (" << adaboostValidPerf << ")" << endl;
-            cout << "--> Average classifier used: " << bres.usedClassifierAvg << endl;
-            cout << "--> Sum of rewards: " << bres.avgReward << endl << endl;
-            
-            classifierContinous->outPutStatistic( bres );
-            
-            cout << "----> Best error so far ( " << bestEpNumber << " ) : " << bestError << endl << "----> Num of whyp used : " << bestWhypNumber << endl << endl;
-
-            
-            // TEST stats
-            
-            if (classifierContinous->setCurrentDataToTest2() )
+            if (((i%1000)==0) && (i>2))
             {
-                AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalTest( agentContinous, rewardFunctionContinous );
+                cout << "Episode number:  " << SEP  << i << endl;
+                cout << "Current error:   " << SEP << (((double)ges_failed / ((double)(ges_succeeded+ges_failed))) * 100.0) << endl;;
+                cout << "Used classifier: " << SEP << ((double)usedClassifierNumber / 1000.0) << endl;
+                cout << "Current alpha:   "  << SEP  << currentAlpha << endl;
+                cout << "Current epsilon: "  << SEP  << policy->getParameter("EpsilonGreedy") << endl;
+                cout << "---------------------------------" << endl;
+                usedClassifierNumber = 0;
+            }
+            
+            
+            if (adaptiveMode == -1 && ((i%paramUpdate)==0) && (i>2))
+            {
+                epsDivisor += epsIncrement;
+                currentEpsilon =  epsNumerator / epsDivisor;
+                policy->setParameter("EpsilonGreedy", currentEpsilon);
+                //policy->setParameter("SoftMaxBeta", currentEpsilon);
                 
-                bres.adaboostPerf = adaboostTestPerf;
+            }
+            
+            if (((i%paramUpdate)==0) && (i>2))
+            {
+                qRateDivisor += qRateIncrement;
+                currentAlpha = qRateNumerator / qRateDivisor;
+                qFunctionLearner->setParameter("QLearningRate", currentAlpha);
+                qData->setParameter("QLearningRate", currentAlpha);
+            }
+            
+    #pragma mark evalation
+            
+            if (((i%evalTestIteration)==0) && (i>2))
+            {            
+                agentContinous->removeSemiMDPListener(qFunctionLearner);
                 
+                // set the policy to be greedy
+                // Create the learners controller from the Q-Function, we use a SoftMaxPolicy
+                CAgentController* greedypolicy = new CQGreedyPolicy(agentContinous->getActions(), qData);
+                
+                // set the policy as controller of the agent
+                agentContinous->setController(greedypolicy);
+                
+                // TRAIN stats
+                classifierContinous->setCurrentDataToTrain();
+                AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalTrain( agentContinous, rewardFunctionContinous );
+                
+                BinaryResultStruct bres;
+                bres.adaboostPerf = adaboostTrainPerf;
+                bres.iterNumber=i;
+                
+                evalTrain.classficationPerformance(bres, "");
+                
+                
+                if (adaptiveMode > -1 ) {
+                    if (bres.usedClassifierAvg != 0)
+                        policy->setParameter("EpsilonGreedy", adaptiveEpsilon/bres.usedClassifierAvg);
+                    else
+                        policy->setParameter("EpsilonGreedy", 0.9);
+                }
+
+                cout << "[+] Training set results: " << endl;
+                cout << "--> Overall error by MDP: " << bres.err << " (" << classifierContinous->getIterationError((int)bres.usedClassifierAvg) << ")" <<  " (" << adaboostTrainPerf << ")" << endl;
+                cout << "--> Average classifier used: " << bres.usedClassifierAvg << endl;
+                cout << "--> Sum of rewards: " << bres.avgReward << endl << endl;
+                
+                classifierContinous->outPutStatistic( bres );
+                
+                
+                // VALID stats
+                
+                classifierContinous->setCurrentDataToTest();
+                AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalValid( agentContinous, rewardFunctionContinous );
+                
+                bres.adaboostPerf = adaboostValidPerf;
+                bres.iterNumber=i;
+                
+                string logFileName;
                 if (!logDirContinous.empty()) {
                     char logfname[4096];
-                    sprintf( logfname, "%s/classTest_%d.txt", logDirContinous.c_str(), i );
+                    sprintf( logfname, "%s/classValid_%d.txt", logDirContinous.c_str(), i );
                     logFileName = string(logfname);
                 }
                 
-                evalTest.classficationPerformance(bres,logFileName);
+                evalValid.classficationPerformance(bres, logFileName);
                 
-                cout << "--> Overall Test error by MDP: " << bres.err << " (" << classifierContinous->getIterationError((int)bres.usedClassifierAvg) << ")" << " (" << adaboostTestPerf << ")" << endl;
-                cout << "--> Average Test classifier used: " << bres.usedClassifierAvg << endl;
-                cout << "--> Sum of rewards on Test: " << bres.avgReward << endl << endl;
+                
+                // QTables
+                string qTableFileName;
+                if (!qTablesDir.empty()) {
+                    char qtablefname[4096];
+                    sprintf( qtablefname, "%s/QTable_%d.dta", qTablesDir.c_str(), i );
+                    qTableFileName = string(qtablefname);
+                }
+
+    //            std::stringstream ss;
+    //            ss << qTablesDir << "/QTable_" << i << ".dta";
+
+    //            FILE *qTableFile = fopen(ss.str().c_str(), "w");
+                
+    //            if (sptype == 0) {
+    //                dynamic_cast<CFeatureQFunction*>(qData)->saveFeatureActionValueTable(qTableFile);
+    //            }
+    //            
+    //            if (sptype == 5) {
+    //                dynamic_cast<GSBNFBasedQFunction*>(qData)->saveActionValueTable(qTableFile);
+    //            }
+                
+                if (sptype == 6) {
+                    dynamic_cast<HashTable*>(qData)->saveActionValueTable(qTableFileName);
+                }
+                
+    //            fflush(qTableFile);
+    //            fclose(qTableFile);
+                
+                if (bres.err < bestError) {
+                    bestEpNumber = i;
+                    bestError = bres.err;
+                    bestWhypNumber = bres.usedClassifierAvg;
+                    
+                    string best_acc_log = "cp " + logFileName + " best_acc_log.dta ; cp " + qTableFileName + " best_acc_qtable.dta";
+                    system(best_acc_log.c_str());
+                    
+                    
+                }
+                
+                if (bres.avgReward > bestReward) {
+                    bestReward = bres.avgReward;
+                    
+                    string best_rwd_log = "cp " + logFileName + " best_rwd_log.dta ; cp " + qTableFileName + " best_rwd_qtable.dta";
+                    system(best_rwd_log.c_str());
+                }
+                
+                string best_log = "cp " + logFileName + " last_log.dta ; cp " + qTableFileName + " last_qtable.dta";
+                system(best_log.c_str());
+                
+                if (noLogs) {
+                    string deleteCmd = "rm -f " + logFileName + " " + qTableFileName;
+                    system(deleteCmd.c_str());
+                }
+
+
+                
+                // Outputs
+                
+                cout << "[+] Validation set results: " << endl;
+                cout << "--> Overall error by MDP: " << bres.err << " (" << classifierContinous->getIterationError((int)bres.usedClassifierAvg) << ")" << " (" << adaboostValidPerf << ")" << endl;
+                cout << "--> Average classifier used: " << bres.usedClassifierAvg << endl;
+                cout << "--> Sum of rewards: " << bres.avgReward << endl << endl;
                 
                 classifierContinous->outPutStatistic( bres );
+                
+                cout << "----> Best error so far ( " << bestEpNumber << " ) : " << bestError << endl << "----> Num of whyp used : " << bestWhypNumber << endl << endl;
+
+                
+                // TEST stats
+                
+                if (classifierContinous->setCurrentDataToTest2() )
+                {
+                    AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalTest( agentContinous, rewardFunctionContinous );
+                    
+                    bres.adaboostPerf = adaboostTestPerf;
+                    
+                    if (!logDirContinous.empty()) {
+                        char logfname[4096];
+                        sprintf( logfname, "%s/classTest_%d.txt", logDirContinous.c_str(), i );
+                        logFileName = string(logfname);
+                    }
+                    
+                    evalTest.classficationPerformance(bres,logFileName);
+                    
+                    cout << "--> Overall Test error by MDP: " << bres.err << " (" << classifierContinous->getIterationError((int)bres.usedClassifierAvg) << ")" << " (" << adaboostTestPerf << ")" << endl;
+                    cout << "--> Average Test classifier used: " << bres.usedClassifierAvg << endl;
+                    cout << "--> Sum of rewards on Test: " << bres.avgReward << endl << endl;
+                    
+                    classifierContinous->outPutStatistic( bres );
+                }
+                
+                cout << "---------------------------------" << endl;
+                
+                agentContinous->setController(policy);
+                agentContinous->addSemiMDPListener(qFunctionLearner);
+                classifierContinous->setCurrentDataToTrain();
             }
             
-            cout << "---------------------------------" << endl;
-            
-            agentContinous->setController(policy);
-            agentContinous->addSemiMDPListener(qFunctionLearner);
-            classifierContinous->setCurrentDataToTrain();
+            ++i;
         }
+        
+        classifierContinous->clearCostBuffer();
     }
 
     delete datahandler;

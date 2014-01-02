@@ -143,6 +143,7 @@ namespace MultiBoost {
         vector<Label>& getLabels(int i) { return _pCurrentData->getLabels(i); }
         
         vector<int>& getBagCardinals() { return _bagCardinals[_pCurrentData]; }
+        vector<int>& getBagOffsets() { return _bagOffsets[_pCurrentData]; }
         
         bool isMILsetup() {return _mil;};
         
@@ -190,7 +191,8 @@ namespace MultiBoost {
         bool                    _mil;
         
         map<InputData*, vector<int> > _bagCardinals;
-
+        map<InputData*, vector<int> > _bagOffsets;
+        
 	};
 
 	////////////////////////////////////////////////////////////////////////////////////////////////

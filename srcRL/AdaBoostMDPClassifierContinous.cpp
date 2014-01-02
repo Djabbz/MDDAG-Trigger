@@ -124,7 +124,6 @@ namespace MultiBoost {
             
             cout << "--> Budget calculation type: " << _budgetType << endl;
 
-            
             if (args.getNumValues("budgeted") > 1) {
                 featureCostFile = args.getValue<string>("budgeted", 1);
                 
@@ -301,7 +300,7 @@ namespace MultiBoost {
                 set<int> usedCols = _data->getUsedColumns(_currentClassifier);
                 
                 for (set<int>::iterator it = usedCols.begin(); it != usedCols.end() ; ++it) {
-                    if (_featuresEvaluated[*it] == false)
+                    if ( isFeatureValueBuffered(*it) == false) // _featuresEvaluated[*it] == false
     //                if (_featuresEvaluated[*it] == true)
                     {
     //                    atLeastOneFeatureEvaluated = true;
@@ -309,6 +308,7 @@ namespace MultiBoost {
                         break;
                     }
                 }
+    
                 
     //            if (atLeastOneFeatureEvaluated)
                 if (allFeaturesEvaluated)
@@ -480,9 +480,16 @@ namespace MultiBoost {
     
     double AdaBoostMDPClassifierContinous::addMomemtumCost(int varIdx){
         
-        if (_featuresEvaluated[varIdx] == true)
-            return 0.;
-            
+        
+        if (isFeatureValueBuffered(varIdx))
+            return 0;
+        else
+            updateValueBuffer(varIdx);
+        
+//        if (_featuresEvaluated[varIdx] == true)
+//            return 0.;
+        
+        
         double resultingCost = 0.;
         FeatureReal featureValue = _data->getAttributeValue(_currentRandomInstance, varIdx);
         if (featureValue > 1200) {
@@ -518,7 +525,8 @@ namespace MultiBoost {
         {
             for (set<int>::iterator it = usedCols.begin(); it != usedCols.end() ; ++it) {
 
-                if ( _featuresEvaluated[*it] == false ) {
+                if ( isFeatureValueBuffered(*it) == false ) { //_featuresEvaluated[*it]
+                    
                     string attributeName = attributeNamemap.getNameFromIdx(*it);
                     
                     if (attributeName.find("_PT") != string::npos) {
@@ -543,7 +551,8 @@ namespace MultiBoost {
                             else {
                                 varIndex = attributeNamemap.getIdxFromName(varName + "_TFC");
                             }
-                            _featuresEvaluated[varIndex] = true;
+                            
+                            updateValueBuffer(varIndex) ; // _featuresEvaluated[varIndex] = true;
                             
                             // virtual cost
                             _classificationVirtualCost += 1.5;
@@ -572,7 +581,7 @@ namespace MultiBoost {
 //                        whypCost += 4;
 //                    }
                     
-                    _featuresEvaluated[*it] = true;
+                    updateValueBuffer(*it); // _featuresEvaluated[*it] = true;
                 }
             }
             

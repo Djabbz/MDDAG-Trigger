@@ -130,7 +130,9 @@ namespace MultiBoost {
         
         // for budgetted classification
         _mil = false;
-        if (args.hasArgument("mil"))
+        
+        // TMPPP
+        if (true) // args.hasArgument("mil")
         {
             _mil = true;
             
@@ -140,10 +142,37 @@ namespace MultiBoost {
             _bagCardinals[_pTestData] = vector<int>();
             readRawData(testFileName + ".events", _bagCardinals[_pTestData]);
             
+            
+            int counter;
+            
+            counter = 0;
+            _bagOffsets[_pTrainData] = vector<int>();
+            _bagOffsets[_pTrainData].resize(_bagCardinals[_pTrainData].size());
+            for (int i = 0; i < _bagCardinals[_pTrainData].size(); ++i) {
+                _bagOffsets[_pTrainData][i] = counter;
+                counter += _bagCardinals[_pTrainData][i];
+            }
+
+            counter = 0;
+            _bagOffsets[_pTestData] = vector<int>();
+            _bagOffsets[_pTestData].resize(_bagCardinals[_pTestData].size());
+            for (int i = 0; i < _bagCardinals[_pTestData].size(); ++i) {
+                _bagOffsets[_pTestData][i] = counter;
+                counter += _bagCardinals[_pTestData][i];
+            }
+
             if (! testFileName2.empty())
             {
                 _bagCardinals[_pTestData2] = vector<int>();
                 readRawData(testFileName2 + ".events", _bagCardinals[_pTestData2]);
+                
+                _bagOffsets[_pTestData2] = vector<int>();
+                counter = 0;
+                for (int i = 0; i < _bagCardinals[_pTestData2].size(); ++i) {
+                    _bagOffsets[_pTestData2][i] = counter;
+                    counter += _bagCardinals[_pTestData2][i];
+                }
+
             }
             
         }
