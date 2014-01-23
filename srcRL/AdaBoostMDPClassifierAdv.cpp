@@ -131,8 +131,8 @@ namespace MultiBoost {
         // for budgetted classification
         _mil = false;
         
-        // TMPPP
-        if (true) // args.hasArgument("mil")
+
+        if (args.hasArgument("mil"))
         {
             _mil = true;
             
