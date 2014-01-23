@@ -195,6 +195,8 @@ void setBasicOptions(nor_utils::Args& args)
     args.declareArgument("traintestmdp", "Performs training and test at the same time.", 6, "<trainingDataFile> <validDataFile> <nInterations> <shypfile> <outfile> <testDataFile>");
     args.declareArgument("testmdp", "Performs test of a previously leant model.", 3, "<qtable> <train log file> <test log file>");
     args.declareArgument("deeparff", "Outputs an arff file where the attributes are the paths of MDDAG.", 4, "<qtable> <train arff file> <test arff file> <mode>");
+    args.declareArgument("groupedfeatures", "Group the base classifiers according to their features.", 0, "");
+    args.declareArgument("cpuopt", "Speed up the learning by storing the output of the classifiers for each instance in memory.", 0, "");
     
     
 	args.declareArgument( "fileformat", "Defines the type of intput file. Available types are:\n"

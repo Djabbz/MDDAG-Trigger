@@ -40,9 +40,10 @@ using namespace std;
 typedef vector<bitset<MAX_NUM_OF_ITERATION> >	vBitSet;
 typedef vector<bitset<MAX_NUM_OF_ITERATION> >*	pVBitSet;
 
-typedef vector<vector<char> >	vVecChar;
-typedef vector<vector<char> >*	pVVecChar;
+//typedef vector<vector<char> >	vVecChar;
+//typedef vector<vector<char> >*	pVVecChar;
 
+typedef vector<vector<vector<AlphaReal> > >	hypermat;
 
 namespace MultiBoost {
 	
@@ -69,7 +70,7 @@ namespace MultiBoost {
 		vector<int> classifyKthWeakLearner( const int wHypInd, const int instance, ExampleResults* exampleResult );
 		
 		bool currentClassifyingResult( const int currentIstance, ExampleResults* exampleResult );
-        AlphaReal getWhypClassification( const int wHypInd, const int instance );
+        vector<AlphaReal> getWhypClassification( const int wHypInd, const int instance );
         
 		AlphaReal getExponentialLoss( const int currentIstance, ExampleResults* exampleResult );
         AlphaReal getLogisticLoss( const int currentIstance, ExampleResults* exampleResult );
@@ -88,16 +89,16 @@ namespace MultiBoost {
         int getNumAttributes() const { return _pCurrentData->getNumAttributes();}
         const NameMap& getAttributeNameMap() { return _pCurrentData->getAttributeNameMap();}
         
-        set<int> getUsedColumns(int weakhypIdx) { return _weakHypotheses[weakhypIdx]->getUsedColumns();}
+        set<int> getUsedColumns(int weakhypIdx) { return _weakHypotheses[weakhypIdx][0]->getUsedColumns();}
         
 		void setCurrentDataToTrain() {
 			_pCurrentData = _pTrainData; 
 			if (_isDataStorageMatrix) _pCurrentMatrix = &_weakHypothesesMatrices[_pCurrentData];			
 		}
 		void setCurrentDataToTest() { 
-			_pCurrentData = _pTestData; 
+			_pCurrentData = _pTestData ;
 			if (_isDataStorageMatrix) _pCurrentMatrix = &_weakHypothesesMatrices[_pCurrentData];
-		}		
+		}
 
         bool setCurrentDataToTest2() { 
             if (_pTestData2) {
@@ -106,14 +107,14 @@ namespace MultiBoost {
             }
             return false;
 			
-//			if (_isDataStorageMatrix) _pCurrentMatrix = &_weakHypothesesMatrices[_pCurrentData];
-		}		
+			if (_isDataStorageMatrix) _pCurrentMatrix = &_weakHypothesesMatrices[_pCurrentData];
+		}
         
 		double getAdaboostPerfOnCurrentDataset();
 		
 		AlphaReal getSumOfAlphas() const { return _sumAlphas; }
         
-        AlphaReal getAlpha(int i) { return _weakHypotheses[i]->getAlpha(); }
+        AlphaReal getAlpha(int i) { return _weakHypotheses[i][0]->getAlpha(); }
         
         inline const NameMap& getClassMap()
 		{ return _pCurrentData->getClassMap(); }
@@ -166,7 +167,7 @@ namespace MultiBoost {
 		
 		const nor_utils::Args&  _args;  //!< The arguments defined by the user.		
 		int						_currentInstance;
-		vector<BaseLearner*>	_weakHypotheses;		
+		vector<vector<BaseLearner*>>	_weakHypotheses;
 		
 		InputData*				_pCurrentData;
 		InputData*				_pTrainData;
@@ -178,9 +179,12 @@ namespace MultiBoost {
 		
 //		map< InputData*, vBitSet > _weakHypothesesMatrices;
 //		pVBitSet				   _pCurrentBitset;
-		map< InputData*, vVecChar > _weakHypothesesMatrices;
-		pVVecChar				   _pCurrentMatrix;
-		
+
+//		map< InputData*, vVecChar > _weakHypothesesMatrices;
+//		pVVecChar				   _pCurrentMatrix;
+
+		map< InputData*, hypermat >     _weakHypothesesMatrices;
+        hypermat*                       _pCurrentMatrix;
 		
 		bool					_isDataStorageMatrix;
 		vector< vector< AlphaReal > > _vs;
@@ -192,6 +196,8 @@ namespace MultiBoost {
         
         map<InputData*, vector<int> > _bagCardinals;
         map<InputData*, vector<int> > _bagOffsets;
+        
+        bool            _groupedFeatures;
         
 	};
 
