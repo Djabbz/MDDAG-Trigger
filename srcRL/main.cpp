@@ -876,21 +876,21 @@ int main(int argc, const char *argv[])
 
         agentContinous->startNewEpisode();
         
-// TMP
-//        if (! isMil) {
-//            classifierContinous->setRandomizedInstance();
-//        }
-//        else
-//        {
         
-        int currentRandomBag = (int) (rand() % numBags );
+        int offset = 0;
+        int bagCard = 1;
+        if (isMil) {
+            int currentRandomBag = (int) (rand() % numBags );
+            offset = bagOffsets[currentRandomBag];
+            bagCard = bagsCard[currentRandomBag];
+        }
         
-        // TMPPPP, MIL is always activated
-        
-        int offset = bagOffsets[currentRandomBag];
-        for (int j = 0; j < bagsCard[currentRandomBag]; ++j) {
+        for (int j = 0; j < bagCard; ++j) {
             
-            classifierContinous->setCurrentRandomIsntace( offset + j );
+            if (! isMil)
+                classifierContinous->setRandomizedInstance();
+            else
+                classifierContinous->setCurrentRandomIsntace( offset + j );
 
             steps2 = agentContinous->doControllerEpisode(1, max_Steps);
             

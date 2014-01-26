@@ -779,18 +779,15 @@ namespace MultiBoost {
                 scores.resize(numTestExamples);
             }
 			
-//            vector<int> bagsCard;
-//            vector<int> bagOffsets;
-//            size_t numBags = 0;
-//            if (milSetup) {
-//                bagsCard = classifier->getDataReader()->getBagCardinals();
-//                bagOffsets = classifier->getDataReader()->getBagOffsets();
-//                numBags = bagsCard.size();
-//            }
+            vector<int> bagCardinals;
+            vector<int> bagOffsets;
+            size_t numBags = 0;
+            if (milSetup) {
+                bagCardinals = classifier->getDataReader()->getBagCardinals();
+                bagOffsets = classifier->getDataReader()->getBagOffsets();
+                numBags = bagCardinals.size();
+            }
             
-            // TMPPPP, MIL is always activated
-            
-            vector<int> bagCardinals = classifier->getBagCardinals();
             
             int eventNumber = 0;
             int candidateCounter = 0;
@@ -798,7 +795,12 @@ namespace MultiBoost {
             int i = 0;
             while (i < numTestExamples)
             {
-                int numCandidates = bagCardinals[eventNumber];
+                int numCandidates = 1;
+                
+                if (milSetup) {
+                    numCandidates = bagCardinals[eventNumber];
+                }
+                
                 candidateCounter += numCandidates;
                 
                 for (int j = 0; j < numCandidates; ++j, ++i)

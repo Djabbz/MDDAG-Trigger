@@ -295,23 +295,23 @@ namespace MultiBoost {
             if ( _currentClassifier != _data->getIterationNumber()) {
             
                 
-                bool allFeaturesEvaluated = true;
-    //            bool atLeastOneFeatureEvaluated = false;
+//                bool allFeaturesEvaluated = true;
+                bool atLeastOneFeatureEvaluated = false;
                 set<int> usedCols = _data->getUsedColumns(_currentClassifier);
                 
                 for (set<int>::iterator it = usedCols.begin(); it != usedCols.end() ; ++it) {
-                    if ( isFeatureValueBuffered(*it) == false) // _featuresEvaluated[*it] == false
+                    if ( isFeatureValueBuffered(*it) == true) // _featuresEvaluated[*it] == false
     //                if (_featuresEvaluated[*it] == true)
                     {
-    //                    atLeastOneFeatureEvaluated = true;
-                        allFeaturesEvaluated = false;
+                        atLeastOneFeatureEvaluated = true;
+//                        allFeaturesEvaluated = false;
                         break;
                     }
                 }
     
                 
-    //            if (atLeastOneFeatureEvaluated)
-                if (allFeaturesEvaluated)
+                if (atLeastOneFeatureEvaluated)
+//                if (allFeaturesEvaluated)
                     idxBias = 1;
             }
             state->setDiscreteState(0, (_currentClassifier * 2) + idxBias);
@@ -458,6 +458,7 @@ namespace MultiBoost {
             cheap_vars.push_back("D0C_1_IP");
 //            cheap_vars.push_back("D0C_1_IPC");
             cheap_vars.push_back("D0C_2_IP");
+            cheap_vars.push_back("D0Tau");
 //            cheap_vars.push_back("D0C_2_IPC");
         }
         

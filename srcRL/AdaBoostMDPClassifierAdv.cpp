@@ -115,24 +115,84 @@ namespace MultiBoost {
         if (_groupedFeatures) {
             map<set<int>, vector<BaseLearner*>> featureWhypMap;
             map<set<int>, vector<BaseLearner*>>::iterator fwIt;
-            for( it = weakHypotheses.begin(); it != weakHypotheses.end(); ++it )
+            
+            if (args.hasArgument("budgeted") && args.getValue<string>("budgeted", 0).compare("LHCb") == 0)
             {
-                set<int> featuresUsed = (*it)->getUsedColumns();
-                featureWhypMap[featuresUsed].push_back(*it);
-            }
-            
-            cout << "[+] Grouped features \n\t" << endl;
-            for (fwIt = featureWhypMap.begin(); fwIt != featureWhypMap.end(); ++fwIt) {
-                for (set<int>::iterator idxIt = fwIt->first.begin(); idxIt != fwIt->first.end(); ++idxIt) {
-                    cout << *idxIt << ", " << endl;
+                vector<string> cheap_vars;
+                if (cheap_vars.size() == 0)
+                {
+                    cheap_vars.push_back("D0_VTX_FD");
+                    cheap_vars.push_back("PiS_IP");
+                    cheap_vars.push_back("D0C_1_IP");
+                    cheap_vars.push_back("D0C_2_IP");
+                    cheap_vars.push_back("D0Tau");
                 }
-                cout << "\t -> " << fwIt->second.size() << "\n\t" <<  endl;
-                _weakHypotheses.push_back(fwIt->second);
+                const NameMap& attributeNamemap = _pTrainData->getAttributeNameMap();
+                
+                set<int> cheapVarIndices;
+                vector<string>::iterator varIt;
+                for (varIt = cheap_vars.begin(); varIt != cheap_vars.end() ; ++varIt)
+                {
+                    int var_index = attributeNamemap.getIdxFromName(*varIt);
+                    cheapVarIndices.insert(var_index);
+                }
+                
+                for( it = weakHypotheses.begin(); it != weakHypotheses.end(); ++it )
+                {
+                    set<int> featuresUsed = (*it)->getUsedColumns();
+                    
+                    bool nonCheapFeaturesUsed = false;
+                    for (set<int>::iterator idxIt = featuresUsed.begin(); idxIt != featuresUsed.end(); ++idxIt)
+                    {
+                        if (cheapVarIndices.find(*idxIt) == cheapVarIndices.end())
+                        {
+                            nonCheapFeaturesUsed = true;
+                            break;
+                        }
+                    }
+                    
+                    if (nonCheapFeaturesUsed)
+                        featureWhypMap[featuresUsed].push_back(*it);
+                    else
+                        featureWhypMap[cheapVarIndices].push_back(*it);
+                }
+                
+                cout << "[+] Grouped features \n\t";
+                _weakHypotheses.push_back(featureWhypMap[cheapVarIndices]);
+                for (set<int>::iterator idxIt = cheapVarIndices.begin(); idxIt != cheapVarIndices.end(); ++idxIt) {
+                    cout << *idxIt << ", ";
+                }
+                cout << "\t -> " << featureWhypMap.size() << "\n\t";
+
+                featureWhypMap.erase(cheapVarIndices);
+                
+                
+                for (fwIt = featureWhypMap.begin(); fwIt != featureWhypMap.end(); ++fwIt) {
+                    for (set<int>::iterator idxIt = fwIt->first.begin(); idxIt != fwIt->first.end(); ++idxIt) {
+                        cout << *idxIt << ", ";
+                    }
+                    cout << "\t -> " << fwIt->second.size() << "\n\t";
+                    _weakHypotheses.push_back(fwIt->second);
+                }
             }
-            
+            else
+            {
+                for( it = weakHypotheses.begin(); it != weakHypotheses.end(); ++it )
+                {
+                    set<int> featuresUsed = (*it)->getUsedColumns();
+                    featureWhypMap[featuresUsed].push_back(*it);
+                }
+                
+                cout << "[+] Grouped features \n\t";
+                for (fwIt = featureWhypMap.begin(); fwIt != featureWhypMap.end(); ++fwIt) {
+                    for (set<int>::iterator idxIt = fwIt->first.begin(); idxIt != fwIt->first.end(); ++idxIt) {
+                        cout << *idxIt << ", ";
+                    }
+                    cout << "\t -> " << fwIt->second.size() << "\n\t";
+                    _weakHypotheses.push_back(fwIt->second);
+                }
+            }
             _numIterations = (int)_weakHypotheses.size();
-            
-//            assert(featureWhypMap.size() == _pTrainData->getNumAttributes());
         }
         else
         {
