@@ -166,7 +166,6 @@ namespace MultiBoost {
 
                 featureWhypMap.erase(cheapVarIndices);
                 
-                
                 for (fwIt = featureWhypMap.begin(); fwIt != featureWhypMap.end(); ++fwIt) {
                     for (set<int>::iterator idxIt = fwIt->first.begin(); idxIt != fwIt->first.end(); ++idxIt) {
                         cout << *idxIt << ", ";
@@ -517,7 +516,7 @@ namespace MultiBoost {
 		if (_isDataStorageMatrix)
 		{
 			for (int l = 0; l < numClasses; ++l) {
-				currVotesVector[l] = (*_pCurrentMatrix)[instance][wHypInd][l];
+				currVotesVector[l] += (*_pCurrentMatrix)[instance][wHypInd][l];
                 ternaryPhis[l] = (currVotesVector[l] > 0) ? 1 : ((currVotesVector[l] < 0) ? -1 : 0) ;
             }
 		}
@@ -739,14 +738,22 @@ namespace MultiBoost {
                 ExampleResults*& tmpResult = examplesResults[i];
                 vector<AlphaReal>& currVotesVector = tmpResult->getVotesVector();
                 
-                vector<BaseLearner*>::iterator whypIt;
-                for (whypIt = _weakHypotheses[j].begin(); whypIt != _weakHypotheses[j].end(); ++whypIt) {
-                    BaseLearner* currWeakHyp = *whypIt;
-                    AlphaReal alpha = currWeakHyp->getAlpha();
-                    
-                    // for every class
+                if (_isDataStorageMatrix)
+                {
                     for (int l = 0; l < numClasses; ++l)
-                        currVotesVector[l] += alpha * currWeakHyp->classify(_pCurrentData, i, l);
+                        currVotesVector[l] += (*_pCurrentMatrix)[i][j][l];
+                }
+                else
+                {
+                    vector<BaseLearner*>::iterator whypIt;
+                    for (whypIt = _weakHypotheses[j].begin(); whypIt != _weakHypotheses[j].end(); ++whypIt) {
+                        BaseLearner* currWeakHyp = *whypIt;
+                        AlphaReal alpha = currWeakHyp->getAlpha();
+                        
+                        // for every class
+                        for (int l = 0; l < numClasses; ++l)
+                            currVotesVector[l] += alpha * currWeakHyp->classify(_pCurrentData, i, l);
+                    }
                 }
                 
                 vector<Label>::const_iterator lIt;
