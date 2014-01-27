@@ -154,6 +154,8 @@ namespace MultiBoost {
         
         map<pair<int, FeatureReal>, bool>   _costBuffer;
         
+        int _lhcbSignelUpweightFactor;
+        
 //        bool isFeatureValueBuffered(set<int> indices) {
 //            bool answer = true;
 //            for (set<int>::iterator it = indices.begin(); it != indices.end() ; ++it) {

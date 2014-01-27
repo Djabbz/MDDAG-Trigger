@@ -256,6 +256,7 @@ void setBasicOptions(nor_utils::Args& args)
     args.declareArgument("mil", "Multiple Instance Learning error output.", 0, "" );
     args.declareArgument("multiskip", "Skip multiple times.", 1, "<number>" );
     args.declareArgument("nologs", "Delete the logs, only keeps the last and the best.", 0, "" );
+    args.declareArgument("lhcbsignalupweight", "Upweight the signal instances by a multiplicative factor.", 1, "<factor>" );
 }
 
 

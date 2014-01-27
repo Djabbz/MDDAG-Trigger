@@ -102,6 +102,12 @@ namespace MultiBoost {
         _featureCosts.clear();
         _featuresEvaluated.clear();
 
+        _lhcbSignelUpweightFactor = 1;
+        if (args.hasArgument("lhcbsignalupweight")){
+            _lhcbSignelUpweightFactor = args.getValue<int>("lhcbsignalupweight", 0);
+        }
+        
+
         if (args.hasArgument("budgeted"))
         {
             _budgetedClassification = true;
@@ -650,7 +656,19 @@ namespace MultiBoost {
 //					assert(margin <= 0);
                     
 				}
-			} else if (_succRewardMode==RT_EXP)
+
+                if (_budgetType.compare("LHCb") == 0) {
+                    vector<Label>::const_iterator lIt;
+                    const vector<Label>& labels = _data->getLabels(_currentRandomInstance);
+                    for (lIt = labels.begin(); lIt != labels.end(); ++lIt) {
+                        if (lIt->idx == 3 && lIt->y < 0) {
+                            rew *= _lhcbSignelUpweightFactor;
+                        }
+                    }
+                }
+
+			}
+            else if (_succRewardMode==RT_EXP)
 			{
 				// since the AdaBoost minimize the margin e(-y_i f(x_i)
 				// we will maximize -1/e(y_i * f(x_i)
