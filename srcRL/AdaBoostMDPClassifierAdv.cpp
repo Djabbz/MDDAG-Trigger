@@ -100,11 +100,14 @@ namespace MultiBoost {
 		// calculate the sum of alphas
 		vector<BaseLearner*>::iterator it;
 		_sumAlphas=0.0;
+        
+        cout << "[+] Summing the alpha... " << flush;
 		for( it = weakHypotheses.begin(); it != weakHypotheses.end(); ++it )
 		{
 			BaseLearner* currBLearner = *it;
 			_sumAlphas += currBLearner->getAlpha();			
 		}
+        cout << "done!" << endl;
         
         _groupedFeatures = false;
         if (args.hasArgument("groupedfeatures"))
@@ -113,6 +116,9 @@ namespace MultiBoost {
         }
         
         if (_groupedFeatures) {
+
+            cout << "[+] Grouped features \n\t" << flush;
+
             map<set<int>, vector<BaseLearner*>> featureWhypMap;
             map<set<int>, vector<BaseLearner*>>::iterator fwIt;
             
@@ -157,12 +163,11 @@ namespace MultiBoost {
                         featureWhypMap[cheapVarIndices].push_back(*it);
                 }
                 
-                cout << "[+] Grouped features \n\t";
                 _weakHypotheses.push_back(featureWhypMap[cheapVarIndices]);
                 for (set<int>::iterator idxIt = cheapVarIndices.begin(); idxIt != cheapVarIndices.end(); ++idxIt) {
                     cout << *idxIt << ", ";
                 }
-                cout << "\t -> " << featureWhypMap.size() << "\n\t";
+                cout << "\t -> " << featureWhypMap[cheapVarIndices].size() << "\n\t";
 
                 featureWhypMap.erase(cheapVarIndices);
                 
@@ -182,7 +187,6 @@ namespace MultiBoost {
                     featureWhypMap[featuresUsed].push_back(*it);
                 }
                 
-                cout << "[+] Grouped features \n\t";
                 for (fwIt = featureWhypMap.begin(); fwIt != featureWhypMap.end(); ++fwIt) {
                     for (set<int>::iterator idxIt = fwIt->first.begin(); idxIt != fwIt->first.end(); ++idxIt) {
                         cout << *idxIt << ", ";
