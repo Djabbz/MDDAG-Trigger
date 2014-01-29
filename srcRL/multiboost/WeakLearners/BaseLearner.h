@@ -411,6 +411,9 @@ namespace MultiBoost {
 		
         virtual set<int> getUsedColumns() = 0;
         
+        int                     index;
+
+        
 	protected:
 		
 		/**
@@ -542,7 +545,8 @@ namespace MultiBoost {
 		 * \see setSmoothingVal
 		 * \date 22/11/2005
 		 */
-		static AlphaReal        _smoothingVal; 
+		static AlphaReal        _smoothingVal;
+        
         
 //        set<int>             _usedColumns; //!< The indices of the columns used by the base learner.
 		

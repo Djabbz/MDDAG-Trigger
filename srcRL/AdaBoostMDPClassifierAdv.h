@@ -167,7 +167,7 @@ namespace MultiBoost {
 		
 		const nor_utils::Args&  _args;  //!< The arguments defined by the user.		
 		int						_currentInstance;
-		vector<vector<BaseLearner*>>	_weakHypotheses;
+		vector<vector<BaseLearner*> >	_weakHypotheses;
 		
 		InputData*				_pCurrentData;
 		InputData*				_pTrainData;

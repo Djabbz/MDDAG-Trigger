@@ -298,11 +298,13 @@ namespace MultiBoost {
 		string algoName = seekAndParseEnclosedValue<string>(st, "algo");
 		
 		// Will be filled in by seekAndParseParamTag in each iteration
-		for ( ; ; )
+		for (int i = 0 ; ; ++i)
 		{
 			// move until the next weak hypothesis
-			if ( seekParamTag(st, "weakhyp") )
+			if ( seekParamTag(st, "weakhyp") ) {
 				loadHypothesis(st, weakHypotheses, pTrainingData, verbose);
+                weakHypotheses.back()->index = i;
+            }
 			else
 				break;
 		}
@@ -341,13 +343,14 @@ namespace MultiBoost {
 		string algoName = seekAndParseEnclosedValue<string>(st, "algo");
 		
 		// Will be filled in by seekAndParseParamTag in each iteration
-		for ( ; ; )
+		for (int i = 0 ; ; ++i)
 		{   
             // move until the next weak hypothesis
             if ( seekParamTag(st, "weakhyp") ) {
                 double threshold = seekAndParseEnclosedValue<double>(st, "rejecthresh");
                 rejectionThresholds.push_back(threshold);
                 loadHypothesis(st, weakHypotheses, pTrainingData, verbose);
+                weakHypotheses.back()->index = i;
             }
             else
                 break;

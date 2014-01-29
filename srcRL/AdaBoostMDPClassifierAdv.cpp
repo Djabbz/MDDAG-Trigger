@@ -119,9 +119,14 @@ namespace MultiBoost {
 
             cout << "[+] Grouped features \n\t" << flush;
 
-            map<set<int>, vector<BaseLearner*>> featureWhypMap;
-            map<set<int>, vector<BaseLearner*>>::iterator fwIt;
+            map<set<int>, vector<BaseLearner*> > featureWhypMap;
+            map<set<int>, vector<BaseLearner*> >::iterator fwIt;
+
+            ofstream featureFile;
+            featureFile.open("grouped_features.dta");
             
+            const NameMap& attributeNamemap = _pTrainData->getAttributeNameMap();
+
             if (args.hasArgument("budgeted") && args.getValue<string>("budgeted", 0).compare("LHCb") == 0)
             {
                 vector<string> cheap_vars;
@@ -133,7 +138,6 @@ namespace MultiBoost {
                     cheap_vars.push_back("D0C_2_IP");
                     cheap_vars.push_back("D0Tau");
                 }
-                const NameMap& attributeNamemap = _pTrainData->getAttributeNameMap();
                 
                 set<int> cheapVarIndices;
                 vector<string>::iterator varIt;
@@ -163,6 +167,8 @@ namespace MultiBoost {
                         featureWhypMap[cheapVarIndices].push_back(*it);
                 }
                 
+                // filling the weakhyp vector<vector>
+                
                 _weakHypotheses.push_back(featureWhypMap[cheapVarIndices]);
                 for (set<int>::iterator idxIt = cheapVarIndices.begin(); idxIt != cheapVarIndices.end(); ++idxIt) {
                     cout << *idxIt << ", ";
@@ -171,6 +177,17 @@ namespace MultiBoost {
 
                 featureWhypMap.erase(cheapVarIndices);
                 
+                // manual reordering
+                int feat_indices[] = {4, 8, 12, 0, 1, 7, 11, 15, 6, 10, 14};
+                for (int f = 0; f < 11; ++f) {
+                    set<int> f_set;
+                    f_set.insert(feat_indices[f]);
+                    _weakHypotheses.push_back(featureWhypMap[f_set]);
+                    cout << feat_indices[f] << "\t -> " << featureWhypMap[f_set].size() << "\n\t";
+                    featureWhypMap.erase(f_set);
+                    f_set.erase(feat_indices[f]);
+                }
+                
                 for (fwIt = featureWhypMap.begin(); fwIt != featureWhypMap.end(); ++fwIt) {
                     for (set<int>::iterator idxIt = fwIt->first.begin(); idxIt != fwIt->first.end(); ++idxIt) {
                         cout << *idxIt << ", ";
@@ -178,6 +195,8 @@ namespace MultiBoost {
                     cout << "\t -> " << fwIt->second.size() << "\n\t";
                     _weakHypotheses.push_back(fwIt->second);
                 }
+                
+                cout << endl;
             }
             else
             {
@@ -195,7 +214,28 @@ namespace MultiBoost {
                     _weakHypotheses.push_back(fwIt->second);
                 }
             }
+            
             _numIterations = (int)_weakHypotheses.size();
+            
+            // logging
+            cout << "[+] Logging the grouped features... " << flush;
+            for (int i = 0; i < _numIterations; ++i) {
+                for (int j = 0; j < _weakHypotheses[i].size(); ++j) {
+                    
+                    featureFile << _weakHypotheses[i][j]->index;
+                    
+                    set<int> featuresUsed = _weakHypotheses[i][j]->getUsedColumns();
+                    for (set<int>::iterator idxIt = featuresUsed.begin(); idxIt != featuresUsed.end(); ++idxIt)
+                    {
+                        featureFile << "," << attributeNamemap.getNameFromIdx(*idxIt);
+                    }
+                    
+                    featureFile << " ";
+                }
+                featureFile << "\n";
+            }
+            featureFile.close();
+            cout << "Done." << endl;
         }
         else
         {
@@ -302,7 +342,7 @@ namespace MultiBoost {
 
 	void DataReader::calculateHypothesesMatrix()
 	{		
-		cout << "Calculate weak hyp matrix ...";
+		cout << "Calculate weak hyp matrix... " << flush;
 		const int numExamples = _pCurrentData->getNumExamples();
         const int numClasses = _pCurrentData->getNumClasses();
         
@@ -335,7 +375,7 @@ namespace MultiBoost {
             }
         }
 								
-		cout << "Done" << endl;
+		cout << "Done." << endl;
 	}
 	
     // -----------------------------------------------------------------------
@@ -805,6 +845,7 @@ namespace MultiBoost {
         
         for (int i = 0; i < numExamples; ++i)
 			delete examplesResults[i] ;
+        
 
 //		double acc = ((double) correct / ((double) numExamples)) * 100.0;
 		return err;
