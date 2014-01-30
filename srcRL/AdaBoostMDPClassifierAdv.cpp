@@ -71,6 +71,8 @@ namespace MultiBoost {
 		
         else _numIterations = (int)weakHypotheses.size();
         
+        _totalNumIterations = _numIterations;
+        
 		if (_verbose > 0)
 			cout << "(" << weakHypotheses.size() << " weak hypotheses kept)" << endl << endl;
 		
@@ -182,7 +184,8 @@ namespace MultiBoost {
                 for (int f = 0; f < 11; ++f) {
                     set<int> f_set;
                     f_set.insert(feat_indices[f]);
-                    _weakHypotheses.push_back(featureWhypMap[f_set]);
+                    if (featureWhypMap[f_set].size() != 0)
+                        _weakHypotheses.push_back(featureWhypMap[f_set]);
                     cout << feat_indices[f] << "\t -> " << featureWhypMap[f_set].size() << "\n\t";
                     featureWhypMap.erase(f_set);
                     f_set.erase(feat_indices[f]);
@@ -342,7 +345,7 @@ namespace MultiBoost {
 
 	void DataReader::calculateHypothesesMatrix()
 	{		
-		cout << "Calculate weak hyp matrix... " << flush;
+		cout << "Calculate weak hyp matrix " << flush;
 		const int numExamples = _pCurrentData->getNumExamples();
         const int numClasses = _pCurrentData->getNumClasses();
         
@@ -357,8 +360,22 @@ namespace MultiBoost {
             }
 		}		
 		
+        const int step = _totalNumIterations < 10 ? 1 : _totalNumIterations / 10;
+    
+        cout << ": 0%." << flush;
+        int t = 0;
 		for(int wHypInd = 0; wHypInd < _numIterations; ++wHypInd )
 		{
+            if ((t + 1) % 1000 == 0)
+                cout << "." << flush;
+
+            if ((t + 1) % step == 0)
+            {
+                float progress = static_cast<float>(t) / static_cast<float>(_totalNumIterations) * 100.0;
+                cout << "." << setprecision(2) << progress << "%." << flush;
+            }
+
+
             vector<BaseLearner*>::iterator whypIt;
             for (whypIt = _weakHypotheses[wHypInd].begin(); whypIt != _weakHypotheses[wHypInd].end(); ++whypIt) {
 //                AbstainableLearner* currWeakHyp = dynamic_cast<AbstainableLearner*>(*whypIt);
@@ -372,6 +389,7 @@ namespace MultiBoost {
                         allOutputs[i][wHypInd][l] += alpha * currWeakHyp->classify(_pCurrentData, i, l);
                     }
                 }
+                ++t;
             }
         }
 								

@@ -175,7 +175,8 @@ namespace MultiBoost {
 		
         InputData*				_pTestData2;
         
-		int						_numIterations;	
+		int						_numIterations;
+        int                     _totalNumIterations;
 		
 //		map< InputData*, vBitSet > _weakHypothesesMatrices;
 //		pVBitSet				   _pCurrentBitset;
