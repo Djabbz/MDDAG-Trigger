@@ -170,25 +170,28 @@ namespace MultiBoost {
                 }
                 
                 // filling the weakhyp vector<vector>
-                
-                _weakHypotheses.push_back(featureWhypMap[cheapVarIndices]);
-                for (set<int>::iterator idxIt = cheapVarIndices.begin(); idxIt != cheapVarIndices.end(); ++idxIt) {
-                    cout << *idxIt << ", ";
-                }
-                cout << "\t -> " << featureWhypMap[cheapVarIndices].size() << "\n\t";
-
-                featureWhypMap.erase(cheapVarIndices);
-                
-                // manual reordering
-                int feat_indices[] = {4, 8, 12, 0, 1, 7, 11, 15, 6, 10, 14};
-                for (int f = 0; f < 11; ++f) {
-                    set<int> f_set;
-                    f_set.insert(feat_indices[f]);
-                    if (featureWhypMap[f_set].size() != 0)
-                        _weakHypotheses.push_back(featureWhypMap[f_set]);
-                    cout << feat_indices[f] << "\t -> " << featureWhypMap[f_set].size() << "\n\t";
-                    featureWhypMap.erase(f_set);
-                    f_set.erase(feat_indices[f]);
+   
+                FeaturewiseLearner* fwBaseLearner = dynamic_cast<FeaturewiseLearner*>(weakHypotheses[0]);
+                if (fwBaseLearner != NULL) {
+                    _weakHypotheses.push_back(featureWhypMap[cheapVarIndices]);
+                    for (set<int>::iterator idxIt = cheapVarIndices.begin(); idxIt != cheapVarIndices.end(); ++idxIt) {
+                        cout << *idxIt << ", ";
+                    }
+                    cout << "\t -> " << featureWhypMap[cheapVarIndices].size() << "\n\t";
+                    
+                    featureWhypMap.erase(cheapVarIndices);
+                    
+                    // manual reordering
+                    int feat_indices[] = {4, 8, 12, 0, 1, 7, 11, 15, 6, 10, 14};
+                    for (int f = 0; f < 11; ++f) {
+                        set<int> f_set;
+                        f_set.insert(feat_indices[f]);
+                        if (featureWhypMap[f_set].size() != 0)
+                            _weakHypotheses.push_back(featureWhypMap[f_set]);
+                        cout << feat_indices[f] << "\t -> " << featureWhypMap[f_set].size() << "\n\t";
+                        featureWhypMap.erase(f_set);
+                        f_set.erase(feat_indices[f]);
+                    }
                 }
                 
                 for (fwIt = featureWhypMap.begin(); fwIt != featureWhypMap.end(); ++fwIt) {
@@ -345,36 +348,30 @@ namespace MultiBoost {
 
 	void DataReader::calculateHypothesesMatrix()
 	{		
-		cout << "Calculate weak hyp matrix " << flush;
+		cout << "[+] Calculate weak hyp matrix..." << endl;
 		const int numExamples = _pCurrentData->getNumExamples();
         const int numClasses = _pCurrentData->getNumClasses();
         
 		hypermat& allOutputs = _weakHypothesesMatrices[_pCurrentData];
 		allOutputs.resize(numExamples);
 		
+
+        cout << "Memory allocation for " << numExamples << " examples, " << _numIterations << " classifiers, and " << numClasses << " 3.classes..." << flush;
 		for(int i = 0; i < numExamples; ++i)
 		{
 			allOutputs[i].resize(_numIterations);
             for (int j = 0; j < _numIterations; ++j) {
                 allOutputs[i][j].resize(numClasses, 0.);
             }
-		}		
+		}
+        cout << "Done." << endl;
 		
-        const int step = _totalNumIterations < 10 ? 1 : _totalNumIterations / 10;
+        const int step = (_totalNumIterations * numExamples) < 1000 ? 1 : (_totalNumIterations * numExamples) / 1000;
     
-        cout << ": 0%." << flush;
+        cout << "Computing the weak hyp outputs: 0%." << flush;
         int t = 0;
 		for(int wHypInd = 0; wHypInd < _numIterations; ++wHypInd )
 		{
-            if ((t + 1) % 1000 == 0)
-                cout << "." << flush;
-
-            if ((t + 1) % step == 0)
-            {
-                float progress = static_cast<float>(t) / static_cast<float>(_totalNumIterations) * 100.0;
-                cout << "." << setprecision(2) << progress << "%." << flush;
-            }
-
 
             vector<BaseLearner*>::iterator whypIt;
             for (whypIt = _weakHypotheses[wHypInd].begin(); whypIt != _weakHypotheses[wHypInd].end(); ++whypIt) {
@@ -389,6 +386,16 @@ namespace MultiBoost {
                         allOutputs[i][wHypInd][l] += alpha * currWeakHyp->classify(_pCurrentData, i, l);
                     }
                 }
+                
+                if ((t + 1) % 10000 == 0)
+                    cout << "." << flush;
+                
+                if ((t + 1) % step == 0)
+                {
+                    float progress = static_cast<float>(t) / (float)(_totalNumIterations * numExamples) * 100.0;
+                    cout << "." << setprecision(2) << progress << "%." << flush;
+                }
+
                 ++t;
             }
         }
@@ -784,8 +791,8 @@ namespace MultiBoost {
         double err;
         
         vector<double>& iterationWiseError = _iterationWiseError[_pCurrentData];
-        iterationWiseError.resize(_weakHypotheses.size());
-        
+        iterationWiseError.resize(_weakHypotheses.size(), 0.);
+
         vector<ExampleResults*> examplesResults(numExamples);
         for (int i = 0; i < numExamples; ++i)
 			examplesResults[i] = new ExampleResults(i, numClasses) ;
