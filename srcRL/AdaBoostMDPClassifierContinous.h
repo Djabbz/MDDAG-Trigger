@@ -741,7 +741,7 @@ namespace MultiBoost {
 				tempController = detController->getController();
 				detController->setController(controller);
 			}
-			
+            			
 			T* classifier = dynamic_cast<T*>(semiMDPRewardFunction);
 
             const int numClasses = classifier->getNumClasses();

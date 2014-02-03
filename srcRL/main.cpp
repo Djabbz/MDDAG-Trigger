@@ -753,7 +753,9 @@ int main(int argc, const char *argv[])
         bres.adaboostPerf = adaboostTrainPerf;
         
         string logFileName = args.getValue<string>("testmdp", 1);
-        evalTrain.classficationPerformance(bres,logFileName, true);
+        evalTrain.classficationPerformance(bres,logFileName, false);
+        
+        dynamic_cast<HashTable*>(qData)->saveActionValueTable( "qtable_train.dta", datahandler->getNumExamples() );
         
         classifierContinous->setCurrentDataToTest();
         AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalTest( agentContinous, rewardFunctionContinous );
@@ -762,7 +764,9 @@ int main(int argc, const char *argv[])
         //            bres.iterNumber=0;
         string logFileName2 = args.getValue<string>("testmdp", 2);
         
-        evalTest.classficationPerformance(bres,logFileName2, true);
+        evalTest.classficationPerformance(bres,logFileName2, false);
+        
+        dynamic_cast<HashTable*>(qData)->saveActionValueTable( "qtable_test.dta", datahandler->getNumExamples() );
         
         cout << "******** Overall Test err by MDP: " << bres.err << "(" << adaboostTestPerf << ")" << endl;
         cout << "******** Average Test classifier used: " << bres.usedClassifierAvg << endl;

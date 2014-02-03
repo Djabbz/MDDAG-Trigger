@@ -356,7 +356,7 @@ namespace MultiBoost {
 		allOutputs.resize(numExamples);
 		
 
-        cout << "Memory allocation for " << numExamples << " examples, " << _numIterations << " classifiers, and " << numClasses << " 3.classes..." << flush;
+        cout << "Memory allocation for " << numExamples << " examples, " << _numIterations << " classifiers, and " << numClasses << " classes..." << flush;
 		for(int i = 0; i < numExamples; ++i)
 		{
 			allOutputs[i].resize(_numIterations);
@@ -366,12 +366,22 @@ namespace MultiBoost {
 		}
         cout << "Done." << endl;
 		
-        const int step = (_totalNumIterations * numExamples) < 1000 ? 1 : (_totalNumIterations * numExamples) / 1000;
-    
-        cout << "Computing the weak hyp outputs: 0%." << flush;
+//        const int step = (_totalNumIterations) < 50 ? 1 : (_totalNumIterations) / 50;
+//        cout << "Computing the weak hyp outputs: 0%." << flush;
+
+        cout << "Computing the weak hyp outputs... " << flush;
         int t = 0;
 		for(int wHypInd = 0; wHypInd < _numIterations; ++wHypInd )
 		{
+//            
+//            if ((t + 1) % 1000 == 0)
+//                cout << "." << flush;
+//            
+//            if ((t + 1) % step == 0)
+//            {
+//                float progress = static_cast<float>(t) / (float)(_totalNumIterations) * 100.0;
+//                cout << "." << setprecision(2) << progress << "%." << flush;
+//            }
 
             vector<BaseLearner*>::iterator whypIt;
             for (whypIt = _weakHypotheses[wHypInd].begin(); whypIt != _weakHypotheses[wHypInd].end(); ++whypIt) {
@@ -385,15 +395,6 @@ namespace MultiBoost {
                     {
                         allOutputs[i][wHypInd][l] += alpha * currWeakHyp->classify(_pCurrentData, i, l);
                     }
-                }
-                
-                if ((t + 1) % 10000 == 0)
-                    cout << "." << flush;
-                
-                if ((t + 1) % step == 0)
-                {
-                    float progress = static_cast<float>(t) / (float)(_totalNumIterations * numExamples) * 100.0;
-                    cout << "." << setprecision(2) << progress << "%." << flush;
                 }
 
                 ++t;

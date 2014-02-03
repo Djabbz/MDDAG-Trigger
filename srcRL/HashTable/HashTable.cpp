@@ -45,6 +45,13 @@ double HashTable::getValue(CStateCollection* state, CAction *action, CActionData
     getKey(mddagState, key);
     AlphaReal value;
     getTableValue(actionIndex, key, value);
+    
+    map<ValueKey, double>::const_iterator it = _exampleCounter.find(key);
+    if (it == _exampleCounter.end())
+        _exampleCounter[key] = 1;
+    else
+        _exampleCounter[key] += 1;
+
     return value;
 };
 
@@ -265,6 +272,64 @@ void HashTable::saveActionValueTable(string filename)
 
 // -----------------------------------------------------------------------------------
 
+void HashTable::saveActionValueTable(string filename,  long numExamples)
+{
+    //        fprintf(stream, "Q-Hash Table\n");
+    
+    ofstream output;
+    output.open(filename.c_str());
+    
+    if (! output.good()) {
+        cout << "Error! Could not the QTable file: " << filename << endl;
+        exit(1);
+    }
+    
+    cout << "Output the QTable: " << filename << endl;
+    
+    ValueTableType::iterator tableIt = _valueTable.begin();
+    
+    for (; tableIt != _valueTable.end(); ++tableIt) {
+        
+        ValueKey key = tableIt->first;
+        vector<AlphaReal> values = tableIt->second;
+        
+        output <<  "( ";
+        ValueKey::iterator keyIt = key.begin();
+        //        if (keyIt != key.end())
+        output << (int)*(keyIt++) << "  ";
+        
+        for (int i = 0; i < _numWinnerClasses; ++i) {
+            output <<  (int)*(keyIt++) << " ";
+        }
+        
+        output <<   " ";
+        
+        output <<  (int)*(keyIt++) << " )\t";
+        //        for (int d = 0; d < _numDimensions; ++d, ++keyIt) {
+        //            fprintf(stream, "%f ", ((*keyIt)*2) - 1);
+        //        }
+        
+        //        if (keyIt != key.end()) fprintf(stream, "%d ", (int)*(keyIt++));
+        
+        //        for (; keyIt != key.end(); ++keyIt) {
+        //            fprintf(stream, "%d ", (int)(*keyIt));
+        //        }
+        
+        for (int i = 0; i < values.size(); ++i) {
+            output <<  values[i] << " ";
+        }
+        
+        output << _exampleCounter[key] / (double)numExamples;
+        _exampleCounter[key] = 0;
+        output << endl;
+    }
+    
+    output.close();
+    
+}
+
+// -----------------------------------------------------------------------------------
+
 void HashTable::loadActionValueTable(const string& fileName)
 {
     //        fprintf(stream, "Q-Hash Table\n");
@@ -329,6 +394,8 @@ void HashTable::loadActionValueTable(const string& fileName)
             ssItem >> q;
             _valueTable[key].push_back(q);
         }
+        
+        assert(_valueTable[key].size() == _numberOfActions);
     }
     
     ++maxDiscreteBin; //starts at 0

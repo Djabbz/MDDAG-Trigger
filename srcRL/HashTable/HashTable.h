@@ -53,6 +53,10 @@ protected:
     double                                 _stepResolution;
     
     int                                 _numWinnerClasses;
+    
+    map<ValueKey, double>               _exampleCounter;
+    
+    int                                 _multiSkip;
         
 public:
     
@@ -108,6 +112,7 @@ public:
     // -----------------------------------------------------------------------------------
     
     void saveActionValueTable(string filename) ;
+    void saveActionValueTable(string filename, long numExamples) ;
 
     // -----------------------------------------------------------------------------------
 
