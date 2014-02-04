@@ -92,6 +92,8 @@ namespace MultiBoost {
 		vector<bool>			_classifierUsed; // store which classifier was used during the process
 		vector<int> 			_classifiersOutput;
         
+        vector<vector<AlphaReal> > _posteriorsTraces;
+        
 		// rewards
 		double					_classificationReward;
         double					_misclassificationReward;
@@ -323,6 +325,8 @@ namespace MultiBoost {
         bool isBudgeted() {return _budgetedClassification;}
         
         DataReader* getDataReader() { return _data;}
+        
+        vector<vector<AlphaReal> >& getPosteriorsTraces() {return _posteriorsTraces;}
 	};
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////
@@ -861,19 +865,30 @@ namespace MultiBoost {
                         output << endl;
                         
                         if (detailed) {
-                            vector<int> classifiersOutput;
-                            classifier->getClassifiersOutput(classifiersOutput);
+//                            vector<int> classifiersOutput;
                             
-                            if (clRes)
-                                detailedOutput << "1" ;
-                            else
-                                detailedOutput << "0" ;
+                            vector<vector<AlphaReal> >& posteriors = classifier->getPosteriorsTraces();
                             
-                            detailedOutput << " " << classes[0] << " ";
-                            
-                            for (int i = 0; i < classifiersOutput.size(); ++i) {
-                                detailedOutput << classifiersOutput[i] << " ";
+                            for (int t = 0; t < posteriors.size(); ++t) {
+                                for (int l = 0; l < posteriors[t].size() - 1; ++l) {
+                                    detailedOutput << posteriors[t][l] << ",";
+                                }
+                                detailedOutput << posteriors[t][posteriors[t].size() - 1] << " ";
                             }
+                            
+                            
+//                            classifier->getClassifiersOutput(classifiersOutput);
+                            
+//                            if (clRes)
+//                                detailedOutput << "1" ;
+//                            else
+//                                detailedOutput << "0" ;
+//                            
+//                            detailedOutput << " " << classes[0] << " ";
+//                            
+//                            for (int i = 0; i < classifiersOutput.size(); ++i) {
+//                                detailedOutput << classifiersOutput[i] << " ";
+//                            }
                             
                             detailedOutput << endl;
                         }

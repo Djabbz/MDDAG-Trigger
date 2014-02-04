@@ -218,8 +218,6 @@ namespace MultiBoost {
         if ( args.hasArgument("bootstrap") ) {
             args.getValue("bootstrap", 0, _bootstrapRate);
         }
-
-
 	}
     
     // -----------------------------------------------------------------------------------
@@ -377,6 +375,10 @@ namespace MultiBoost {
 			_classifierNumber++;
 			_currentClassifier++;
             
+            vector<AlphaReal>& currVotesVector = _exampleResult->getVotesVector();
+            _posteriorsTraces.push_back(currVotesVector);
+            
+            
 //            KeyIndicesType::const_iterator kIt = _keysIndices.find(_classifiersOutput);
 //            if (kIt == _keysIndices.end()) {
 //                _keysIndices[_classifiersOutput] = _currentKeyIndex++;
@@ -446,6 +448,11 @@ namespace MultiBoost {
         _classifiersOutput.clear();
         
         fill( _featuresEvaluated.begin(), _featuresEvaluated.end(), false );
+        
+        _posteriorsTraces.clear();
+        
+        vector<AlphaReal> initZeros(_classNum, 0.);
+        _posteriorsTraces.push_back(initZeros);
 
 			
 	}

@@ -753,7 +753,7 @@ int main(int argc, const char *argv[])
         bres.adaboostPerf = adaboostTrainPerf;
         
         string logFileName = args.getValue<string>("testmdp", 1);
-        evalTrain.classficationPerformance(bres,logFileName, false);
+        evalTrain.classficationPerformance(bres,logFileName, true);
         
         dynamic_cast<HashTable*>(qData)->saveActionValueTable( "qtable_train.dta", datahandler->getNumExamples() );
         
@@ -764,7 +764,7 @@ int main(int argc, const char *argv[])
         //            bres.iterNumber=0;
         string logFileName2 = args.getValue<string>("testmdp", 2);
         
-        evalTest.classficationPerformance(bres,logFileName2, false);
+        evalTest.classficationPerformance(bres,logFileName2, true);
         
         dynamic_cast<HashTable*>(qData)->saveActionValueTable( "qtable_test.dta", datahandler->getNumExamples() );
         
