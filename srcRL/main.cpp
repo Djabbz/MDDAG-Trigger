@@ -196,6 +196,8 @@ void setBasicOptions(nor_utils::Args& args)
     args.declareArgument("testmdp", "Performs test of a previously leant model.", 3, "<qtable> <train log file> <test log file>");
     args.declareArgument("deeparff", "Outputs an arff file where the attributes are the paths of MDDAG.", 4, "<qtable> <train arff file> <test arff file> <mode>");
     args.declareArgument("groupedfeatures", "Group the base classifiers according to their features.", 0, "");
+    args.declareArgument("shuffle", "Shuffle the base classifiers (for analysis).", 0, "");
+
     args.declareArgument("cpuopt", "Speed up the learning by storing the output of the classifiers for each instance in memory.", 0, "");
     
     
@@ -367,7 +369,7 @@ int main(int argc, const char *argv[])
 	//////////////////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////////////////
 	
-	int verbose = 1;
+	int verbose = 2;
 	
 	if ( args.hasArgument("verbose") )
 		args.getValue("verbose", 0, verbose);
@@ -385,7 +387,7 @@ int main(int argc, const char *argv[])
 	//////////////////////////////////////////////////////////////////////////////////////////
 	
 	// Console Input Processing
-	if (verbose>5)
+	if (verbose > 5)
 	{
 		char *debugFile = "debug.txt";
 		DebugInit("debug.txt", "+", false);
@@ -488,11 +490,13 @@ int main(int argc, const char *argv[])
     
     if ( datahandler->getClassNumber() <= 2 )
     {
-        cout  << "---[ Binary classification ]---" << endl << endl;
+        if (verbose > 1)
+            cout  << "---[ Binary classification ]---" << endl << endl;
     }
     else
     {
-        cout << endl << "---[ Multi-class classification ]---" << endl << endl;
+        if (verbose > 1)
+            cout << endl << "---[ Multi-class classification ]---" << endl << endl;
     }
     
     int numClasses = datahandler->getClassNumber();
@@ -526,7 +530,10 @@ int main(int argc, const char *argv[])
         multiskip = args.getValue<unsigned int>("multiskip");
     }
     
-    cout << endl << "[+] multiskip " << multiskip << endl;
+    if (verbose > 1) {
+        cout << endl << "[+] multiskip " << multiskip << endl;
+    }
+
     for (int m = 0; m < multiskip; ++m) {
         agentContinous->addAction(new CAdaBoostAction(m + 2));
     }
@@ -614,17 +621,19 @@ int main(int argc, const char *argv[])
         if ( args.hasArgument("maxrbfnumber") )
             maxrbfnumber = args.getValue<int>("MaxRBFNumber", 0);
         
-        cout << "[+] Meta parameters:" << endl;
-        cout << "\t--> Normalized RBF: " << normalizeRbf << endl;
-        cout << "\t--> RBF Sigma: " << initSigma << endl;
-        
-        if (addCenter != 0)
-        {
-            cout << "\t--> New center addition:" << endl;
-            cout << "\t\t--> Max TD error: 1/" << maxtderr << endl;
-            cout << "\t\t--> Min RBF activation: " << minact << endl;
+        if (verbose > 1) {
+            cout << "[+] Meta parameters:" << endl;
+            cout << "\t--> Normalized RBF: " << normalizeRbf << endl;
+            cout << "\t--> RBF Sigma: " << initSigma << endl;
+            
+            if (addCenter != 0)
+            {
+                cout << "\t--> New center addition:" << endl;
+                cout << "\t\t--> Max TD error: 1/" << maxtderr << endl;
+                cout << "\t\t--> Min RBF activation: " << minact << endl;
+            }
+            cout << endl;
         }
-        cout << endl;
         
         qData->setParameter("AddCenterOnError", addCenter);
         qData->setParameter("NormalizedRBFs", normalizeRbf);
@@ -666,20 +675,21 @@ int main(int argc, const char *argv[])
 //        exit(1);
 //    }
     
-    cout << "\t--> Learning rate:" << endl;
-    cout << "\t\t--> Numerator: " << qRateNumerator << endl;
-    cout << "\t\t--> Divisor: " << qRateDivisor << endl;
-    cout << "\t\t--> Increment of the divisor: " << qRateIncrement << endl;
-    
-    cout << "\t--> Exploration rate:" << endl;
-    cout << "\t\t--> Numerator: " << epsNumerator << endl;
-    cout << "\t\t--> Divisor: " << epsDivisor << endl;
-    cout << "\t\t--> Increment of the divisor: " << epsDivisor << endl;
-    
-    cout << "\t--> Update frequency: " << paramUpdate << endl;
+    if (verbose > 1) {
+        cout << "\t--> Learning rate:" << endl;
+        cout << "\t\t--> Numerator: " << qRateNumerator << endl;
+        cout << "\t\t--> Divisor: " << qRateDivisor << endl;
+        cout << "\t\t--> Increment of the divisor: " << qRateIncrement << endl;
+        
+        cout << "\t--> Exploration rate:" << endl;
+        cout << "\t\t--> Numerator: " << epsNumerator << endl;
+        cout << "\t\t--> Divisor: " << epsDivisor << endl;
+        cout << "\t\t--> Increment of the divisor: " << epsDivisor << endl;
+        
+        cout << "\t--> Update frequency: " << paramUpdate << endl;
 
-    cout << "\t--> Reward type: " << args.getValue<string>("succrewartdtype", 0) << endl;
-
+        cout << "\t--> Reward type: " << args.getValue<string>("succrewartdtype", 0) << endl;
+    }
     
     CTDLearner *qFunctionLearner = new CQLearner(classifierContinous, qData);
 //    CSarsaLearner *qFunctionLearner = new CSarsaLearner(rewardFunctionContinous, qData, agentContinous);
@@ -717,7 +727,10 @@ int main(int argc, const char *argv[])
     int max_Steps = 100000;
     double adaboostTrainPerf = 0., adaboostValidPerf = 0., adaboostTestPerf = 0.;
     
-    cout << "[+] Computing Adaboost performance..." << flush;
+    if (verbose > 1)
+        cout << "[+] Computing Adaboost performance..." << flush;
+    
+    
     classifierContinous->setCurrentDataToTrain();
     adaboostTrainPerf = classifierContinous->getAdaboostPerfOnCurrentDataset();
     classifierContinous->setCurrentDataToTest();
@@ -727,7 +740,9 @@ int main(int argc, const char *argv[])
         adaboostTestPerf = classifierContinous->getAdaboostPerfOnCurrentDataset();
     
     classifierContinous->setCurrentDataToTrain();
-    cout << " done!" << endl;
+    if (verbose > 1)
+        cout << " done!" << endl;
+    
     if (args.hasArgument("testmdp"))
     {
         
@@ -747,7 +762,7 @@ int main(int argc, const char *argv[])
             dynamic_cast<HashTable*>( qData )->loadActionValueTable(args.getValue<string>("testmdp", 0));
         
         classifierContinous->setCurrentDataToTrain();
-        AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalTrain( agentContinous, rewardFunctionContinous );
+        AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalTrain( agentContinous, rewardFunctionContinous, verbose );
         BinaryResultStruct bres;
         bres.iterNumber=0;
         bres.adaboostPerf = adaboostTrainPerf;
@@ -758,7 +773,7 @@ int main(int argc, const char *argv[])
         dynamic_cast<HashTable*>(qData)->saveActionValueTable( "qtable_train.dta", datahandler->getNumExamples() );
         
         classifierContinous->setCurrentDataToTest();
-        AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalTest( agentContinous, rewardFunctionContinous );
+        AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalTest( agentContinous, rewardFunctionContinous, verbose );
         
         bres.adaboostPerf = adaboostTestPerf;
         //            bres.iterNumber=0;
@@ -819,13 +834,13 @@ int main(int argc, const char *argv[])
         int mode = args.getValue<int>("deeparff", 3);
         
         classifierContinous->setCurrentDataToTrain();
-        AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalTrain( agentContinous, rewardFunctionContinous );
+        AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalTrain( agentContinous, rewardFunctionContinous, verbose );
         string logFileName = args.getValue<string>("deeparff", 1);
         evalTrain.outputDeepArff(logFileName, mode);
         
         
         classifierContinous->setCurrentDataToTest();
-        AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalTest( agentContinous, rewardFunctionContinous );
+        AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalTest( agentContinous, rewardFunctionContinous, verbose );
         string logFileName2 = args.getValue<string>("deeparff", 2);
         evalTest.outputDeepArff(logFileName2, mode);
         
@@ -840,15 +855,19 @@ int main(int argc, const char *argv[])
         exit(0);
     }
 
-    cout << "Train: " << adaboostTrainPerf << "\t Valid: " << adaboostValidPerf;
+    if (verbose > 1)
+        cout << "Train: " << adaboostTrainPerf << "\t Valid: " << adaboostValidPerf;
     
     if (adaboostTestPerf != 0) {
-        cout << "\t Test: " << adaboostTestPerf;
+        if (verbose > 1)
+            cout << "\t Test: " << adaboostTestPerf;
     }
     
-    cout << endl;
+    if (verbose > 1){
+        cout << endl;
+        cout << "---------------------------------" << endl;
+    }
     
-    cout << "---------------------------------" << endl;
     double bestError =  numeric_limits<double>::max(), bestWhypNumber=0.;
     double bestReward = -numeric_limits<double>::max();
     int bestEpNumber = 0;
@@ -909,7 +928,7 @@ int main(int argc, const char *argv[])
                 ges_failed++;
             }
             
-            if (((i%1000)==0) && (i>2))
+            if (verbose > 1 && ((i % 5000 )==0) && (i>2))
             {
                 cout << "Episode number:  " << SEP  << i << endl;
                 cout << "Current error:   " << SEP << (((double)ges_failed / ((double)(ges_succeeded+ges_failed))) * 100.0) << endl;;
@@ -953,7 +972,7 @@ int main(int argc, const char *argv[])
                 
                 // TRAIN stats
                 classifierContinous->setCurrentDataToTrain();
-                AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalTrain( agentContinous, rewardFunctionContinous );
+                AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalTrain( agentContinous, rewardFunctionContinous, verbose );
                 
                 BinaryResultStruct bres;
                 bres.adaboostPerf = adaboostTrainPerf;
@@ -969,10 +988,12 @@ int main(int argc, const char *argv[])
                         policy->setParameter("EpsilonGreedy", 0.9);
                 }
 
-                cout << "[+] Training set results: " << endl;
-                cout << "--> Overall error by MDP: " << bres.err << " (" << classifierContinous->getIterationError((int)bres.usedClassifierAvg) << ")" <<  " (" << adaboostTrainPerf << ")" << endl;
-                cout << "--> Average classifier used: " << bres.usedClassifierAvg << endl;
-                cout << "--> Sum of rewards: " << bres.avgReward << endl << endl;
+                if (verbose > 1) {
+                    cout << "[+] Training set results: " << endl;
+                    cout << "--> Overall error by MDP: " << bres.err << " (" << classifierContinous->getIterationError((int)bres.usedClassifierAvg) << ")" <<  " (" << adaboostTrainPerf << ")" << endl;
+                    cout << "--> Average classifier used: " << bres.usedClassifierAvg << endl;
+                    cout << "--> Sum of rewards: " << bres.avgReward << endl << endl;
+                }
                 
                 classifierContinous->outPutStatistic( bres );
                 
@@ -980,7 +1001,7 @@ int main(int argc, const char *argv[])
                 // VALID stats
                 
                 classifierContinous->setCurrentDataToTest();
-                AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalValid( agentContinous, rewardFunctionContinous );
+                AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalValid( agentContinous, rewardFunctionContinous, verbose );
                 
                 bres.adaboostPerf = adaboostValidPerf;
                 bres.iterNumber=i;
@@ -1052,22 +1073,24 @@ int main(int argc, const char *argv[])
 
                 
                 // Outputs
-                
-                cout << "[+] Validation set results: " << endl;
-                cout << "--> Overall error by MDP: " << bres.err << " (" << classifierContinous->getIterationError((int)bres.usedClassifierAvg) << ")" << " (" << adaboostValidPerf << ")" << endl;
-                cout << "--> Average classifier used: " << bres.usedClassifierAvg << endl;
-                cout << "--> Sum of rewards: " << bres.avgReward << endl << endl;
+                if (verbose > 1) {
+                    cout << "[+] Validation set results: " << endl;
+                    cout << "--> Overall error by MDP: " << bres.err << " (" << classifierContinous->getIterationError((int)bres.usedClassifierAvg) << ")" << " (" << adaboostValidPerf << ")" << endl;
+                    cout << "--> Average classifier used: " << bres.usedClassifierAvg << endl;
+                    cout << "--> Sum of rewards: " << bres.avgReward << endl << endl;
+                    
+                    cout << "----> Best error so far ( " << bestEpNumber << " ) : " << bestError << endl << "----> Num of whyp used : " << bestWhypNumber << endl << endl;
+
+                }
                 
                 classifierContinous->outPutStatistic( bres );
                 
-                cout << "----> Best error so far ( " << bestEpNumber << " ) : " << bestError << endl << "----> Num of whyp used : " << bestWhypNumber << endl << endl;
-
                 
                 // TEST stats
                 
                 if (classifierContinous->setCurrentDataToTest2() )
                 {
-                    AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalTest( agentContinous, rewardFunctionContinous );
+                    AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalTest( agentContinous, rewardFunctionContinous, verbose );
                     
                     bres.adaboostPerf = adaboostTestPerf;
                     
@@ -1079,14 +1102,17 @@ int main(int argc, const char *argv[])
                     
                     evalTest.classficationPerformance(bres,logFileName);
                     
-                    cout << "--> Overall Test error by MDP: " << bres.err << " (" << classifierContinous->getIterationError((int)bres.usedClassifierAvg) << ")" << " (" << adaboostTestPerf << ")" << endl;
-                    cout << "--> Average Test classifier used: " << bres.usedClassifierAvg << endl;
-                    cout << "--> Sum of rewards on Test: " << bres.avgReward << endl << endl;
+                    if (verbose > 1) {
+                        cout << "--> Overall Test error by MDP: " << bres.err << " (" << classifierContinous->getIterationError((int)bres.usedClassifierAvg) << ")" << " (" << adaboostTestPerf << ")" << endl;
+                        cout << "--> Average Test classifier used: " << bres.usedClassifierAvg << endl;
+                        cout << "--> Sum of rewards on Test: " << bres.avgReward << endl << endl;
+                    }
                     
                     classifierContinous->outPutStatistic( bres );
                 }
                 
-                cout << "---------------------------------" << endl;
+                if (verbose > 1)
+                    cout << "---------------------------------" << endl;
                 
                 agentContinous->setController(policy);
                 agentContinous->addSemiMDPListener(qFunctionLearner);

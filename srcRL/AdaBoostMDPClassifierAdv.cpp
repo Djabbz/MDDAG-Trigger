@@ -65,7 +65,7 @@ namespace MultiBoost {
         vector<BaseLearner*>	weakHypotheses;
         
 		// loads them
-		us.loadHypotheses(shypFileName, weakHypotheses, _pTrainData);
+		us.loadHypotheses(shypFileName, weakHypotheses, _pTrainData, _verbose);
 		if (_numIterations < weakHypotheses.size())
 			weakHypotheses.resize(_numIterations);
 		
@@ -78,38 +78,48 @@ namespace MultiBoost {
 		
 		assert( weakHypotheses.size() >= _numIterations );
 		
-//        cout << "[+++] SUPER SHUFFLE... ACTION! [+++]" << endl;
-//        // random shuffle on the shyp
-//        random_shuffle ( _weakHypotheses.begin(), _weakHypotheses.end() );
-//        random_shuffle ( _weakHypotheses.begin(), _weakHypotheses.end() );
+        if (args.hasArgument("shuffle"))
+        {
+            cout << "[+++] SUPER SHUFFLE... ACTION! [+++]" << endl;
+            // random shuffle on the shyp
+            random_shuffle ( weakHypotheses.begin(), weakHypotheses.end() );
+            random_shuffle ( weakHypotheses.begin(), weakHypotheses.end() );
+            
+            for (int i = 0; i < _numIterations; ++i) {
+                cout  << weakHypotheses[i]->index << " ";
+            }
+            cout << endl;
 
+        }
 //        cout << "[+++] SUPER REVERSE... ACTION! [+++]" << endl;
 //        vector<BaseLearner*> inveresedWhyp(_weakHypotheses.size());
 //        copy(_weakHypotheses.rbegin(), _weakHypotheses.rend(), inveresedWhyp.begin());
 //        copy(inveresedWhyp.begin(), inveresedWhyp.end(), _weakHypotheses.begin());
 
-//        cout << "[+++] SUPER REORDER ! BY FEATURE COST... ACTION! [+++]" << endl;
+        ofstream shuffleFile;
+        shuffleFile.open("shuffled_features.dta");
         
+        for (int i = 0; i < _numIterations; ++i) {
+            shuffleFile << weakHypotheses[i]->index << "\n";
+        }
         
-//        cheap_vars.push_back("D0_VTX_FD");  D0_VTX_FD PiS_IP PiS_IPC2 D0C_1_IP D0C_1_IPC D0C_2_IP D0C_2_IPC
-//        cheap_vars.push_back("PiS_IP");
-//        cheap_vars.push_back("PiS_IPC2");
-//        cheap_vars.push_back("D0C_1_IP");
-//        cheap_vars.push_back("D0C_1_IPC");
-//        cheap_vars.push_back("D0C_2_IP");
-//        cheap_vars.push_back("D0C_2_IPC");
+        shuffleFile.close();
 
 		// calculate the sum of alphas
 		vector<BaseLearner*>::iterator it;
 		_sumAlphas=0.0;
         
-        cout << "[+] Summing the alpha... " << flush;
+        if (_verbose > 0)
+            cout << "[+] Summing the alpha... " << flush;
+        
 		for( it = weakHypotheses.begin(); it != weakHypotheses.end(); ++it )
 		{
 			BaseLearner* currBLearner = *it;
 			_sumAlphas += currBLearner->getAlpha();			
 		}
-        cout << "done!" << endl;
+        
+        if (_verbose > 0)
+            cout << "done!" << endl;
         
         _groupedFeatures = false;
         if (args.hasArgument("groupedfeatures"))
@@ -284,6 +294,7 @@ namespace MultiBoost {
         
         if (args.hasArgument("mil"))
         {
+            cout << "[+] MIL SETUP" << endl;
             _mil = true;
             
             _bagCardinals[_pTrainData] = vector<int>();
@@ -301,7 +312,9 @@ namespace MultiBoost {
                 _bagOffsets[_pTrainData][i] = counter;
                 counter += _bagCardinals[_pTrainData][i];
             }
-
+            
+            assert (counter ==  _pTrainData->getNumExamples() );
+            
             counter = 0;
             _bagOffsets[_pTestData] = vector<int>();
             _bagOffsets[_pTestData].resize(_bagCardinals[_pTestData].size());
@@ -309,6 +322,10 @@ namespace MultiBoost {
                 _bagOffsets[_pTestData][i] = counter;
                 counter += _bagCardinals[_pTestData][i];
             }
+            
+            
+            assert (counter ==  _pTestData->getNumExamples() );
+
 
             if (! testFileName2.empty())
             {

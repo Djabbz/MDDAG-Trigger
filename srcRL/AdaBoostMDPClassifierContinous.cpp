@@ -44,7 +44,8 @@ namespace MultiBoost {
 		
 		_sumAlpha = _data->getSumOfAlphas();
         
-        cout << "[+] Sum of alphas: " << _sumAlpha << endl;
+        if (_verbose > 1)
+            cout << "[+] Sum of alphas: " << _sumAlpha << endl;
         
 		_classifierUsed.resize(_data->getIterationNumber());
 		
@@ -118,7 +119,8 @@ namespace MultiBoost {
             if (!_simulatedBudgeted)
                 properties->setDiscreteStateSize(0, (datareader->getIterationNumber() * 2)+1);
 
-            cout << "[+] Budgeted Classification" << endl;
+            if (verbose > -1)
+                cout << "[+] Budgeted Classification" << endl;
             
             if (args.getNumValues("budgeted") > 0) {
                 _budgetType = args.getValue<string>("budgeted", 0);
@@ -128,7 +130,8 @@ namespace MultiBoost {
                 _budgetType = "generic";
             }
             
-            cout << "--> Budget calculation type: " << _budgetType << endl;
+            if (verbose > -1)
+                cout << "--> Budget calculation type: " << _budgetType << endl;
 
             if (args.getNumValues("budgeted") > 1) {
                 featureCostFile = args.getValue<string>("budgeted", 1);
@@ -146,7 +149,7 @@ namespace MultiBoost {
                 
                 assert(_featureCosts.size() == _data->getNumAttributes());
                 
-                if (verbose > 2) {
+                if (verbose > -1) {
                     const NameMap& namemap = _data->getAttributeNameMap();
                     cout << "[+] Feature Budget:" << endl;
                     
@@ -229,7 +232,8 @@ namespace MultiBoost {
 	// -----------------------------------------------------------------------
     
     double AdaBoostMDPClassifierContinous::getClassificationCost() {
-        if (_featuresEvaluated.size() == 0) {
+//        if (_featuresEvaluated.size() == 0) {
+        if (! _budgetedClassification) {
             return (AlphaReal)_classifierNumber;
         }
         else
@@ -299,23 +303,23 @@ namespace MultiBoost {
             if ( _currentClassifier != _data->getIterationNumber()) {
             
                 
-//                bool allFeaturesEvaluated = true;
-                bool atLeastOneFeatureEvaluated = false;
+                bool allFeaturesEvaluated = true;
+//                bool atLeastOneFeatureEvaluated = false;
                 set<int> usedCols = _data->getUsedColumns(_currentClassifier);
                 
                 for (set<int>::iterator it = usedCols.begin(); it != usedCols.end() ; ++it) {
-                    if ( isFeatureValueBuffered(*it) == true) // _featuresEvaluated[*it] == false
+                    if ( isFeatureValueBuffered(*it) == false) // _featuresEvaluated[*it] == false
     //                if (_featuresEvaluated[*it] == true)
                     {
-                        atLeastOneFeatureEvaluated = true;
-//                        allFeaturesEvaluated = false;
+//                        atLeastOneFeatureEvaluated = true;
+                        allFeaturesEvaluated = false;
                         break;
                     }
                 }
     
                 
-                if (atLeastOneFeatureEvaluated)
-//                if (allFeaturesEvaluated)
+//                if (atLeastOneFeatureEvaluated)
+                if (usedCols.size() != 0 && allFeaturesEvaluated)
                     idxBias = 1;
             }
             state->setDiscreteState(0, (_currentClassifier * 2) + idxBias);
@@ -429,6 +433,7 @@ namespace MultiBoost {
 	
     void AdaBoostMDPClassifierContinous::doResetModel()
 	{
+//        cout << "+++[DEBUG] RESSEEEETTTT " << endl;
 		//_currentRandomInstance = (int) (rand() % _data->getNumExamples() );
 		_currentClassifier = 0;
 		_classifierNumber = 0;				
@@ -461,31 +466,35 @@ namespace MultiBoost {
     
     double AdaBoostMDPClassifierContinous::getInitialCost()
     {
-        const NameMap& attributeNamemap = _data->getAttributeNameMap();
-        
-        static vector<string> cheap_vars;
-        if (cheap_vars.size() == 0) {
-            cheap_vars.push_back("D0_VTX_FD");
-            cheap_vars.push_back("PiS_IP");
-//            cheap_vars.push_back("PiS_IPC2");
-            cheap_vars.push_back("D0C_1_IP");
-//            cheap_vars.push_back("D0C_1_IPC");
-            cheap_vars.push_back("D0C_2_IP");
-            cheap_vars.push_back("D0Tau");
-//            cheap_vars.push_back("D0C_2_IPC");
-        }
-        
+
         double cost = 0.;
-        if (_budgetType.compare("LHCb") == 0)
-        {
-//            cost += 4;
-            vector<string>::iterator varIt;
-            for (varIt = cheap_vars.begin(); varIt != cheap_vars.end() ; ++varIt) {
-                int var_index = attributeNamemap.getIdxFromName(*varIt);
-                _featuresEvaluated[var_index] = true;
+        if (_budgetType.compare("LHCb") == 0) {
+            const NameMap& attributeNamemap = _data->getAttributeNameMap();
+            
+            static vector<string> cheap_vars;
+            if (cheap_vars.size() == 0) {
+                cheap_vars.push_back("D0_VTX_FD");
+                cheap_vars.push_back("PiS_IP");
+    //            cheap_vars.push_back("PiS_IPC2");
+                cheap_vars.push_back("D0C_1_IP");
+    //            cheap_vars.push_back("D0C_1_IPC");
+                cheap_vars.push_back("D0C_2_IP");
+                cheap_vars.push_back("D0Tau");
+    //            cheap_vars.push_back("D0C_2_IPC");
+            }
+            
+            
+//            if (_budgetType.compare("LHCb") == 0)
+//            {
+    //            cost += 4;
+                vector<string>::iterator varIt;
+                for (varIt = cheap_vars.begin(); varIt != cheap_vars.end() ; ++varIt) {
+                    int var_index = attributeNamemap.getIdxFromName(*varIt);
+                    _featuresEvaluated[var_index] = true;
+//                }
             }
         }
-
+        
         return cost;
     }
 
@@ -527,13 +536,22 @@ namespace MultiBoost {
         double whypCost = 0.;
         
         if (_budgetType.compare("generic") == 0) {
+            
+//            if (usedCols.size() == 0) {
+//                cout << "+++[DEBUG] Constant!  " << endl;
+//            }
+//            
+//            cout << "\n+++[DEBUG] _currentClassifier " << _currentClassifier << endl;
+
             for (set<int>::iterator it = usedCols.begin(); it != usedCols.end() ; ++it) {
                 if (_featuresEvaluated[*it] == false)
                 {
-                    whypCost += _featureCosts[*it];
-                     _featuresEvaluated[*it] = true;
+                    whypCost += _featureCosts.at(*it);//[*it];
+                     _featuresEvaluated.at(*it) = true;//[*it] = true;
                 }
             }
+            
+//            cout << "+++[DEBUG] whypCost " << whypCost << endl;
         }
         else if (_budgetType.compare("LHCb") == 0)
         {
@@ -618,6 +636,7 @@ namespace MultiBoost {
 		CAdaBoostAction* gridAction = dynamic_cast<CAdaBoostAction*>(action);
 		int mode = gridAction->getMode();
 		
+//        cout << "+++[DEBUG] _classificationCost " << _classificationCost << endl;
 		if ( _currentClassifier < _data->getIterationNumber() )
 		{
 			if (mode > 1)
@@ -673,7 +692,6 @@ namespace MultiBoost {
                         }
                     }
                 }
-
 			}
             else if (_succRewardMode==RT_EXP)
 			{

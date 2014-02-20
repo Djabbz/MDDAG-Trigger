@@ -109,7 +109,11 @@ namespace MultiBoost {
 		 */
 		virtual void getStateData( vector<FeatureReal>& data, const string& /*reason = ""*/, InputData* pData = 0 );
         
-        virtual set<int> getUsedColumns() {return set<int>(); };
+        virtual set<int> getUsedColumns() {
+//            cout << "+++[DEBUG] Hey Constant Man ! " << endl;
+            set<int> emptySet;
+            return emptySet;
+        };
 		
 	protected:
 		

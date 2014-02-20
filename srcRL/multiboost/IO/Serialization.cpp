@@ -308,7 +308,10 @@ namespace MultiBoost {
 			else
 				break;
 		}
-		cout << weakHypotheses.size() << endl;
+        
+        
+        if (verbose > 0)
+            cout << weakHypotheses.size() << endl;
 		
 	}
 

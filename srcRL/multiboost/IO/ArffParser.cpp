@@ -231,9 +231,9 @@ namespace MultiBoost {
 		istringstream ssSparse;
 		ssSparse.imbue(_sparseLocale);
 		
-		cout << "Counting rows.." << flush;
+//		cout << "Counting rows.." << flush;
 		size_t numRows = nor_utils::count_rows(in);
-		cout << "Allocating.." << flush;
+//		cout << "Allocating.." << flush;
 		try {
 			examples.resize(numRows);
 		} 
@@ -241,9 +241,9 @@ namespace MultiBoost {
 			cerr << "ERROR: Cannot allocate memory for storage!" << endl;
 			exit(1);
 		}
-		cout << "Done!" << endl;
+//		cout << "Done!" << endl;
 		
-		cout << "Now reading file.." << flush;
+//		cout << "Now reading file.." << flush;
 		size_t i;
 		for (i = 0; i < numRows; ++i)
 		{
@@ -411,7 +411,7 @@ namespace MultiBoost {
 			}
 		}
 		
-		cout << "Done!" << endl;
+//		cout << "Done!" << endl;
 		
 		if ( i != numRows )
 		{

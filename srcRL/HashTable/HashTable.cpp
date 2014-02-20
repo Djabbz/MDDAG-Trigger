@@ -228,7 +228,7 @@ void HashTable::saveActionValueTable(string filename)
         exit(1);
     }
     
-    cout << "Output the QTable: " << filename << endl;
+//    cout << "Output the QTable: " << filename << endl;
     
     ValueTableType::iterator tableIt = _valueTable.begin();
     
@@ -265,8 +265,8 @@ void HashTable::saveActionValueTable(string filename)
         
         output << endl;
     }
-    
-    output.close();
+    if (! output.good())
+        output.close();
     
 }
 

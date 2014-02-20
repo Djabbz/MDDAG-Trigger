@@ -178,13 +178,30 @@ namespace MultiBoost {
 //        }
 
         bool isFeatureValueBuffered(int index) {
-            FeatureReal featureValue = _data->getAttributeValue(_currentRandomInstance, index);
-            return _costBuffer[make_pair(index, featureValue)];
+            
+            bool answer = false;
+            if (_budgetType.compare("generic") == 0) {
+                answer = _featuresEvaluated[index];
+            }
+            
+            else if (_budgetType.compare("LHCb") == 0) {
+                FeatureReal featureValue = _data->getAttributeValue(_currentRandomInstance, index);
+                answer = _costBuffer[make_pair(index, featureValue)];
+            }
+            
+            return answer;
         }
         
         void updateValueBuffer(int index) {
-            FeatureReal featureValue = _data->getAttributeValue(_currentRandomInstance, index);
-            _costBuffer[make_pair(index, featureValue)] = true;
+            
+            if (_budgetType.compare("generic") == 0) {
+                _featuresEvaluated[index] = true;
+            }
+            
+            else if (_budgetType.compare("LHCb") == 0) {
+                FeatureReal featureValue = _data->getAttributeValue(_currentRandomInstance, index);
+                _costBuffer[make_pair(index, featureValue)] = true;
+            }
         }
         
 
@@ -471,9 +488,12 @@ namespace MultiBoost {
 	template <typename T>
 	class AdaBoostMDPBinaryDiscreteEvaluator : public CRewardPerEpisodeCalculator
 	{
+        int _verbose;
+        
 	public:
-		AdaBoostMDPBinaryDiscreteEvaluator(CAgent *agent, CRewardFunction *rewardFunction ) : CRewardPerEpisodeCalculator( agent, rewardFunction, 1000, 2000 )
+		AdaBoostMDPBinaryDiscreteEvaluator(CAgent *agent, CRewardFunction *rewardFunction, int verbose = 1) : CRewardPerEpisodeCalculator( agent, rewardFunction, 1000, 2000 )
 		{
+            _verbose = verbose;
 		}
 		
         void outputDeepArff(const string &arffFileName, int mode)
@@ -730,6 +750,8 @@ namespace MultiBoost {
 
         }
         
+# pragma mark Evaluation
+        
 		void classficationPerformance( BinaryResultStruct& binRes, const string &logFileName, bool detailed = false )
 		{
 			double value = 0.0;
@@ -769,8 +791,9 @@ namespace MultiBoost {
                     cout << "Error! Could not open the log file: " << logFileName << endl;
                     exit(1);
                 }
-
-				cout << "Output classfication result: " << logFileName << endl;
+                
+                if (_verbose > 1)
+                    cout << "Output classfication result: " << logFileName << endl;
                 
                 if ( detailed ) {
                     string logFileNameDetailed = logFileName + ".detailed";
