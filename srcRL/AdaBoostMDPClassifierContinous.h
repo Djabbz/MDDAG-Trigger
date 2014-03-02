@@ -41,13 +41,16 @@
 
 #include <set>
 
-//#include "tbb/parallel_for.h"
-//#include "tbb/blocked_range.h"
+#include "tbb/parallel_for.h"
+#include "tbb/blocked_range.h"
 
 using namespace std;
+using namespace tbb;
 
 namespace MultiBoost {
-	////////////////////////////////////////////////////////////////////////////////////////////////	
+    
+	////////////////////////////////////////////////////////////////////////////////////////////////
+    
 	enum SuccesRewardModes {
 		RT_HAMMING,
 		RT_EXP,
@@ -55,7 +58,7 @@ namespace MultiBoost {
 	};
 
     //////////////////////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////////////////////
+
 	struct BinaryResultStruct {
 		double adaboostPerf;
 		
@@ -76,13 +79,14 @@ namespace MultiBoost {
         double milError;
 	};
     
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
     typedef vector<int> KeyType;
     typedef map<KeyType, int> KeyIndicesType;
 
 	////////////////////////////////////////////////////////////////////////////////////////////////	
-	////////////////////////////////////////////////////////////////////////////////////////////////	
-	////////////////////////////////////////////////////////////////////////////////////////////////
-	class AdaBoostMDPClassifierContinous : public	CEnvironmentModel,	public CRewardFunction
+	
+    class AdaBoostMDPClassifierContinous : public	CEnvironmentModel,	public CRewardFunction
 	{
 	protected: 
 		// 
@@ -295,7 +299,7 @@ namespace MultiBoost {
 		
 		// get the discretized state space
         virtual CStateModifier* getStateSpace(int);
-		virtual CStateModifier* getStateSpaceRBF(unsigned int partitionNumber);
+//		virtual CStateModifier* getStateSpaceRBF(unsigned int partitionNumber);
 		virtual CStateModifier* getStateSpaceTileCoding(unsigned int partitionNumber);
 		virtual CStateModifier* getStateSpaceExp( int divNum, int e );
         virtual CStateModifier* getStateSpaceForGSBNFQFunction(int numOfFeatures);
@@ -326,123 +330,7 @@ namespace MultiBoost {
 	};
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////
-	////////////////////////////////////////////////////////////////////////////////////////////////
-	////////////////////////////////////////////////////////////////////////////////////////////////					
-//	class AdaBoostMDPClassifierContinousEvaluator : public CRewardPerEpisodeCalculator
-//	{
-//	public:
-//		AdaBoostMDPClassifierContinousEvaluator(CAgent *agent, CRewardFunction *rewardFunction) : CRewardPerEpisodeCalculator( agent, rewardFunction, 1000, 2000 )
-//		{
-//		}
-//		
-//		double classficationAccruacy( double& acc, double& usedClassifierAvg, const char* logFileName = NULL)
-//		{
-//			double value = 0;
-//			
-//			agent->addSemiMDPListener(this);
-//			
-//			CAgentController *tempController = NULL;
-//			if (controller)
-//			{
-//				tempController = detController->getController();
-//				detController->setController(controller);	
-//			}
-//			
-//			AdaBoostMDPClassifierContinous* classifier = dynamic_cast<AdaBoostMDPClassifierContinous*>(semiMDPRewardFunction);
-//			const int numTestExamples = classifier->getNumExamples();
-//			const int numClasses = classifier->getNumClasses();
-//			int  correct = 0, notcorrect = 0;
-//			usedClassifierAvg=0;
-//			
-//			//ofstream output( logFileName );
-//			
-//			//cout << "Output classfication reult: " << logFileName << endl;
-//			ofstream output;
-//			vector<double> currentVotes(0);
-//			vector<bool> currentHistory(0);
-//			
-//			if ( logFileName )
-//			{
-//				output.open( logFileName );			
-//				cout << "Output classfication reult: " << logFileName << endl;
-//			}
-//			
-//			for (int i = 0; i < numTestExamples; i ++)
-//			{
-//				
-//				
-//				//cout << i << endl;
-//				agent->startNewEpisode();				
-//				//cout << "Length of history: " << classifier->getLengthOfHistory() << endl;
-//				classifier->setCurrentRandomIsntace(i);
-//				agent->doControllerEpisode(1, classifier->getIterNum()*2 );
-//				//cout << "Length of history: " << classifier->getLengthOfHistory() << endl;
-//				
-//				//cout << "Intance: " << i << '\t' << "Num of classifier: " << classifier->getUsedClassifierNumber() << endl;
-//				bool clRes = classifier->classifyCorrectly();				
-//				if (clRes ) correct++;
-//				else notcorrect++;
-//				
-//				usedClassifierAvg += classifier->getUsedClassifierNumber();
-//				value += this->getEpisodeValue();
-//				
-//				//if ((i>10)&&((i%100)==0))
-//				//	cout << i << " " << flush;
-//				if ( logFileName ) {
-//					output << (clRes ? "1" : "0");
-//					output << " ";
-//					
-//					//output << (isNeg ? "1" : "2");
-//					output << " ";
-//					classifier->getCurrentExmapleResult( currentVotes );
-//					classifier->getHistory( currentHistory );
-//					for( int l=0; l<numClasses; ++l ) output << currentVotes[l] << " ";
-//					//for( int i=0; i<currentHistory.size(); ++i) output << currentHistory[i] << " ";
-//					for( int i=0; i<currentHistory.size(); ++i) 
-//					{ 
-//						if ( currentHistory[i] )
-//							output << i+1 << " ";
-//					}
-//					
-//					output << endl << flush;
-//				}
-//				
-//			}
-//			
-//			cout << endl;
-//			
-//			value /= (double)numTestExamples ;
-//			usedClassifierAvg /= (double)numTestExamples ;
-//			acc = ((double)correct/(double)numTestExamples)*100.0;
-//			
-//			//output.close();
-//			if (logFileName) output.close();
-//			
-//			agent->removeSemiMDPListener(this);
-//			
-//			if (tempController)
-//			{
-//				detController->setController(tempController);
-//			}
-//			
-//			return value;		
-//		}
-//	};
-	////////////////////////////////////////////////////////////////////////////////////////////////
-	////////////////////////////////////////////////////////////////////////////////////////////////	
-	////////////////////////////////////////////////////////////////////////////////////////////////	
-	////////////////////////////////////////////////////////////////////////////////////////////////		
-	//class AdaBoostMDPClassifierContinousWitWHInd : public AdaBoostMDPClassifierContinous
-	//{
-	//	AdaBoostMDPClassifierContinousWitWHInd(const nor_utils::Args& args, int verbose, DataReader* datareader, int classNum );
-	//	virtual ~AdaBoostMDPClassifierContinousWitWHInd() {}
-	//};
-	
-	
-	////////////////////////////////////////////////////////////////////////////////////////////////	
-	////////////////////////////////////////////////////////////////////////////////////////////////	
-	////////////////////////////////////////////////////////////////////////////////////////////////	
-	////////////////////////////////////////////////////////////////////////////////////////////////	
+
 	class  AdaBoostMDPClassifierSimpleDiscreteSpace : public CAbstractStateDiscretizer
 	{
 	protected:
@@ -459,12 +347,9 @@ namespace MultiBoost {
 		}
 	};
 	
-    ////////////////////////////////////////////////////////////////////////////////////////////////
 	////////////////////////////////////////////////////////////////////////////////////////////////
-	////////////////////////////////////////////////////////////////////////////////////////////////
-	////////////////////////////////////////////////////////////////////////////////////////////////
-    
-	template <typename T>
+    // AdaBoostMDPClassifierContinous
+
 	class AdaBoostMDPBinaryDiscreteEvaluator : public CRewardPerEpisodeCalculator
 	{
 	public:
@@ -482,7 +367,7 @@ namespace MultiBoost {
 				detController->setController(controller);
 			}
 			
-			T* classifier = dynamic_cast<T*>(semiMDPRewardFunction);
+			AdaBoostMDPClassifierContinous* classifier = dynamic_cast<AdaBoostMDPClassifierContinous*>(semiMDPRewardFunction);
             
             const int numClasses = classifier->getNumClasses();
 			const int numExamples = classifier->getNumExamples();
@@ -726,6 +611,9 @@ namespace MultiBoost {
 
         }
         
+        // -----------------------------------------------------------------------------------
+        // -----------------------------------------------------------------------------------
+        
 		void classficationPerformance( BinaryResultStruct& binRes, const string &logFileName, bool detailed = false )
 		{
 			double value = 0.0;
@@ -742,7 +630,7 @@ namespace MultiBoost {
 				detController->setController(controller);
 			}
             			
-			T* classifier = dynamic_cast<T*>(semiMDPRewardFunction);
+			AdaBoostMDPClassifierContinous* classifier = dynamic_cast<AdaBoostMDPClassifierContinous*>(semiMDPRewardFunction);
 
             const int numClasses = classifier->getNumClasses();
 			const int numTestExamples = classifier->getNumExamples();
@@ -922,10 +810,11 @@ namespace MultiBoost {
 		}
         
         // -----------------------------------------------------------------------------------
+        // -----------------------------------------------------------------------------------
         
         double computeMILError(vector<vector<AlphaReal> >& g, vector<int>& bagCardinals)
         {
-            T* classifier = dynamic_cast<T*>(semiMDPRewardFunction);
+            AdaBoostMDPClassifierContinous* classifier = dynamic_cast<AdaBoostMDPClassifierContinous*>(semiMDPRewardFunction);
             
 			const int numExamples = classifier->getNumExamples();
             
@@ -1029,13 +918,162 @@ namespace MultiBoost {
 
 	};
     
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////
 	
+    struct EvaluationResults
+    {
+        double value;
+        double classificationCost;
+        int  correct;
+        int  notcorrect;
+        int usedClassifierAvg;
+        
+        EvaluationResults() :
+        value(0.), classificationCost(0.), correct(0), notcorrect(0)
+        {}
+    };
+    
+	struct ParallelEvaluator
+	{
+        vector<double>* value;
+        vector<double>* classificationCost;
+        vector<bool>*  correct;
+        vector<int>* usedClassifierAvg;
+        CAgent *agent;
+        AdaBoostMDPClassifierContinous* classifier;
+        AdaBoostMDPBinaryDiscreteEvaluator* evaluator;
+        vector<stringstream>* output;
 
-	////////////////////////////////////////////////////////////////////////////////////////////////		
-	////////////////////////////////////////////////////////////////////////////////////////////////	
-	////////////////////////////////////////////////////////////////////////////////////////////////	
-	////////////////////////////////////////////////////////////////////////////////////////////////	
+        // -----------------------------------------------------------------------------------
+        
+        ParallelEvaluator(CAgent *agent,
+                          AdaBoostMDPClassifierContinous* classifier,
+                          AdaBoostMDPBinaryDiscreteEvaluator* evaluator,
+                          vector<bool>*  correct,
+                          vector<double>* value,
+                          vector<double>* classificationCost,
+                          vector<int>* usedClassifierAvg,
+                          vector<stringstream>* output
+                          )
+        : agent(agent), classifier(classifier), evaluator(evaluator), correct(correct), value(value), classificationCost(classificationCost),
+          usedClassifierAvg(usedClassifierAvg), output(output)
+        {}
+        
+        
+        // -----------------------------------------------------------------------------------
+        
+        void operator()(const blocked_range<size_t>& range) const
+		{
+            const int numClasses = classifier->getNumClasses();
+            const int numTestExamples = classifier->getNumExamples();
+            
+			vector<AlphaReal> currentVotes(0);
+			vector<bool> currentHistory(0);
+			
+            bool milSetup = classifier->isMILsetup();
+            
+            // later
+            vector<vector<AlphaReal> > scores;
+            if (milSetup) {
+                scores.resize(numTestExamples);
+            }
+			
+            vector<int> bagCardinals;
+            vector<int> bagOffsets;
+
+            size_t numBags = 0;
+
+            if (milSetup) {
+                bagCardinals = classifier->getDataReader()->getBagCardinals();
+                bagOffsets = classifier->getDataReader()->getBagOffsets();
+                numBags = bagCardinals.size();
+            }
+            
+            int eventNumber = 0;
+            
+//            vector<bool>& correctVect = correct;
+            
+            for(size_t i = range.begin(); i != range.end();)
+            {
+                int numCandidates = 1;
+                
+                if (milSetup) {
+                    numCandidates = bagCardinals[eventNumber];
+                }
+                
+                for (int j = 0; j < numCandidates; ++j, ++i)
+                {
+                    agent->startNewEpisode();
+                    classifier->setCurrentRandomIsntace(i);
+                    agent->doControllerEpisode(1,  classifier->getIterNum() + 1 );
+                    bool clRes = classifier->classifyCorrectly();
+                    if (clRes) correct->at(i) = true;
+                    else correct->at(i) = false;
+                    
+                    double instanceClassificationCost = classifier->getClassificationCost();
+                    classificationCost->at(i) += instanceClassificationCost;
+                    double numEval = classifier->getUsedClassifierNumber();
+                    usedClassifierAvg->at(i) += numEval;
+                    value->at(i) += evaluator->getEpisodeValue();
+                    
+                    classifier->getCurrentExmapleResult( currentVotes );
+                    if (clRes)
+                        output->at(i) << "1 " ;
+                    else
+                        output->at(i) << "0 " ;
+                    
+                    vector<int> classes;
+                    vector<Label>& labels = classifier->getLabels(i);
+                    for (vector<Label>::iterator lIt = labels.begin(); lIt != labels.end(); ++lIt) {
+                        if (lIt->y > 0) classes.push_back(lIt->idx);
+                    }
+                    
+                    classifier->getHistory( currentHistory );
+                        
+                    if (numClasses <= 2) {
+                        output->at(i) << classes[0] << " ";
+                        output->at(i) << currentVotes[classifier->getPositiveLabelIndex()] << " ";
+                    }
+                    else
+                    {
+                        for( int l = 0; l < numClasses; ++l )
+                            output->at(i) << currentVotes[l] << " ";
+                    }
+                    
+                    if (classifier->isBudgeted()) {
+                        output->at(i) << instanceClassificationCost << " ";
+                    }
+                    
+                    for( int wl = 0; wl < currentHistory.size(); ++wl)
+                    {
+                        if ( currentHistory[wl] )
+                            output->at(i) << wl+1 << " ";
+                    }
+                    
+                    output->at(i) << endl;
+                
+                //                if (milSetup) {
+                //                    scores[i] = currentVotes;
+                //                }
+                }
+                
+                ++eventNumber;
+                classifier->clearCostBuffer();
+			}
+            
+            
+            //            if (milSetup) {
+            //
+            //                binRes.milError = computeMILError(scores, classifier->getBagCardinals());
+            //            }
+		}
+        // -----------------------------------------------------------------------------------
+	};
+    
 	
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
 	
 } // end of namespace MultiBoost
 

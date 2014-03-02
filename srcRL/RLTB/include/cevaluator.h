@@ -34,8 +34,10 @@ class CPolicyEvaluator : public CSemiMDPRewardListener, public CEvaluator
 		int nEpisodes;
 		int nStepsPerEpisode;
 
-		virtual double getEpisodeValue() = 0;
 	public:
+    
+        virtual double getEpisodeValue() = 0;
+    
 		CPolicyEvaluator(CAgent *agent, CRewardFunction *rewardFunction, int nEpisodes, int nStepsPerEpisode);
 		virtual ~CPolicyEvaluator() {};
 
@@ -58,8 +60,9 @@ class CAverageRewardCalculator : public CPolicyEvaluator
 		double averageReward;
 		double minReward;
 
-		virtual double getEpisodeValue();
+
 	public:
+        virtual double getEpisodeValue();
 		CAverageRewardCalculator(CAgent *agent, CRewardFunction *rewardFunction, int nEpisodes, int nStepsPerEpisode,double minReward = -2.0);
 		virtual ~CAverageRewardCalculator(){};
 
@@ -73,9 +76,9 @@ class CRewardPerEpisodeCalculator : public CPolicyEvaluator
 		
 		double reward;
 		
-
-		virtual double getEpisodeValue();
 	public:
+		virtual double getEpisodeValue();
+
 		CRewardPerEpisodeCalculator(CAgent *agent, CRewardFunction *rewardFunction, int nEpisodes, int nStepsPerEpisode);
 
 		virtual void nextStep(CStateCollection *oldState, CAction *action, double reward, CStateCollection *nextState);
@@ -88,8 +91,9 @@ class CValueCalculator : public CPolicyEvaluator
 		int nSteps;
 		double value;
 
-		virtual double getEpisodeValue();
+
 	public:
+        virtual double getEpisodeValue();
 		CValueCalculator(CAgent *agent, CRewardFunction *rewardFunction, int nEpisodes, int nStepsPerEpisode, double gamma);
 
 		virtual void nextStep(CStateCollection *oldState, CAction *action, double reward, CStateCollection *nextState);
@@ -104,8 +108,11 @@ class CPolicySameStateEvaluator : public CPolicyEvaluator
 
 		CSemiMDPSender *sender;
 
-		virtual double getEpisodeValue() = 0;
+
 	public:
+    
+		virtual double getEpisodeValue() = 0;
+    
 		CPolicySameStateEvaluator(CAgent *agent, CRewardFunction *rewardFunction, CTransitionFunctionEnvironment *environment, CStateList *startStates, int nStepsPerEpisode);
 		CPolicySameStateEvaluator(CAgent *agent, CRewardFunction *rewardFunction, CTransitionFunctionEnvironment *environment, int numStartStates, int nStepsPerEpisode);
 		virtual ~CPolicySameStateEvaluator();
@@ -133,8 +140,10 @@ class CAverageRewardSameStateCalculator : public CPolicySameStateEvaluator
 		double averageReward;
 		double minReward;
 
-		virtual double getEpisodeValue();
+
 	public:
+    
+		virtual double getEpisodeValue();
 		CAverageRewardSameStateCalculator(CAgent *agent, CRewardFunction *rewardFunction, CTransitionFunctionEnvironment *environment, CStateList *startStates, int nStepsPerEpisode, double minReward = -2.0);
 
 		virtual void nextStep(CStateCollection *oldState, CAction *action, double reward, CStateCollection *nextState);
@@ -147,8 +156,10 @@ class CValueSameStateCalculator : public CPolicySameStateEvaluator
 		int nSteps;
 		double value;
 
-		virtual double getEpisodeValue();
 	public:
+    
+		virtual double getEpisodeValue();
+    
 		CValueSameStateCalculator(CAgent *agent, CRewardFunction *rewardFunction, CTransitionFunctionEnvironment *environment, CStateList *startStates, int nStepsPerEpisode, double gamma);
 
 		virtual void nextStep(CStateCollection *oldState, CAction *action, double reward, CStateCollection *nextState);
@@ -161,10 +172,12 @@ class CPolicyGreedynessEvaluator : public CPolicyEvaluator
 		CAgentController *greedyPolicy;
 		CActionDataSet *actionDataSet;
 
-		virtual double getEpisodeValue();
-
 		int nGreedyActions;
 	public:
+    
+    
+        virtual double getEpisodeValue();
+
 		CPolicyGreedynessEvaluator(CAgent *agent, CRewardFunction *reward, int nEpisodes, int nStepsPerEpsiode, CAgentController *l_greedyPolicy);
 		~CPolicyGreedynessEvaluator();
 

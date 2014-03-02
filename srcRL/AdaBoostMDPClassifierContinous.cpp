@@ -731,42 +731,42 @@ namespace MultiBoost {
 	
     // -----------------------------------------------------------------------
 
-	CStateModifier* AdaBoostMDPClassifierContinous::getStateSpaceRBF(unsigned int partitionNumber)
-	{
-		// Now we can already create our RBF network
-		// Therefore we will use a CRBFFeatureCalculator, our feature calculator uses both dimensions of the model state 
-		// (the angel and the angular velocity) and lays a 20x20 RBF grid over the state space. For each dimension the given sigmas are used.
-		// For the calculation of useful sigmas we have to consider that the CRBFFeatureCalculator always uses the 
-		// normalized state representation, so the state variables are scaled to the intervall [0,1]
-		
-		int numClasses = _classNum;
-		if (numClasses == 2) numClasses = 1;
-        
-		unsigned int* dimensions = new unsigned int[numClasses];
-		unsigned int* partitions = new unsigned int[numClasses];
-		double* offsets = new double[numClasses];
-		double* sigma = new double[numClasses];
-		
-		for(int i=0; i<numClasses; ++i )
-		{
-			dimensions[i]=i;
-			partitions[i]=partitionNumber;
-			offsets[i]=0.0;
-			sigma[i]=1.0/(2.0*partitionNumber);;
-		}
-		
-		
-		// Now we can create our Feature Calculator
-		CStateModifier *rbfCalc = new CRBFFeatureCalculator(numClasses, dimensions, partitions, offsets, sigma);
-        CAbstractStateDiscretizer* disc= new AdaBoostMDPClassifierSimpleDiscreteSpace(_data->getIterationNumber()+1);
-        CFeatureOperatorAnd *andCalculator = new CFeatureOperatorAnd();
-        andCalculator->addStateModifier(disc);
-        andCalculator->addStateModifier(rbfCalc);
-        
-        andCalculator->initFeatureOperator();
-        
-		return andCalculator;
-	}
+//	CStateModifier* AdaBoostMDPClassifierContinous::getStateSpaceRBF(unsigned int partitionNumber)
+//	{
+//		// Now we can already create our RBF network
+//		// Therefore we will use a CRBFFeatureCalculator, our feature calculator uses both dimensions of the model state 
+//		// (the angel and the angular velocity) and lays a 20x20 RBF grid over the state space. For each dimension the given sigmas are used.
+//		// For the calculation of useful sigmas we have to consider that the CRBFFeatureCalculator always uses the 
+//		// normalized state representation, so the state variables are scaled to the intervall [0,1]
+//		
+//		int numClasses = _classNum;
+//		if (numClasses == 2) numClasses = 1;
+//        
+//		unsigned int* dimensions = new unsigned int[numClasses];
+//		unsigned int* partitions = new unsigned int[numClasses];
+//		double* offsets = new double[numClasses];
+//		double* sigma = new double[numClasses];
+//		
+//		for(int i=0; i<numClasses; ++i )
+//		{
+//			dimensions[i]=i;
+//			partitions[i]=partitionNumber;
+//			offsets[i]=0.0;
+//			sigma[i]=1.0/(2.0*partitionNumber);;
+//		}
+//		
+//		
+//		// Now we can create our Feature Calculator
+//		CStateModifier *rbfCalc = new CRBFFeatureCalculator(numClasses, dimensions, partitions, offsets, sigma);
+//        CAbstractStateDiscretizer* disc= new AdaBoostMDPClassifierSimpleDiscreteSpace(_data->getIterationNumber()+1);
+//        CFeatureOperatorAnd *andCalculator = new CFeatureOperatorAnd();
+//        andCalculator->addStateModifier(disc);
+//        andCalculator->addStateModifier(rbfCalc);
+//        
+//        andCalculator->initFeatureOperator();
+//        
+//		return andCalculator;
+//	}
 	// -----------------------------------------------------------------------
     
     CStateModifier* AdaBoostMDPClassifierContinous::getStateSpace( int divNum )
