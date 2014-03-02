@@ -762,7 +762,7 @@ int main(int argc, const char *argv[])
             dynamic_cast<HashTable*>( qData )->loadActionValueTable(args.getValue<string>("testmdp", 0));
         
         classifierContinous->setCurrentDataToTrain();
-        AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalTrain( agentContinous, rewardFunctionContinous, verbose );
+        AdaBoostMDPBinaryDiscreteEvaluator evalTrain( agentContinous, rewardFunctionContinous );
         BinaryResultStruct bres;
         bres.iterNumber=0;
         bres.adaboostPerf = adaboostTrainPerf;
@@ -773,7 +773,7 @@ int main(int argc, const char *argv[])
         dynamic_cast<HashTable*>(qData)->saveActionValueTable( "qtable_train.dta", datahandler->getNumExamples() );
         
         classifierContinous->setCurrentDataToTest();
-        AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalTest( agentContinous, rewardFunctionContinous, verbose );
+        AdaBoostMDPBinaryDiscreteEvaluator evalTest( agentContinous, rewardFunctionContinous );
         
         bres.adaboostPerf = adaboostTestPerf;
         //            bres.iterNumber=0;
@@ -834,13 +834,14 @@ int main(int argc, const char *argv[])
         int mode = args.getValue<int>("deeparff", 3);
         
         classifierContinous->setCurrentDataToTrain();
-        AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalTrain( agentContinous, rewardFunctionContinous, verbose );
+        AdaBoostMDPBinaryDiscreteEvaluator evalTrain( agentContinous, rewardFunctionContinous );
+        
         string logFileName = args.getValue<string>("deeparff", 1);
         evalTrain.outputDeepArff(logFileName, mode);
         
         
         classifierContinous->setCurrentDataToTest();
-        AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalTest( agentContinous, rewardFunctionContinous, verbose );
+        AdaBoostMDPBinaryDiscreteEvaluator evalTest( agentContinous, rewardFunctionContinous );
         string logFileName2 = args.getValue<string>("deeparff", 2);
         evalTest.outputDeepArff(logFileName2, mode);
         
@@ -972,7 +973,7 @@ int main(int argc, const char *argv[])
                 
                 // TRAIN stats
                 classifierContinous->setCurrentDataToTrain();
-                AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalTrain( agentContinous, rewardFunctionContinous, verbose );
+                AdaBoostMDPBinaryDiscreteEvaluator evalTrain( agentContinous, rewardFunctionContinous );
                 
                 BinaryResultStruct bres;
                 bres.adaboostPerf = adaboostTrainPerf;
@@ -1001,7 +1002,7 @@ int main(int argc, const char *argv[])
                 // VALID stats
                 
                 classifierContinous->setCurrentDataToTest();
-                AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalValid( agentContinous, rewardFunctionContinous, verbose );
+                AdaBoostMDPBinaryDiscreteEvaluator evalValid( agentContinous, rewardFunctionContinous );
                 
                 bres.adaboostPerf = adaboostValidPerf;
                 bres.iterNumber=i;
@@ -1090,7 +1091,7 @@ int main(int argc, const char *argv[])
                 
                 if (classifierContinous->setCurrentDataToTest2() )
                 {
-                    AdaBoostMDPBinaryDiscreteEvaluator<AdaBoostMDPClassifierContinous> evalTest( agentContinous, rewardFunctionContinous, verbose );
+                    AdaBoostMDPBinaryDiscreteEvaluator evalTest( agentContinous, rewardFunctionContinous );
                     
                     bres.adaboostPerf = adaboostTestPerf;
                     
