@@ -640,13 +640,38 @@ namespace MultiBoost {
         // -----------------------------------------------------------------------------------
 
         
-		void classficationPerformance( BinaryResultStruct& binRes, const string &logFileName, bool detailed = false )
+		void classficationPerformance( BinaryResultStruct& binRes, const string &logFileName, bool detailed = false, bool parallel=false )
 		{
-			double value = 0.0;
-//            double negNumEval = 0.0;
+            AdaBoostMDPClassifierContinous* classifier = dynamic_cast<AdaBoostMDPClassifierContinous*>(semiMDPRewardFunction);
             
-            double classificationCost = 0.;
+            const int numClasses = classifier->getNumClasses();
+			const int numTestExamples = classifier->getNumExamples();
             
+            
+            vector<double>* value;
+            vector<double>* classificationCost;
+            vector<bool>*  correct;
+            vector<int>* usedClassifierAvg;
+            vector<stringstream*>* output;
+            
+            
+            if (parallel) {
+                value = new vector<double>(numTestExamples, 0.);
+                classificationCost = new vector<double>(numTestExamples, 0.);
+                correct = new vector<bool>(numTestExamples, false);
+                usedClassifierAvg = new vector<int>(numTestExamples, 0);
+            }
+            
+            output = new vector<stringstream*>(numTestExamples);
+            for (int i = 0; i < numTestExamples; ++i) {
+                output->at(i) = new stringstream();
+            }
+
+			double totalValue = 0.0;
+            double totalClassificationCost = 0.;
+			int  totalCorrect = 0, totalNotcorrect = 0;
+			int totalUsedClassifierAvg=0;
+
 			agent->addSemiMDPListener(this);
 			
 			CAgentController *tempController = NULL;
@@ -655,27 +680,18 @@ namespace MultiBoost {
 				tempController = detController->getController();
 				detController->setController(controller);
 			}
-            			
-			AdaBoostMDPClassifierContinous* classifier = dynamic_cast<AdaBoostMDPClassifierContinous*>(semiMDPRewardFunction);
-
-            const int numClasses = classifier->getNumClasses();
-			const int numTestExamples = classifier->getNumExamples();
-			int  correct = 0, notcorrect = 0;
-			int usedClassifierAvg=0;
-//			int correctP=0;
-//			int posNum=0;
-//			int correctN=0;
-//			int negNum=0;
-			ofstream output;
+            
+			ofstream fileOutput;
             ofstream detailedOutput;
+
 			vector<AlphaReal> currentVotes(0);
 			vector<bool> currentHistory(0);
 			
 			if ( !logFileName.empty() )
 			{
-				output.open( logFileName.c_str() );
+				fileOutput.open( logFileName.c_str() );
                 
-                if (! output.good()) {
+                if (! fileOutput.good()) {
                     cout << "Error! Could not open the log file: " << logFileName << endl;
                     exit(1);
                 }
@@ -726,23 +742,31 @@ namespace MultiBoost {
                     classifier->setCurrentRandomIsntace(i);
                     agent->doControllerEpisode(1,  classifier->getIterNum() + 1 );
                     bool clRes = classifier->classifyCorrectly();
-                    if (clRes ) correct++;
-                    else notcorrect++;
+
+//                    correct->at(i) = clRes;
+                    
+                    if (clRes) ++totalCorrect;
+                    else ++totalNotcorrect;
+
                     
                     double instanceClassificationCost = classifier->getClassificationCost();
-                    classificationCost += instanceClassificationCost;
+//                    classificationCost->at(i) = instanceClassificationCost;
+                    totalClassificationCost += instanceClassificationCost;
+                    
                     double numEval = classifier->getUsedClassifierNumber();
-                    usedClassifierAvg += numEval;
-                    value += this->getEpisodeValue();
-                                    
+//                    usedClassifierAvg->at(i) = numEval;
+                    totalUsedClassifierAvg += numEval;
+                    
+//                    value->at(i) = this->getEpisodeValue();
+                    totalValue += this->getEpisodeValue();
+                    
                     classifier->getCurrentExmapleResult( currentVotes );
+
                     if ( !logFileName.empty() ) {
                         if (clRes)
-                            output << "1" ;
+                            *(output->at(i)) << "1 " ;
                         else
-                            output << "0" ;
-                        
-                        output << " ";
+                            *(output->at(i)) << "0 " ;
                         
                         vector<int> classes;
                         vector<Label>& labels = classifier->getLabels(i);
@@ -754,26 +778,26 @@ namespace MultiBoost {
                         classifier->getHistory( currentHistory );
                         
                         if (numClasses <= 2) {
-                            output << classes[0] << " ";
-                            output << currentVotes[classifier->getPositiveLabelIndex()] << " ";
+                            *(output->at(i)) << classes[0] << " ";
+                            *(output->at(i)) << currentVotes[classifier->getPositiveLabelIndex()] << " ";
                         }
                         else
                         {
                             for( int l = 0; l < numClasses; ++l )
-                                output << currentVotes[l] << " ";
+                                *(output->at(i)) << currentVotes[l] << " ";
                         }
                         
                         if (classifier->isBudgeted()) {
-                            output << instanceClassificationCost << " ";
+                            *(output->at(i)) << instanceClassificationCost << " ";
                         }
                         
                         for( int wl = 0; wl < currentHistory.size(); ++wl)
                         {
                             if ( currentHistory[wl] )
-                                output << wl+1 << " ";
+                                *(output->at(i)) << wl+1 << " ";
                         }
                         
-                        output << endl;
+                        *(output->at(i)) << endl;
                         
                         if (detailed) {
 //                            vector<int> classifiersOutput;
@@ -822,13 +846,30 @@ namespace MultiBoost {
 //                binRes.milError = computeMILError(scores, classifier->getBagCardinals());
 //            }
             
-			binRes.avgReward = value/(double)numTestExamples ;
-			binRes.usedClassifierAvg = (double)usedClassifierAvg/(double)numTestExamples ;
+            if (parallel) {
+                for (int i = 0; i < numTestExamples; ++i) {
+                    totalValue += value->at(i);
+                    totalClassificationCost += classificationCost->at(i);
+                    totalUsedClassifierAvg += usedClassifierAvg->at(i);
+                    if (correct->at(i))
+                        ++totalCorrect;
+                    else
+                        ++totalNotcorrect;
+                    
+                    if ( !logFileName.empty() )
+                    {
+                        fileOutput << output->at(i)->str();
+                    }
+                }
+            }
+            
+			binRes.avgReward = totalValue/(double)numTestExamples ;
+			binRes.usedClassifierAvg = (double)totalUsedClassifierAvg/(double)numTestExamples ;
             //			binRes.negNumEval = (double)negNumEval/(double)negNum;
             
-            binRes.classificationCost = classificationCost/(double)numTestExamples;
+            binRes.classificationCost = totalClassificationCost/(double)numTestExamples;
             
-            binRes.err = ((double)notcorrect/(double)numTestExamples);//*100.0;
+            binRes.err = ((double)totalNotcorrect/(double)numTestExamples);//*100.0;
 			
 //			binRes.TP = (double)correctP/(double)posNum;
 //			binRes.TN = (double)correctN/(double)negNum;
@@ -836,7 +877,7 @@ namespace MultiBoost {
             binRes.itError = classifier->getIterationError((int)binRes.usedClassifierAvg);
             
 			//cout << posNum << " " << negNum << endl << flush;
-			if (!logFileName.empty()) output.close();
+			if (!logFileName.empty()) fileOutput.close();
 			
 			agent->removeSemiMDPListener(this);
 			
@@ -844,6 +885,19 @@ namespace MultiBoost {
 			{
 				detController->setController(tempController);
 			}
+            
+            if (parallel) {
+                delete value;
+                delete classificationCost;
+                delete correct;
+                delete usedClassifierAvg;
+            }
+            
+            for (int i = 0; i < numTestExamples; ++i) {
+                delete output->at(i);
+            }
+            
+            delete output;
 			
 		}
         
@@ -1046,14 +1100,13 @@ namespace MultiBoost {
                     classifier->setCurrentRandomIsntace(i);
                     agent->doControllerEpisode(1,  classifier->getIterNum() + 1 );
                     bool clRes = classifier->classifyCorrectly();
-                    if (clRes) correct->at(i) = true;
-                    else correct->at(i) = false;
+                    correct->at(i) = clRes;
                     
                     double instanceClassificationCost = classifier->getClassificationCost();
-                    classificationCost->at(i) += instanceClassificationCost;
+                    classificationCost->at(i) = instanceClassificationCost;
                     double numEval = classifier->getUsedClassifierNumber();
-                    usedClassifierAvg->at(i) += numEval;
-                    value->at(i) += evaluator->getEpisodeValue();
+                    usedClassifierAvg->at(i) = numEval;
+                    value->at(i) = evaluator->getEpisodeValue();
                     
                     classifier->getCurrentExmapleResult( currentVotes );
                     if (clRes)
