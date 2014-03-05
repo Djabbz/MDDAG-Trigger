@@ -41,11 +41,11 @@
 
 #include <set>
 
-//#include "tbb/parallel_for.h"
-//#include "tbb/blocked_range.h"
+#include "tbb/parallel_for.h"
+#include "tbb/blocked_range.h"
+using namespace tbb;
 
 using namespace std;
-//using namespace tbb;
 
 namespace MultiBoost {
     
@@ -379,34 +379,34 @@ namespace MultiBoost {
     
     class AdaBoostMDPBinaryDiscreteEvaluator;
     
-//	struct ParallelEvaluator
-//	{
-//        vector<double>* value;
-//        vector<double>* classificationCost;
-//        vector<bool>*  correct;
-//        vector<int>* usedClassifierAvg;
-//        CAgent *agent;
-//        AdaBoostMDPClassifierContinous* classifier;
-//        AdaBoostMDPBinaryDiscreteEvaluator* evaluator;
-//        vector<stringstream*>* output;
-//        
-//        // -----------------------------------------------------------------------------------
-//        
-//        ParallelEvaluator(   //CAgent *agent,
-//                             AdaBoostMDPClassifierContinous* classifier,
-//                             AdaBoostMDPBinaryDiscreteEvaluator* evaluator,
-//                             vector<bool>*  correct,
-//                             vector<double>* value,
-//                             vector<double>* classificationCost,
-//                             vector<int>* usedClassifierAvg,
-//                             vector<stringstream*>* output
-//                          );
-//
-//        void operator()(const blocked_range<int>& range) const ;
-//        
-//        ~ParallelEvaluator() { delete classifier ; }
-//        
-//	};
+	struct ParallelEvaluator
+	{
+        vector<double>* value;
+        vector<double>* classificationCost;
+        vector<bool>*  correct;
+        vector<int>* usedClassifierAvg;
+        CAgent *agent;
+        AdaBoostMDPClassifierContinous* classifier;
+        AdaBoostMDPBinaryDiscreteEvaluator* evaluator;
+        vector<stringstream*>* output;
+        
+        // -----------------------------------------------------------------------------------
+        
+        ParallelEvaluator(   CAgent *agent,
+                             AdaBoostMDPClassifierContinous* classifier,
+                             AdaBoostMDPBinaryDiscreteEvaluator* evaluator,
+                             vector<bool>*  correct,
+                             vector<double>* value,
+                             vector<double>* classificationCost,
+                             vector<int>* usedClassifierAvg,
+                             vector<stringstream*>* output
+                          );
+
+        void operator()(const blocked_range<int>& range) const ;
+        
+        ~ParallelEvaluator() { delete classifier ; }
+        
+	};
     
 	
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -760,18 +760,18 @@ namespace MultiBoost {
             
 
             if (parallel) {
-//                ParallelEvaluator evaluator(classifier, this, correct, value, classificationCost, usedClassifierAvg, output);
-//                parallel_for(blocked_range<int>(0, numBags), evaluator);
-//
-//                for (int i = 0; i < numTestExamples; ++i) {
-//                    totalValue += value->at(i);
-//                    totalClassificationCost += classificationCost->at(i);
-//                    totalUsedClassifierAvg += usedClassifierAvg->at(i);
-//                    if (correct->at(i))
-//                        ++totalCorrect;
-//                    else
-//                        ++totalNotcorrect;
-//                }
+                ParallelEvaluator evaluator(agent, classifier, this, correct, value, classificationCost, usedClassifierAvg, output);
+                parallel_for(blocked_range<int>(0, numBags), evaluator);
+
+                for (int i = 0; i < numTestExamples; ++i) {
+                    totalValue += value->at(i);
+                    totalClassificationCost += classificationCost->at(i);
+                    totalUsedClassifierAvg += usedClassifierAvg->at(i);
+                    if (correct->at(i))
+                        ++totalCorrect;
+                    else
+                        ++totalNotcorrect;
+                }
             }
             else
             {

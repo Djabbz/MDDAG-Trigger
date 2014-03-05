@@ -461,6 +461,31 @@ CAgent::CAgent(CEnvironmentModel *model) : CSemiMarkovDecisionProcess(), CStateM
 	startNewEpisode();
 }
 
+CAgent::CAgent(CAgent& other) : CSemiMarkovDecisionProcess(), CStateModifiersObject(other.getStateProperties())
+{
+
+    this->model = other.model;
+    lastAction = NULL;
+    
+    setParameters(1, 5000);
+	keyboardBreaks = false;
+	
+	assert(model->getStateProperties());
+    //	printf("%d %d\n", model->getStateProperties()->getNumContinuousStates(), model->getStateProperties()->getNumDiscreteStates());
+    
+	currentEpisode = new CEpisode(model->getStateProperties(), actions);
+    
+	addSemiMDPListener(currentEpisode);
+	bLogEpisode = true;
+    
+	currentState = new CStateCollectionImpl(model->getStateProperties());
+	lastState = new CStateCollectionImpl(model->getStateProperties());
+    
+	modifiers = new std::list<CStateModifier *>;
+    
+	startNewEpisode();
+}
+
 CAgent::~CAgent()
 {
 	delete currentState;

@@ -52,6 +52,8 @@
 #include "AdaBoostMDPClassifierAdv.h"
 #include "AdaBoostMDPClassifierContinous.h"
 
+#include <ctime> // for time
+
 using namespace std;
 using namespace MultiBoost;
 using namespace Torch;
@@ -897,6 +899,9 @@ int main(int argc, const char *argv[])
     
     #pragma mark Main loop
     
+    time_t startTime, currentTime;
+    time(&startTime);
+
     int i = 0;
     while (i < episodeNumber)
     {
@@ -934,7 +939,7 @@ int main(int argc, const char *argv[])
                 ges_failed++;
             }
             
-            if (verbose > 1 && ((i % 5000 )==0) && (i>2))
+            if (verbose > 1 && ((i % 1000 )==0) && (i>2))
             {
                 cout << "Episode number:  " << SEP  << i << endl;
                 cout << "Current error:   " << SEP << (((double)ges_failed / ((double)(ges_succeeded+ges_failed))) * 100.0) << endl;;
@@ -1130,6 +1135,11 @@ int main(int argc, const char *argv[])
         
         classifierContinous->clearCostBuffer();
     }
+    
+    time( &currentTime );
+    float diff = difftime(currentTime, startTime); // difftime is in seconds
+    diff /= 60; // = minutes
+    cout << "\n[+] Time: " << diff << " minutes" << endl;
 
     delete datahandler;
     delete classifierContinous;

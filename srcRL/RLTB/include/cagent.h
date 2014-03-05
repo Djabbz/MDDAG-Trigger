@@ -231,6 +231,9 @@ protected:
 public:
 
 	CAgent(CEnvironmentModel *model);
+    
+    CAgent(CAgent& other);
+    
 	~CAgent();
 
 /// Execute the action and send the State-Action-State tuple
