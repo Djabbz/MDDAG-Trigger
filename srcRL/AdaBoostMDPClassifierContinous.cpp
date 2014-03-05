@@ -39,8 +39,10 @@ namespace MultiBoost {
 		_exampleResult = NULL;
 		
 		// open result file
+        
+        _outputStream = new ofstream();
 		string tmpFname = _args.getValue<string>("traintestmdp", 4);			
-		_outputStream.open( tmpFname.c_str() );
+		_outputStream->open( tmpFname.c_str() );
 		
 		_sumAlpha = _data->getSumOfAlphas();
         
@@ -206,16 +208,16 @@ namespace MultiBoost {
         
         _lastCorrectClassifications.resize(_data->getNumExamples(), false);
         
-        if ( args.hasArgument("debug") )
-		{
-            string debugfilename;
-			args.getValue("debug", 0, debugfilename);
-            _debugFileStream.open(debugfilename.c_str());
-            
-            if (!_debugFileStream.good()) {
-                cout << "[!] Warning: Could not open the debug file: " << debugfilename << endl;
-            }
-        }
+//        if ( args.hasArgument("debug") )
+//		{
+//            string debugfilename;
+//			args.getValue("debug", 0, debugfilename);
+//            _debugFileStream.open(debugfilename.c_str());
+//            
+//            if (!_debugFileStream.good()) {
+//                cout << "[!] Warning: Could not open the debug file: " << debugfilename << endl;
+//            }
+//        }
         
         _bootstrapRate = 0;
         if ( args.hasArgument("bootstrap") ) {
@@ -458,8 +460,14 @@ namespace MultiBoost {
         
         vector<AlphaReal> initZeros(_classNum, 0.);
         _posteriorsTraces.push_back(initZeros);
+	}
 
-			
+    // -----------------------------------------------------------------------------------
+    
+    void AdaBoostMDPClassifierContinous::clear()
+	{
+        this->resetModel();
+        _exampleResult = new ExampleResults(_currentRandomInstance,_data->getClassNumber());
 	}
 
     // -----------------------------------------------------------------------
@@ -975,21 +983,21 @@ namespace MultiBoost {
     
     void AdaBoostMDPClassifierContinous::outHeader()
     {
-//        _outputStream << setiosflags(ios::fixed);
+//        *_outputStream << setiosflags(ios::fixed);
         
-        _outputStream << "ep" << "\t" <<  "full" << "\t" << "prop" << "\t" << "acc" << "\t" << "eval" << "\t" << "rwd" << "\t" << "cost" ;
+        *_outputStream << "ep" << "\t" <<  "full" << "\t" << "prop" << "\t" << "acc" << "\t" << "eval" << "\t" << "rwd" << "\t" << "cost" ;
         
         if (_data->isMILsetup()) {
-            _outputStream << "\t" << "mil";
+            *_outputStream << "\t" << "mil";
         }
         
-        _outputStream << setprecision(4) <<  endl ;
+        *_outputStream << setprecision(4) <<  endl ;
 
 //        if (_classNum <= 2) {
-//            _outputStream << "ep" << "\t" <<  "full" << "\t" << "prop" << "\t" << "err" << "\t" << "eval" << "\t" << "rwd" << "\t" << "tpr" << "\t" << "tnr" << "\t" << "cost" << setprecision(4) <<  endl ;
+//            *_outputStream << "ep" << "\t" <<  "full" << "\t" << "prop" << "\t" << "err" << "\t" << "eval" << "\t" << "rwd" << "\t" << "tpr" << "\t" << "tnr" << "\t" << "cost" << setprecision(4) <<  endl ;
 //        }
 //        else {
-//            _outputStream << "Ep" << "\t" <<  "AdaB" << "\t" << "Acc" << "\t" << "AvgEv" << "\t" << "AvgRwd" << endl << setprecision(4) ;
+//            *_outputStream << "Ep" << "\t" <<  "AdaB" << "\t" << "Acc" << "\t" << "AvgEv" << "\t" << "AvgRwd" << endl << setprecision(4) ;
 //        }
     }
     
@@ -997,24 +1005,155 @@ namespace MultiBoost {
         
 //    void AdaBoostMDPClassifierContinous::outPutStatistic(int ep, double acc, double curracc, double uc, double sumrew )
 //	{
-//		_outputStream << ep << "\t" << acc << "\t" << curracc << "\t" << uc << "\t" << sumrew << endl << flush;
+//		*_outputStream << ep << "\t" << acc << "\t" << curracc << "\t" << uc << "\t" << sumrew << endl << flush;
 //	}
 
 	// -----------------------------------------------------------------------
         
     void AdaBoostMDPClassifierContinous::outPutStatistic( BinaryResultStruct& bres )
     {
-        //		_outputStream << bres.iterNumber << " " <<  bres.adaboostPerf << " " << bres.err << " " << bres.usedClassifierAvg << " " << bres.avgReward << " " << bres.TP << " " << bres.TN << " " << bres.negNumEval <<  endl;
-//        _outputStream << bres.iterNumber << "\t" << 100*(1 - bres.adaboostPerf) << "\t"  <<  100*(1 - bres.itError) << "\t" << 100*(1 - bres.err) << "\t" << bres.usedClassifierAvg << "\t" << bres.avgReward << "\t" << bres.TP << "\t" << bres.TN << "\t" << bres.classificationCost <<  endl;
-        _outputStream << bres.iterNumber << "\t" << 100*(1 - bres.adaboostPerf) << "\t"  <<  100*(1 - bres.itError) << "\t" << 100*(1 - bres.err) << "\t" << bres.usedClassifierAvg << "\t" << bres.avgReward << "\t" << bres.classificationCost;
+        //		*_outputStream << bres.iterNumber << " " <<  bres.adaboostPerf << " " << bres.err << " " << bres.usedClassifierAvg << " " << bres.avgReward << " " << bres.TP << " " << bres.TN << " " << bres.negNumEval <<  endl;
+//        *_outputStream << bres.iterNumber << "\t" << 100*(1 - bres.adaboostPerf) << "\t"  <<  100*(1 - bres.itError) << "\t" << 100*(1 - bres.err) << "\t" << bres.usedClassifierAvg << "\t" << bres.avgReward << "\t" << bres.TP << "\t" << bres.TN << "\t" << bres.classificationCost <<  endl;
+        *_outputStream << bres.iterNumber << "\t" << 100*(1 - bres.adaboostPerf) << "\t"  <<  100*(1 - bres.itError) << "\t" << 100*(1 - bres.err) << "\t" << bres.usedClassifierAvg << "\t" << bres.avgReward << "\t" << bres.classificationCost;
         
         if (_data->isMILsetup()) {
-            _outputStream << "\t" << bres.milError;
+            *_outputStream << "\t" << bres.milError;
         }
         
-        _outputStream << endl;
+        *_outputStream << endl;
 
     }
+
+    // -----------------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------------
+    
+//    ParallelEvaluator::ParallelEvaluator(//CAgent *agent,
+//                      AdaBoostMDPClassifierContinous* origin_classifier,
+//                      AdaBoostMDPBinaryDiscreteEvaluator* evaluator,
+//                      vector<bool>*  correct,
+//                      vector<double>* value,
+//                      vector<double>* classificationCost,
+//                      vector<int>* usedClassifierAvg,
+//                      vector<stringstream*>* output
+//                      )
+//    : evaluator(evaluator), correct(correct), value(value), classificationCost(classificationCost),
+//    usedClassifierAvg(usedClassifierAvg), output(output) //, classifier(classifier), agent(agent)
+//    {
+//        classifier = new AdaBoostMDPClassifierContinous(*origin_classifier);
+//        classifier->clear();
+//        
+//        agent = new CAgent(classifier);
+//    }
+//    
+//    
+//    // -----------------------------------------------------------------------------------
+//    
+//    void ParallelEvaluator::operator()(const blocked_range<int>& range) const
+//    {
+//        const int numClasses = classifier->getNumClasses();
+////        const int numTestExamples = classifier->getNumExamples();
+//        
+//        vector<AlphaReal> currentVotes(0);
+//        vector<bool> currentHistory(0);
+//        
+//        bool milSetup = classifier->isMILsetup();
+//        
+//        // later
+//        //            vector<vector<AlphaReal> > scores;
+//        //            if (milSetup) {
+//        //                scores.resize(numTestExamples);
+//        //            }
+//        
+//        vector<int> bagCardinals;
+//        vector<int> bagOffsets;
+//        
+//        int numBags = 0;
+//        
+//        if (milSetup) {
+//            bagCardinals = classifier->getDataReader()->getBagCardinals();
+//            bagOffsets = classifier->getDataReader()->getBagOffsets();
+//            numBags = bagCardinals.size();
+//        }
+//        
+//        int eventNumber = 0;
+//        
+//        //            vector<bool>& correctVect = correct;
+//        
+//        for(int i = range.begin(); i != range.end();)
+//        {
+//            int numCandidates = 1;
+//            
+//            if (milSetup) {
+//                numCandidates = bagCardinals[eventNumber];
+//            }
+//            
+//            for (int j = 0; j < numCandidates; ++j, ++i)
+//            {
+//                agent->startNewEpisode();
+//                classifier->setCurrentRandomIsntace(i);
+//                agent->doControllerEpisode(1,  classifier->getIterNum() + 1 );
+//                bool clRes = classifier->classifyCorrectly();
+//                correct->at(i) = clRes;
+//                
+//                double instanceClassificationCost = classifier->getClassificationCost();
+//                classificationCost->at(i) = instanceClassificationCost;
+//                double numEval = classifier->getUsedClassifierNumber();
+//                usedClassifierAvg->at(i) = numEval;
+//                value->at(i) = evaluator->getEpisodeValue();
+//                
+//                classifier->getCurrentExmapleResult( currentVotes );
+//                if (clRes)
+//                    *(output->at(i)) << "1 " ;
+//                else
+//                    *(output->at(i)) << "0 " ;
+//                
+//                vector<int> classes;
+//                vector<Label>& labels = classifier->getLabels(i);
+//                for (vector<Label>::iterator lIt = labels.begin(); lIt != labels.end(); ++lIt) {
+//                    if (lIt->y > 0) classes.push_back(lIt->idx);
+//                }
+//                
+//                classifier->getHistory( currentHistory );
+//                
+//                if (numClasses <= 2) {
+//                    *(output->at(i)) << classes[0] << " ";
+//                    *(output->at(i)) << currentVotes[classifier->getPositiveLabelIndex()] << " ";
+//                }
+//                else
+//                {
+//                    for( int l = 0; l < numClasses; ++l )
+//                        *(output->at(i)) << currentVotes[l] << " ";
+//                }
+//                
+//                if (classifier->isBudgeted()) {
+//                    *(output->at(i)) << instanceClassificationCost << " ";
+//                }
+//                
+//                for( int wl = 0; wl < currentHistory.size(); ++wl)
+//                {
+//                    if ( currentHistory[wl] )
+//                        *(output->at(i)) << wl+1 << " ";
+//                }
+//                
+//                *(output->at(i)) << endl;
+//                
+//                //                if (milSetup) {
+//                //                    scores[i] = currentVotes;
+//                //                }
+//            }
+//            
+//            ++eventNumber;
+//            classifier->clearCostBuffer();
+//        }
+//        
+//        
+//        //            if (milSetup) {
+//        //
+//        //                binRes.milError = computeMILError(scores, classifier->getBagCardinals());
+//        //            }
+//    }
+    // -----------------------------------------------------------------------------------
 
 
 } // end of namespace MultiBoost

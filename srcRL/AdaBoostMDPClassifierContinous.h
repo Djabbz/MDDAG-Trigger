@@ -41,11 +41,11 @@
 
 #include <set>
 
-#include "tbb/parallel_for.h"
-#include "tbb/blocked_range.h"
+//#include "tbb/parallel_for.h"
+//#include "tbb/blocked_range.h"
 
 using namespace std;
-using namespace tbb;
+//using namespace tbb;
 
 namespace MultiBoost {
     
@@ -117,7 +117,7 @@ namespace MultiBoost {
 		double					_currentSumAlpha;
 		
 		// for output info
-		ofstream				_outputStream;
+		ofstream*				_outputStream;
 		
 		//!< The arguments defined by the user.		
 		const nor_utils::Args&		_args;  
@@ -151,7 +151,7 @@ namespace MultiBoost {
         
         vector<bool>            _lastCorrectClassifications;
         
-        ofstream                _debugFileStream;
+//        ofstream                _debugFileStream;
         
         double                  _bootstrapRate;
         
@@ -161,6 +161,7 @@ namespace MultiBoost {
         map<pair<int, FeatureReal>, bool>   _costBuffer;
         
         int _lhcbSignelUpweightFactor;
+        
         
 //        bool isFeatureValueBuffered(set<int> indices) {
 //            bool answer = true;
@@ -303,10 +304,13 @@ namespace MultiBoost {
         
 		// constructor
 		AdaBoostMDPClassifierContinous(const nor_utils::Args& args, int verbose, DataReader* datareader, int classNum, int discState = 1);
-		// destructor
+//        AdaBoostMDPClassifierContinous(const AdaBoostMDPClassifierContinous& other);
+		
+        // destructor
 		virtual	~AdaBoostMDPClassifierContinous() 
 		{
-			_outputStream.close();
+			_outputStream->close();
+            delete _exampleResult;
 		}
 		
 		///returns the reward for the transition, implements the CRewardFunction interface
@@ -348,6 +352,8 @@ namespace MultiBoost {
         DataReader* getDataReader() { return _data;}
         
         vector<vector<AlphaReal> >& getPosteriorsTraces() {return _posteriorsTraces;}
+        
+        void clear();
 	};
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////
@@ -368,6 +374,42 @@ namespace MultiBoost {
 		}
 	};
 	
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    class AdaBoostMDPBinaryDiscreteEvaluator;
+    
+//	struct ParallelEvaluator
+//	{
+//        vector<double>* value;
+//        vector<double>* classificationCost;
+//        vector<bool>*  correct;
+//        vector<int>* usedClassifierAvg;
+//        CAgent *agent;
+//        AdaBoostMDPClassifierContinous* classifier;
+//        AdaBoostMDPBinaryDiscreteEvaluator* evaluator;
+//        vector<stringstream*>* output;
+//        
+//        // -----------------------------------------------------------------------------------
+//        
+//        ParallelEvaluator(   //CAgent *agent,
+//                             AdaBoostMDPClassifierContinous* classifier,
+//                             AdaBoostMDPBinaryDiscreteEvaluator* evaluator,
+//                             vector<bool>*  correct,
+//                             vector<double>* value,
+//                             vector<double>* classificationCost,
+//                             vector<int>* usedClassifierAvg,
+//                             vector<stringstream*>* output
+//                          );
+//
+//        void operator()(const blocked_range<int>& range) const ;
+//        
+//        ~ParallelEvaluator() { delete classifier ; }
+//        
+//	};
+    
+	
+    ////////////////////////////////////////////////////////////////////////////////////////////////
 	////////////////////////////////////////////////////////////////////////////////////////////////
     // AdaBoostMDPClassifierContinous
 
@@ -706,162 +748,173 @@ namespace MultiBoost {
 			}
             
             bool milSetup = classifier->isMILsetup();
-            
-            vector<vector<AlphaReal> > scores;
-            if (milSetup) {
-                scores.resize(numTestExamples);
-            }
-			
             vector<int> bagCardinals;
             vector<int> bagOffsets;
-            size_t numBags = 0;
+            int numBags = numTestExamples;
+            
             if (milSetup) {
                 bagCardinals = classifier->getDataReader()->getBagCardinals();
                 bagOffsets = classifier->getDataReader()->getBagOffsets();
                 numBags = bagCardinals.size();
             }
             
-            
-            int eventNumber = 0;
-            int candidateCounter = 0;
 
-            int i = 0;
-            while (i < numTestExamples)
+            if (parallel) {
+//                ParallelEvaluator evaluator(classifier, this, correct, value, classificationCost, usedClassifierAvg, output);
+//                parallel_for(blocked_range<int>(0, numBags), evaluator);
+//
+//                for (int i = 0; i < numTestExamples; ++i) {
+//                    totalValue += value->at(i);
+//                    totalClassificationCost += classificationCost->at(i);
+//                    totalUsedClassifierAvg += usedClassifierAvg->at(i);
+//                    if (correct->at(i))
+//                        ++totalCorrect;
+//                    else
+//                        ++totalNotcorrect;
+//                }
+            }
+            else
             {
-                int numCandidates = 1;
-                
+                vector<vector<AlphaReal> > scores;
                 if (milSetup) {
-                    numCandidates = bagCardinals[eventNumber];
+                    scores.resize(numTestExamples);
                 }
                 
-                candidateCounter += numCandidates;
+
                 
-                for (int j = 0; j < numCandidates; ++j, ++i)
+                
+                int eventNumber = 0;
+                int candidateCounter = 0;
+                
+                int i = 0;
+                while (i < numBags)
                 {
-                    agent->startNewEpisode();
-                    classifier->setCurrentRandomIsntace(i);
-                    agent->doControllerEpisode(1,  classifier->getIterNum() + 1 );
-                    bool clRes = classifier->classifyCorrectly();
-
-//                    correct->at(i) = clRes;
+                    int numCandidates = 1;
                     
-                    if (clRes) ++totalCorrect;
-                    else ++totalNotcorrect;
-
+                    if (milSetup) {
+                        numCandidates = bagCardinals[eventNumber];
+                    }
                     
-                    double instanceClassificationCost = classifier->getClassificationCost();
-//                    classificationCost->at(i) = instanceClassificationCost;
-                    totalClassificationCost += instanceClassificationCost;
+                    candidateCounter += numCandidates;
                     
-                    double numEval = classifier->getUsedClassifierNumber();
-//                    usedClassifierAvg->at(i) = numEval;
-                    totalUsedClassifierAvg += numEval;
-                    
-//                    value->at(i) = this->getEpisodeValue();
-                    totalValue += this->getEpisodeValue();
-                    
-                    classifier->getCurrentExmapleResult( currentVotes );
-
-                    if ( !logFileName.empty() ) {
-                        if (clRes)
-                            *(output->at(i)) << "1 " ;
-                        else
-                            *(output->at(i)) << "0 " ;
+                    for (int j = 0; j < numCandidates; ++j, ++i)
+                    {
+                        agent->startNewEpisode();
+                        classifier->setCurrentRandomIsntace(i);
+                        agent->doControllerEpisode(1,  classifier->getIterNum() + 1 );
+                        bool clRes = classifier->classifyCorrectly();
                         
-                        vector<int> classes;
-                        vector<Label>& labels = classifier->getLabels(i);
-                        for (vector<Label>::iterator lIt = labels.begin(); lIt != labels.end(); ++lIt) {
-                            if (lIt->y > 0) classes.push_back(lIt->idx);
-                        }
+                        //                    correct->at(i) = clRes;
+                        
+                        if (clRes) ++totalCorrect;
+                        else ++totalNotcorrect;
                         
                         
-                        classifier->getHistory( currentHistory );
+                        double instanceClassificationCost = classifier->getClassificationCost();
+                        //                    classificationCost->at(i) = instanceClassificationCost;
+                        totalClassificationCost += instanceClassificationCost;
                         
-                        if (numClasses <= 2) {
-                            *(output->at(i)) << classes[0] << " ";
-                            *(output->at(i)) << currentVotes[classifier->getPositiveLabelIndex()] << " ";
-                        }
-                        else
-                        {
-                            for( int l = 0; l < numClasses; ++l )
-                                *(output->at(i)) << currentVotes[l] << " ";
-                        }
+                        double numEval = classifier->getUsedClassifierNumber();
+                        //                    usedClassifierAvg->at(i) = numEval;
+                        totalUsedClassifierAvg += numEval;
                         
-                        if (classifier->isBudgeted()) {
-                            *(output->at(i)) << instanceClassificationCost << " ";
-                        }
+                        //                    value->at(i) = this->getEpisodeValue();
+                        totalValue += this->getEpisodeValue();
                         
-                        for( int wl = 0; wl < currentHistory.size(); ++wl)
-                        {
-                            if ( currentHistory[wl] )
-                                *(output->at(i)) << wl+1 << " ";
-                        }
+                        classifier->getCurrentExmapleResult( currentVotes );
                         
-                        *(output->at(i)) << endl;
-                        
-                        if (detailed) {
-//                            vector<int> classifiersOutput;
+                        if ( !logFileName.empty() ) {
+                            if (clRes)
+                                *(output->at(i)) << "1 " ;
+                            else
+                                *(output->at(i)) << "0 " ;
                             
-                            vector<vector<AlphaReal> >& posteriors = classifier->getPosteriorsTraces();
-                            
-                            for (int t = 0; t < posteriors.size(); ++t) {
-                                for (int l = 0; l < posteriors[t].size() - 1; ++l) {
-                                    detailedOutput << posteriors[t][l] << ",";
-                                }
-                                detailedOutput << posteriors[t][posteriors[t].size() - 1] << " ";
+                            vector<int> classes;
+                            vector<Label>& labels = classifier->getLabels(i);
+                            for (vector<Label>::iterator lIt = labels.begin(); lIt != labels.end(); ++lIt) {
+                                if (lIt->y > 0) classes.push_back(lIt->idx);
                             }
                             
                             
-//                            classifier->getClassifiersOutput(classifiersOutput);
+                            classifier->getHistory( currentHistory );
                             
-//                            if (clRes)
-//                                detailedOutput << "1" ;
-//                            else
-//                                detailedOutput << "0" ;
-//                            
-//                            detailedOutput << " " << classes[0] << " ";
-//                            
-//                            for (int i = 0; i < classifiersOutput.size(); ++i) {
-//                                detailedOutput << classifiersOutput[i] << " ";
-//                            }
+                            if (numClasses <= 2) {
+                                *(output->at(i)) << classes[0] << " ";
+                                *(output->at(i)) << currentVotes[classifier->getPositiveLabelIndex()] << " ";
+                            }
+                            else
+                            {
+                                for( int l = 0; l < numClasses; ++l )
+                                    *(output->at(i)) << currentVotes[l] << " ";
+                            }
                             
-                            detailedOutput << endl;
-                        }
-                    }
+                            if (classifier->isBudgeted()) {
+                                *(output->at(i)) << instanceClassificationCost << " ";
+                            }
+                            
+                            for( int wl = 0; wl < currentHistory.size(); ++wl)
+                            {
+                                if ( currentHistory[wl] )
+                                    *(output->at(i)) << wl+1 << " ";
+                            }
+                            
+                            *(output->at(i)) << endl;
+                            
+                            if (detailed) {
+                                //                            vector<int> classifiersOutput;
                                 
-    //                if (milSetup) {
-    //                    scores[i] = currentVotes;
-    //                }
+                                vector<vector<AlphaReal> >& posteriors = classifier->getPosteriorsTraces();
+                                
+                                for (int t = 0; t < posteriors.size(); ++t) {
+                                    for (int l = 0; l < posteriors[t].size() - 1; ++l) {
+                                        detailedOutput << posteriors[t][l] << ",";
+                                    }
+                                    detailedOutput << posteriors[t][posteriors[t].size() - 1] << " ";
+                                }
+                                
+                                
+                                //                            classifier->getClassifiersOutput(classifiersOutput);
+                                
+                                //                            if (clRes)
+                                //                                detailedOutput << "1" ;
+                                //                            else
+                                //                                detailedOutput << "0" ;
+                                //
+                                //                            detailedOutput << " " << classes[0] << " ";
+                                //                            
+                                //                            for (int i = 0; i < classifiersOutput.size(); ++i) {
+                                //                                detailedOutput << classifiersOutput[i] << " ";
+                                //                            }
+                                
+                                detailedOutput << endl;
+                            }
+                        }
+                        
+                        //                if (milSetup) {
+                        //                    scores[i] = currentVotes;
+                        //                }
+                    }
+                    
+                    ++eventNumber;
+                    classifier->clearCostBuffer();
                 }
                 
-                ++eventNumber;
-                classifier->clearCostBuffer();
-			}
-            
-            assert(candidateCounter == numTestExamples);
+                assert(candidateCounter == numTestExamples);
+                
+                //            if (milSetup) {
+                //
+                //                binRes.milError = computeMILError(scores, classifier->getBagCardinals());
+                //            }
 
-						
-//            if (milSetup) {
-//                
-//                binRes.milError = computeMILError(scores, classifier->getBagCardinals());
-//            }
-            
-            if (parallel) {
-                for (int i = 0; i < numTestExamples; ++i) {
-                    totalValue += value->at(i);
-                    totalClassificationCost += classificationCost->at(i);
-                    totalUsedClassifierAvg += usedClassifierAvg->at(i);
-                    if (correct->at(i))
-                        ++totalCorrect;
-                    else
-                        ++totalNotcorrect;
-                    
-                    if ( !logFileName.empty() )
-                    {
-                        fileOutput << output->at(i)->str();
-                    }
-                }
             }
+            
+            
+            if ( !logFileName.empty() )
+            {
+                for (int i = 0; i < numTestExamples; ++i)
+                    fileOutput << output->at(i)->str();
+            }
+
             
 			binRes.avgReward = totalValue/(double)numTestExamples ;
 			binRes.usedClassifierAvg = (double)totalUsedClassifierAvg/(double)numTestExamples ;
@@ -1010,159 +1063,6 @@ namespace MultiBoost {
 
 	};
     
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-	
-    struct EvaluationResults
-    {
-        double value;
-        double classificationCost;
-        int  correct;
-        int  notcorrect;
-        int usedClassifierAvg;
-        
-        EvaluationResults() :
-        value(0.), classificationCost(0.), correct(0), notcorrect(0)
-        {}
-    };
-    
-	struct ParallelEvaluator
-	{
-        vector<double>* value;
-        vector<double>* classificationCost;
-        vector<bool>*  correct;
-        vector<int>* usedClassifierAvg;
-        CAgent *agent;
-        AdaBoostMDPClassifierContinous* classifier;
-        AdaBoostMDPBinaryDiscreteEvaluator* evaluator;
-        vector<stringstream>* output;
-
-        // -----------------------------------------------------------------------------------
-        
-        ParallelEvaluator(CAgent *agent,
-                          AdaBoostMDPClassifierContinous* classifier,
-                          AdaBoostMDPBinaryDiscreteEvaluator* evaluator,
-                          vector<bool>*  correct,
-                          vector<double>* value,
-                          vector<double>* classificationCost,
-                          vector<int>* usedClassifierAvg,
-                          vector<stringstream>* output
-                          )
-        : agent(agent), classifier(classifier), evaluator(evaluator), correct(correct), value(value), classificationCost(classificationCost),
-          usedClassifierAvg(usedClassifierAvg), output(output)
-        {}
-        
-        
-        // -----------------------------------------------------------------------------------
-        
-        void operator()(const blocked_range<size_t>& range) const
-		{
-            const int numClasses = classifier->getNumClasses();
-            const int numTestExamples = classifier->getNumExamples();
-            
-			vector<AlphaReal> currentVotes(0);
-			vector<bool> currentHistory(0);
-			
-            bool milSetup = classifier->isMILsetup();
-            
-            // later
-            vector<vector<AlphaReal> > scores;
-            if (milSetup) {
-                scores.resize(numTestExamples);
-            }
-			
-            vector<int> bagCardinals;
-            vector<int> bagOffsets;
-
-            size_t numBags = 0;
-
-            if (milSetup) {
-                bagCardinals = classifier->getDataReader()->getBagCardinals();
-                bagOffsets = classifier->getDataReader()->getBagOffsets();
-                numBags = bagCardinals.size();
-            }
-            
-            int eventNumber = 0;
-            
-//            vector<bool>& correctVect = correct;
-            
-            for(size_t i = range.begin(); i != range.end();)
-            {
-                int numCandidates = 1;
-                
-                if (milSetup) {
-                    numCandidates = bagCardinals[eventNumber];
-                }
-                
-                for (int j = 0; j < numCandidates; ++j, ++i)
-                {
-                    agent->startNewEpisode();
-                    classifier->setCurrentRandomIsntace(i);
-                    agent->doControllerEpisode(1,  classifier->getIterNum() + 1 );
-                    bool clRes = classifier->classifyCorrectly();
-                    correct->at(i) = clRes;
-                    
-                    double instanceClassificationCost = classifier->getClassificationCost();
-                    classificationCost->at(i) = instanceClassificationCost;
-                    double numEval = classifier->getUsedClassifierNumber();
-                    usedClassifierAvg->at(i) = numEval;
-                    value->at(i) = evaluator->getEpisodeValue();
-                    
-                    classifier->getCurrentExmapleResult( currentVotes );
-                    if (clRes)
-                        output->at(i) << "1 " ;
-                    else
-                        output->at(i) << "0 " ;
-                    
-                    vector<int> classes;
-                    vector<Label>& labels = classifier->getLabels(i);
-                    for (vector<Label>::iterator lIt = labels.begin(); lIt != labels.end(); ++lIt) {
-                        if (lIt->y > 0) classes.push_back(lIt->idx);
-                    }
-                    
-                    classifier->getHistory( currentHistory );
-                        
-                    if (numClasses <= 2) {
-                        output->at(i) << classes[0] << " ";
-                        output->at(i) << currentVotes[classifier->getPositiveLabelIndex()] << " ";
-                    }
-                    else
-                    {
-                        for( int l = 0; l < numClasses; ++l )
-                            output->at(i) << currentVotes[l] << " ";
-                    }
-                    
-                    if (classifier->isBudgeted()) {
-                        output->at(i) << instanceClassificationCost << " ";
-                    }
-                    
-                    for( int wl = 0; wl < currentHistory.size(); ++wl)
-                    {
-                        if ( currentHistory[wl] )
-                            output->at(i) << wl+1 << " ";
-                    }
-                    
-                    output->at(i) << endl;
-                
-                //                if (milSetup) {
-                //                    scores[i] = currentVotes;
-                //                }
-                }
-                
-                ++eventNumber;
-                classifier->clearCostBuffer();
-			}
-            
-            
-            //            if (milSetup) {
-            //
-            //                binRes.milError = computeMILError(scores, classifier->getBagCardinals());
-            //            }
-		}
-        // -----------------------------------------------------------------------------------
-	};
-    
-	
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
 	

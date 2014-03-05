@@ -435,6 +435,11 @@ int main(int argc, const char *argv[])
     // only UNIX
     command = "if [ ! -d \"" + qTablesDir + "\" ]; then mkdir \"" + qTablesDir + "\" ; fi";
     system(command.c_str());
+    
+    
+    
+    /// it starts here !
+    /// initz
 
 	DataReader* datahandler = new DataReader( args, verbose );
 	datahandler->setCurrentDataToTrain();
