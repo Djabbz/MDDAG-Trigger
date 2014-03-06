@@ -148,7 +148,6 @@ namespace MultiBoost {
                     cheap_vars.push_back("PiS_IP");
                     cheap_vars.push_back("D0C_1_IP");
                     cheap_vars.push_back("D0C_2_IP");
-                    cheap_vars.push_back("D0Tau");
                 }
                 
                 set<int> cheapVarIndices;

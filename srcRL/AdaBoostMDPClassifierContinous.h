@@ -41,9 +41,9 @@
 
 #include <set>
 
-#include "tbb/parallel_for.h"
-#include "tbb/blocked_range.h"
-using namespace tbb;
+//#include "tbb/parallel_for.h"
+//#include "tbb/blocked_range.h"
+//using namespace tbb;
 
 using namespace std;
 
@@ -379,34 +379,34 @@ namespace MultiBoost {
     
     class AdaBoostMDPBinaryDiscreteEvaluator;
     
-	struct ParallelEvaluator
-	{
-        vector<double>* value;
-        vector<double>* classificationCost;
-        vector<bool>*  correct;
-        vector<int>* usedClassifierAvg;
-        CAgent *agent;
-        AdaBoostMDPClassifierContinous* classifier;
-        AdaBoostMDPBinaryDiscreteEvaluator* evaluator;
-        vector<stringstream*>* output;
-        
+//	struct ParallelEvaluator
+//	{
+//        vector<double>* value;
+//        vector<double>* classificationCost;
+//        vector<bool>*  correct;
+//        vector<int>* usedClassifierAvg;
+//        CAgent *agent;
+//        AdaBoostMDPClassifierContinous* classifier;
+//        AdaBoostMDPBinaryDiscreteEvaluator* evaluator;
+//        vector<stringstream*>* output;
+    
         // -----------------------------------------------------------------------------------
         
-        ParallelEvaluator(   CAgent *agent,
-                             AdaBoostMDPClassifierContinous* classifier,
-                             AdaBoostMDPBinaryDiscreteEvaluator* evaluator,
-                             vector<bool>*  correct,
-                             vector<double>* value,
-                             vector<double>* classificationCost,
-                             vector<int>* usedClassifierAvg,
-                             vector<stringstream*>* output
-                          );
-
-        void operator()(const blocked_range<int>& range) const ;
-        
-        ~ParallelEvaluator() { delete classifier ; }
-        
-	};
+//        ParallelEvaluator(   CAgent *agent,
+//                             AdaBoostMDPClassifierContinous* classifier,
+//                             AdaBoostMDPBinaryDiscreteEvaluator* evaluator,
+//                             vector<bool>*  correct,
+//                             vector<double>* value,
+//                             vector<double>* classificationCost,
+//                             vector<int>* usedClassifierAvg,
+//                             vector<stringstream*>* output
+//                          );
+//
+//        void operator()(const blocked_range<int>& range) const ;
+//        
+//        ~ParallelEvaluator() { delete classifier ; }
+//        
+//	};
     
 	
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -682,7 +682,7 @@ namespace MultiBoost {
         // -----------------------------------------------------------------------------------
 
         
-		void classficationPerformance( BinaryResultStruct& binRes, const string &logFileName, bool detailed = false, bool parallel=true )
+		void classficationPerformance( BinaryResultStruct& binRes, const string &logFileName, bool detailed = false, bool parallel=false )
 		{
             AdaBoostMDPClassifierContinous* classifier = dynamic_cast<AdaBoostMDPClassifierContinous*>(semiMDPRewardFunction);
             
@@ -759,21 +759,21 @@ namespace MultiBoost {
             }
             
 
-            if (parallel) {
-                ParallelEvaluator evaluator(agent, classifier, this, correct, value, classificationCost, usedClassifierAvg, output);
-                parallel_for(blocked_range<int>(0, numBags), evaluator);
-
-                for (int i = 0; i < numTestExamples; ++i) {
-                    totalValue += value->at(i);
-                    totalClassificationCost += classificationCost->at(i);
-                    totalUsedClassifierAvg += usedClassifierAvg->at(i);
-                    if (correct->at(i))
-                        ++totalCorrect;
-                    else
-                        ++totalNotcorrect;
-                }
-            }
-            else
+//            if (parallel) {
+//                ParallelEvaluator evaluator(agent, classifier, this, correct, value, classificationCost, usedClassifierAvg, output);
+//                parallel_for(blocked_range<int>(0, numBags), evaluator);
+//
+//                for (int i = 0; i < numTestExamples; ++i) {
+//                    totalValue += value->at(i);
+//                    totalClassificationCost += classificationCost->at(i);
+//                    totalUsedClassifierAvg += usedClassifierAvg->at(i);
+//                    if (correct->at(i))
+//                        ++totalCorrect;
+//                    else
+//                        ++totalNotcorrect;
+//                }
+//            }
+//            else
             {
                 vector<vector<AlphaReal> > scores;
                 if (milSetup) {
@@ -911,11 +911,11 @@ namespace MultiBoost {
             
             if ( !logFileName.empty() )
             {
-                for (int i = 0; i < numTestExamples; ++i)
+                for (int i = 0; i < numTestExamples; ++i) {
                     fileOutput << output->at(i)->str();
+                }
             }
 
-            
 			binRes.avgReward = totalValue/(double)numTestExamples ;
 			binRes.usedClassifierAvg = (double)totalUsedClassifierAvg/(double)numTestExamples ;
             //			binRes.negNumEval = (double)negNumEval/(double)negNum;
@@ -923,6 +923,8 @@ namespace MultiBoost {
             binRes.classificationCost = totalClassificationCost/(double)numTestExamples;
             
             binRes.err = ((double)totalNotcorrect/(double)numTestExamples);//*100.0;
+            
+            cout << "+++[DEBUG] binRes.err " << binRes.err << endl;
 			
 //			binRes.TP = (double)correctP/(double)posNum;
 //			binRes.TN = (double)correctN/(double)negNum;
