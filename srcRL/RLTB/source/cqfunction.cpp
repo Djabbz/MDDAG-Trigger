@@ -51,6 +51,7 @@
 #include <sstream>
 #include <assert.h>
 
+
 CAbstractQFunction::CAbstractQFunction(CActionSet *actions) : CActionObject(actions, false)
 {
 	type = 0;
@@ -67,6 +68,9 @@ void CAbstractQFunction::setValue(CStateCollection *, CAction *, double , CActio
 
 void CAbstractQFunction::getActionValues(CStateCollection *stateCol,  CActionSet *actions, double *actionValues, CActionDataSet *data)
 {
+    
+    assert(actions->size() > 0);
+    
 	CActionSet::iterator it = actions->begin();
 	for (unsigned int i = 0; it != actions->end(); it++, i++)
 	{
@@ -76,6 +80,9 @@ void CAbstractQFunction::getActionValues(CStateCollection *stateCol,  CActionSet
 		}
 		else
 		{
+            CAction* action = *it;
+//            assert(*it);
+//            cout << "+++[DEBUG]  " << dynamic_cast<CAdaBoostAction*>(*it)->getMode() << endl;
 			actionValues[i] = this->getValue(stateCol, *it);
 		}
 	}
@@ -92,7 +99,7 @@ double CAbstractQFunction::getMaxValue(CStateCollection *state, CActionSet *avai
 	getActionValues(state, availableActions, actionValues);
 
     max = actionValues[0];
-
+//
 	for (unsigned int i = 1; i < availableActions->size(); i++)
 	{
         value = actionValues[i];
@@ -117,6 +124,7 @@ CAction* CAbstractQFunction::getMax(CStateCollection* stateCol, CActionSet *avai
 
 	
 	CActionSet::iterator it = availableActions->begin();
+    CAction* action_ = *it;
 	CActionSet *max_list = new CActionSet();
 
 	getActionValues(stateCol, availableActions, actionValues);

@@ -682,7 +682,7 @@ namespace MultiBoost {
         // -----------------------------------------------------------------------------------
 
         
-		void classficationPerformance( BinaryResultStruct& binRes, const string &logFileName, bool detailed = false, bool parallel=false )
+		void classficationPerformance( BinaryResultStruct& binRes, const string &logFileName, bool detailed = false, bool parallel=true )
 		{
             AdaBoostMDPClassifierContinous* classifier = dynamic_cast<AdaBoostMDPClassifierContinous*>(semiMDPRewardFunction);
             

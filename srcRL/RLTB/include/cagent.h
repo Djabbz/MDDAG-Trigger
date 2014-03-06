@@ -243,6 +243,7 @@ public:
 /// remove a state Modifier from the StateCollections
 	virtual void removeStateModifier(CStateModifier *modifier);
 
+    virtual void setEnvironment(CEnvironmentModel *model);
 
 
 /// Executes maxEpisodes, if an epsiode reaches maxsteps, a new episode is startet automatically

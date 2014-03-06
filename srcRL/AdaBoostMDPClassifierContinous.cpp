@@ -1028,7 +1028,7 @@ namespace MultiBoost {
     // -----------------------------------------------------------------------------------
     // -----------------------------------------------------------------------------------
     
-    ParallelEvaluator::ParallelEvaluator(CAgent *agent,
+    ParallelEvaluator::ParallelEvaluator(CAgent *origin_agent,
                       AdaBoostMDPClassifierContinous* origin_classifier,
                       AdaBoostMDPBinaryDiscreteEvaluator* evaluator,
                       vector<bool>*  correct,
@@ -1038,12 +1038,13 @@ namespace MultiBoost {
                       vector<stringstream*>* output
                       )
     : evaluator(evaluator), correct(correct), value(value), classificationCost(classificationCost),
-    usedClassifierAvg(usedClassifierAvg), output(output), agent(agent) //, classifier(classifier)
+    usedClassifierAvg(usedClassifierAvg), output(output)//, agent(agent) //, classifier(classifier)
     {
         classifier = new AdaBoostMDPClassifierContinous(*origin_classifier);
         classifier->clear();
         
-//        agent = new CAgent(classifier);
+        agent = new CAgent(*origin_agent);
+        agent->setEnvironment(origin_classifier);
     }
     
     

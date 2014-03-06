@@ -119,6 +119,7 @@ void HashTable::getKey(MDDAGState& state, ValueKey& key)
     
     AlphaReal scoreDifference = (state.continuousStates[winners[0]] - maxScore) ;
     
+//    if (scoreDifference < 0) cout << "+++[DEBUG] scoreDifference " << scoreDifference << endl;
     assert(scoreDifference >= 0);
     int p = int(scoreDifference / _stepResolution);
     
