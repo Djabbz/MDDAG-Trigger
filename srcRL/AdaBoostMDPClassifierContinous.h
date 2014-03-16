@@ -787,7 +787,7 @@ namespace MultiBoost {
                 int candidateCounter = 0;
                 
                 int i = 0;
-                while (i < numBags)
+                while (eventNumber < numBags)
                 {
                     int numCandidates = 1;
                     
