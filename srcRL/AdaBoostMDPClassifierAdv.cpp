@@ -191,7 +191,7 @@ namespace MultiBoost {
                     featureWhypMap.erase(cheapVarIndices);
                     
                     // manual reordering
-                    int feat_indices[] = {4, 8, 12, 0, 1, 7, 11, 15, 6, 10, 14};
+                    int feat_indices[] = {4, 8, 12, 0, 2, 1, 7, 11, 15, 6, 10, 14};
                     for (int f = 0; f < 11; ++f) {
                         set<int> f_set;
                         f_set.insert(feat_indices[f]);
