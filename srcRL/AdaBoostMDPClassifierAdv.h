@@ -120,7 +120,11 @@ namespace MultiBoost {
 		{ return _pCurrentData->getClassMap(); }
         
         double getIterationError(int it) {
-            return _iterationWiseError[_pCurrentData][it];
+            if (_iterationWiseError[_pCurrentData].size() != 0)
+                return _iterationWiseError[_pCurrentData][it];
+            else
+                return 0;
+
 //            double err = _iterationWiseError[_pCurrentData][it];
 //            if (err != err) {
 //                

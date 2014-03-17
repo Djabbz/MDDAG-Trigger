@@ -734,21 +734,6 @@ int main(int argc, const char *argv[])
     int max_Steps = 100000;
     double adaboostTrainPerf = 0., adaboostValidPerf = 0., adaboostTestPerf = 0.;
     
-    if (verbose > 1)
-        cout << "[+] Computing Adaboost performance..." << flush;
-    
-    
-    classifierContinous->setCurrentDataToTrain();
-    adaboostTrainPerf = classifierContinous->getAdaboostPerfOnCurrentDataset();
-    classifierContinous->setCurrentDataToTest();
-    adaboostValidPerf = classifierContinous->getAdaboostPerfOnCurrentDataset();
-    
-    if (classifierContinous->setCurrentDataToTest2())
-        adaboostTestPerf = classifierContinous->getAdaboostPerfOnCurrentDataset();
-    
-    classifierContinous->setCurrentDataToTrain();
-    if (verbose > 1)
-        cout << " done!" << endl;
     
     if (args.hasArgument("testmdp"))
     {
@@ -794,7 +779,7 @@ int main(int argc, const char *argv[])
         cout << "******** Average Test classifier used: " << bres.usedClassifierAvg << endl;
         cout << "******** Sum of rewards on Test: " << bres.avgReward << endl;
         
-        cout << endl << "full" << setw(10) << "prop" << setw(10) << "acc" << setw(10) << "eval" << setw(10) << "rwd" << setw(10) << "cost" ;
+        cout << endl <<  "acc" << setw(10) << "eval" << setw(10) << "rwd" << setw(10) << "cost" ;
         
         if (datahandler->isMILsetup()) {
             cout  << setw(10) << "mil";
@@ -802,7 +787,7 @@ int main(int argc, const char *argv[])
         
         cout  << setprecision(4) <<  endl ;
 
-        cout << 100*(1 - bres.adaboostPerf) << setw(10)  <<  100*(1 - bres.itError) << setw(10) << 100*(1 - bres.err) << setw(10) << bres.usedClassifierAvg << setw(10) << bres.avgReward << setw(10) << bres.classificationCost;
+        cout << 100*(1 - bres.err) << setw(10) << bres.usedClassifierAvg << setw(10) << bres.avgReward << setw(10) << bres.classificationCost;
         
         if (datahandler->isMILsetup()) {
             cout << setw(10) << bres.milError;
@@ -862,6 +847,23 @@ int main(int argc, const char *argv[])
         
         exit(0);
     }
+    
+    if (verbose > 1)
+        cout << "[+] Computing Adaboost performance..." << flush;
+    
+    classifierContinous->setCurrentDataToTrain();
+    adaboostTrainPerf = classifierContinous->getAdaboostPerfOnCurrentDataset();
+    classifierContinous->setCurrentDataToTest();
+    adaboostValidPerf = classifierContinous->getAdaboostPerfOnCurrentDataset();
+    
+    if (classifierContinous->setCurrentDataToTest2())
+        adaboostTestPerf = classifierContinous->getAdaboostPerfOnCurrentDataset();
+    
+    classifierContinous->setCurrentDataToTrain();
+    if (verbose > 1)
+        cout << " done!" << endl;
+
+    
 
     if (verbose > 1)
         cout << "Train: " << adaboostTrainPerf << "\t Valid: " << adaboostValidPerf;
