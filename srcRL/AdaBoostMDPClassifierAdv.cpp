@@ -296,9 +296,11 @@ namespace MultiBoost {
             cout << "[+] MIL SETUP" << endl;
             _mil = true;
             
+            _pCurrentData = _pTrainData;
             _bagCardinals[_pTrainData] = vector<int>();
             readRawData(mdpTrainFileName + ".events", _bagCardinals[_pTrainData]);            
             
+            _pCurrentData = _pTestData;
             _bagCardinals[_pTestData] = vector<int>();
             readRawData(testFileName + ".events", _bagCardinals[_pTestData]);
             
@@ -353,11 +355,17 @@ namespace MultiBoost {
             exit(1);
         }
         
-        while (ifs.good()) {
-            int i ;
-            ifs >> i;
+        cout << "[+] Reading event numbers from: " << rawDataFileName << endl;
+        
+//        long counter = 0;
+        int i = 0 ;
+        while (ifs >> i) {
+            
+//            counter += i;
             candidateNumber.push_back(i);
         }
+        
+//        assert (counter ==  _pCurrentData->getNumExamples() );
     }
 
 	// -----------------------------------------------------------------------

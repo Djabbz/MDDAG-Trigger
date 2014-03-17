@@ -923,9 +923,7 @@ namespace MultiBoost {
             binRes.classificationCost = totalClassificationCost/(double)numTestExamples;
             
             binRes.err = ((double)totalNotcorrect/(double)numTestExamples);//*100.0;
-            
-            cout << "+++[DEBUG] binRes.err " << binRes.err << endl;
-			
+            			
 //			binRes.TP = (double)correctP/(double)posNum;
 //			binRes.TN = (double)correctN/(double)negNum;
 			
