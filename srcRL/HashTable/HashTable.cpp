@@ -102,22 +102,22 @@ void HashTable::getKey(MDDAGState& state, ValueKey& key)
     
 //    const int numWinners = 0;
     
-    _numWinnerClasses = 1;//2;
+    _numWinnerClasses = 2;//1;
     // index + numWinners + difference between the first two winners
     key.resize(1 + _numWinnerClasses + 1);//+ 1
     
     int i = 0;
     key[i++] = state.discreteStates[0];
     
-//    AlphaReal scoreDifference = (state.continuousStates[winners[0]] - state.continuousStates[winners[1]]) ;
+    AlphaReal scoreDifference = (state.continuousStates[winners[0]] - state.continuousStates[winners[1]]) ;
 
-    AlphaReal maxScore = 0;
-    for (int l = 0; l < _numDimensions; ++l) {
-        if (l != winners[0] && maxScore < state.continuousStates[l] )
-            maxScore = state.continuousStates[l];
-    }
-    
-    AlphaReal scoreDifference = (state.continuousStates[winners[0]] - maxScore) ;
+//    AlphaReal maxScore = 0;
+//    for (int l = 0; l < _numDimensions; ++l) {
+//        if (l != winners[0] && maxScore < state.continuousStates[l] )
+//            maxScore = state.continuousStates[l];
+//    }
+//    
+//    AlphaReal scoreDifference = (state.continuousStates[winners[0]] - maxScore) ;
     
 //    if (scoreDifference < 0) cout << "+++[DEBUG] scoreDifference " << scoreDifference << endl;
     assert(scoreDifference >= 0);
