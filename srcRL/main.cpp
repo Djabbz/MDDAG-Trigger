@@ -261,6 +261,10 @@ void setBasicOptions(nor_utils::Args& args)
     args.declareArgument("multiskip", "Skip multiple times.", 1, "<number>" );
     args.declareArgument("nologs", "Delete the logs, only keeps the last and the best.", 0, "" );
     args.declareArgument("lhcbsignalupweight", "Upweight the signal instances by a multiplicative factor.", 1, "<factor>" );
+    args.declareArgument("classupweight", "Upweight a certain class instances by a multiplicative factor.", 2, "<label> <factor>" );
+    args.declareArgument("groupLHCb", "Group the features of the LHCb data even if the setup is not buedgeted.", 0, "" );
+    args.declareArgument("numwinclasses", "Number of winner classes in the state space.", 1, "<number>" );
+    
 }
 
 
@@ -663,6 +667,12 @@ int main(int argc, const char *argv[])
 
         dynamic_cast<HashTable*>(qData)->setScoreResolution(featnum);
         
+        int numWinClasses = 1;
+        if (args.hasArgument("numwinclasses")) {
+            numWinClasses = args.getValue<int>("numwinclasses", 0);
+        }
+        dynamic_cast<HashTable*>(qData)->setNumWinnerClasses(numWinClasses);
+        
         if (args.hasArgument("qtable")) {
             cout << "Loading Q Hash Table from : " << args.getValue<string>("qtable", 0) << endl;
             dynamic_cast<HashTable*>( qData )->loadActionValueTable(args.getValue<string>("qtable", 0));
@@ -760,9 +770,14 @@ int main(int argc, const char *argv[])
         bres.adaboostPerf = adaboostTrainPerf;
         
         string logFileName = args.getValue<string>("testmdp", 1);
-        evalTrain.classficationPerformance(bres,logFileName, true);
+        evalTrain.classficationPerformance(bres, logFileName, true);
         
-        dynamic_cast<HashTable*>(qData)->saveActionValueTable( "qtable_train.dta", datahandler->getNumExamples() );
+        if (sptype == 5)
+            dynamic_cast<GSBNFBasedQFunction*>(qData)->saveActionValueTable( "qtable_with_numbers_train.dta", datahandler->getNumExamples() );
+        else if (sptype == 6)
+            dynamic_cast<HashTable*>(qData)->saveActionValueTable( "qtable_with_numbers_train.dta", datahandler->getNumExamples() );
+
+        classifierContinous->outPutStatistic( bres );
         
         classifierContinous->setCurrentDataToTest();
         AdaBoostMDPBinaryDiscreteEvaluator evalTest( agentContinous, rewardFunctionContinous );
@@ -771,9 +786,14 @@ int main(int argc, const char *argv[])
         //            bres.iterNumber=0;
         string logFileName2 = args.getValue<string>("testmdp", 2);
         
-        evalTest.classficationPerformance(bres,logFileName2, true);
+        evalTest.classficationPerformance(bres, logFileName2, true);
         
-        dynamic_cast<HashTable*>(qData)->saveActionValueTable( "qtable_test.dta", datahandler->getNumExamples() );
+        if (sptype == 5)
+            dynamic_cast<GSBNFBasedQFunction*>(qData)->saveActionValueTable( "qtable_with_numbers_test.dta", datahandler->getNumExamples() );
+        else if (sptype == 6)
+            dynamic_cast<HashTable*>(qData)->saveActionValueTable( "qtable_with_numbers_test.dta", datahandler->getNumExamples() );
+
+        classifierContinous->outPutStatistic( bres );
         
         cout << "******** Overall Test err by MDP: " << bres.err << "(" << adaboostTestPerf << ")" << endl;
         cout << "******** Average Test classifier used: " << bres.usedClassifierAvg << endl;
@@ -808,6 +828,8 @@ int main(int argc, const char *argv[])
     if (args.hasArgument("deeparff"))
     {
         
+        classifierContinous->outHeader();
+
         if (sptype < 5) {
             cout << "Error: use sptype 5 with --deeparff" << endl;
             exit(1);
@@ -1046,9 +1068,9 @@ int main(int argc, const char *argv[])
     //                dynamic_cast<CFeatureQFunction*>(qData)->saveFeatureActionValueTable(qTableFile);
     //            }
     //            
-    //            if (sptype == 5) {
-    //                dynamic_cast<GSBNFBasedQFunction*>(qData)->saveActionValueTable(qTableFile);
-    //            }
+                if (sptype == 5) {
+                    dynamic_cast<GSBNFBasedQFunction*>(qData)->saveActionValueTable(qTableFileName);
+                }
                 
                 if (sptype == 6) {
                     dynamic_cast<HashTable*>(qData)->saveActionValueTable(qTableFileName);

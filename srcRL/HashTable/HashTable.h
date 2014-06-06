@@ -125,6 +125,8 @@ public:
     // -----------------------------------------------------------------------------------
     
     void setScoreResolution(int r) { _stepResolution = 1./r;}
+
+    void setNumWinnerClasses(int numWinners) { _numWinnerClasses = numWinners;}
     
     // -----------------------------------------------------------------------------------
     

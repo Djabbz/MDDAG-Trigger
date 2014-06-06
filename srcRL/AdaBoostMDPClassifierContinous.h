@@ -162,6 +162,9 @@ namespace MultiBoost {
         
         int _lhcbSignelUpweightFactor;
         
+        int _classUpWeightFactor;
+        int _classUpWeightIndex;
+        
         
 //        bool isFeatureValueBuffered(set<int> indices) {
 //            bool answer = true;

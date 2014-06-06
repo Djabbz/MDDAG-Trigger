@@ -116,7 +116,6 @@ void GSBNFBasedQFunction::uniformInit(double* init)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 double GSBNFBasedQFunction::getValue(CStateCollection *state, CAction *action, CActionData *data)
 {
     CState* currState = state->getState();
@@ -152,7 +151,7 @@ double GSBNFBasedQFunction::getValue(CStateCollection *state, CAction *action, C
     if (norm) {
         retVal /= rbfSum;
     }
-    
+
     assert( retVal == retVal);
     return retVal;
 }
@@ -418,6 +417,32 @@ void GSBNFBasedQFunction::saveActionValueTable(FILE* stream, int dim)
                 fprintf(stream,"%f %f %f ", _rbfs[k][j][i].getAlpha()[dim], _rbfs[k][j][i].getMean()[dim], _rbfs[k][j][i].getSigma()[dim]);
             }
             fprintf(stream, "\n");
+        }
+        
+    }
+}
+
+
+void GSBNFBasedQFunction::saveActionValueTable(string filename, int dim)
+{
+    ofstream output;
+    output.open(filename.c_str());
+    
+    if (! output.good()) {
+        cout << "Error! Could not the QTable file: " << filename << endl;
+        exit(1);
+    }
+
+    output << "Q-Feature ActionValue Table\n";
+    //    CActionSet::iterator it;
+    
+    for (int j = 0; j < _numberOfIterations; ++j) {
+        for (int k = 0; k < _numberOfActions; ++k) {
+            output << "classifier " << j << " action " << k << ": ";
+            for (int i = 0; i < _rbfs[k][j].size(); ++i) {
+                output << _rbfs[k][j][i].getAlpha()[dim] << " " << _rbfs[k][j][i].getMean()[dim] << " " << _rbfs[k][j][i].getSigma()[dim] << " ";
+            }
+            output << endl;
         }
         
     }

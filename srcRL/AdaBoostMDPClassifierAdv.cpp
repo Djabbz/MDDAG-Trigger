@@ -139,7 +139,7 @@ namespace MultiBoost {
             
             const NameMap& attributeNamemap = _pTrainData->getAttributeNameMap();
 
-            if (args.hasArgument("budgeted") && args.getValue<string>("budgeted", 0).compare("LHCb") == 0)
+            if ((args.hasArgument("budgeted") && args.getValue<string>("budgeted", 0).compare("LHCb") == 0) || args.hasArgument("groupLHCb"))
             {
                 vector<string> cheap_vars;
                 if (cheap_vars.size() == 0)
@@ -251,6 +251,18 @@ namespace MultiBoost {
             }
             featureFile.close();
             cout << "Done." << endl;
+            
+            // saving the shypfile
+            Serialization grouped_shyp(shypFileName + ".grouped", false);
+            grouped_shyp.writeHeader( "SingleStumpLearner" );
+            
+            int iteration = 0;
+            for (int i = 0; i < _numIterations; ++i) {
+                for (int j = 0; j < _weakHypotheses[i].size(); ++j, ++iteration) {
+                    grouped_shyp.appendHypothesis(iteration, _weakHypotheses[i][j]);
+                }
+            }
+            grouped_shyp.writeFooter();
         }
         else
         {

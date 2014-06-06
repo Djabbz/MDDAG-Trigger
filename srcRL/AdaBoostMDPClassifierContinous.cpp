@@ -110,6 +110,16 @@ namespace MultiBoost {
             _lhcbSignelUpweightFactor = args.getValue<int>("lhcbsignalupweight", 0);
         }
         
+        _classUpWeightIndex = -1;
+        _classUpWeightFactor = 1;
+        
+        if (args.hasArgument("classupweight"))
+        {
+            const NameMap& classnamemap = _data->getClassMap();
+            _classUpWeightIndex = classnamemap.getIdxFromName(args.getValue<string>("classupweight", 0));
+            _classUpWeightFactor = args.getValue<int>("classupweight", 1);
+        }
+        
 
         if (args.hasArgument("budgeted"))
         {
@@ -264,7 +274,7 @@ namespace MultiBoost {
 		
         //FIXME: this works for spstate=6 and not for spstate=5
         // set the continuous state var
-		if (_classNum<=0) //2
+		if (_classNum<=2) //2
         {
 			state->setNumActiveContinuousStates(1);
             AlphaReal st = ((currVotesVector[_positiveLabelIndex] /_sumAlpha)+1)/2.0; // rescale between [0,1]
@@ -693,6 +703,16 @@ namespace MultiBoost {
                     for (lIt = labels.begin(); lIt != labels.end(); ++lIt) {
                         if (lIt->idx == 3 && lIt->y < 0) {
                             rew *= _lhcbSignelUpweightFactor;
+                        }
+                    }
+                }
+                
+                if (_classUpWeightIndex > 0) {
+                    vector<Label>::const_iterator lIt;
+                    const vector<Label>& labels = _data->getLabels(_currentRandomInstance);
+                    for (lIt = labels.begin(); lIt != labels.end(); ++lIt) {
+                        if (lIt->idx == _classUpWeightIndex && lIt->y > 0) {
+                            rew *= _classUpWeightFactor;
                         }
                     }
                 }

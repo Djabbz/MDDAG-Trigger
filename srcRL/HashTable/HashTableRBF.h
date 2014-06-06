@@ -105,6 +105,7 @@ public:
     // -----------------------------------------------------------------------------------
     
     void saveActionValueTable(FILE* stream, int dim=0) ;
+    void saveActionValueTable(string filename) ;
     // -----------------------------------------------------------------------------------
     
     CAbstractQETraces* getStandardETraces() { return new HashTableRBFETraces(this, _stateProperties); } ;

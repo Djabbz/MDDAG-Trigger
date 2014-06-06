@@ -33,7 +33,7 @@ HashTable::HashTable(CActionSet *actions, CStateModifier* sm,  MultiBoost::AdaBo
 
     _stepResolution = 1. / 9;
     
-    _numWinnerClasses = 2;
+    _numWinnerClasses = 1;
 }
 
 // -----------------------------------------------------------------------------------
@@ -102,7 +102,7 @@ void HashTable::getKey(MDDAGState& state, ValueKey& key)
     
 //    const int numWinners = 0;
     
-    _numWinnerClasses = 2;//1;
+//    _numWinnerClasses = 1;//1;
     // index + numWinners + difference between the first two winners
     key.resize(1 + _numWinnerClasses + 1);//+ 1
     

@@ -236,3 +236,46 @@ void HashTableRBF::saveActionValueTable(FILE* stream, int dim)
 
 // -----------------------------------------------------------------------------------
 
+void HashTableRBF::saveActionValueTable(string filename)
+{
+    
+    ofstream output;
+    output.open(filename.c_str());
+    
+    if (! output.good()) {
+        cout << "Error! Could not the QTable file: " << filename << endl;
+        exit(1);
+    }
+    
+    ValueTableType::iterator tableIt = _valueTable.begin();
+    
+    for (; tableIt != _valueTable.end(); ++tableIt) {
+        
+        ValueKey key = tableIt->first;
+        vector<AlphaReal> values = tableIt->second;
+        
+        output << "( ";
+        ValueKey::iterator keyIt = key.begin();
+        if (keyIt != key.end()) output << (int)*(keyIt++) << " ";
+        
+        for (int d = 0; d < _numDimensions; ++d, ++keyIt) {
+            output << (*keyIt)*2 - 1 << " ";
+        }
+        
+        for (; keyIt != key.end(); ++keyIt) {
+            output <<  (int)(*keyIt) << " ";
+        }
+        
+        output << ")\t";
+        
+        for (int i = 0; i < values.size(); ++i) {
+            output << values[i] << " ";
+        }
+        
+        output << endl;
+    }
+    
+}
+
+// -----------------------------------------------------------------------------------
+
